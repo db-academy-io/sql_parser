@@ -1,0 +1,48 @@
+[workspace.package]
+authors = ["db-academy.io <admin@db-academy.io>"]
+edition = "2021"
+homepage = "https://db-academy.io"
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/db-academy-io/bulldb"
+version = "0.0.1-alpha"
+
+[workspace]
+exclude = []
+members = [ 
+    "engines/processing",
+    "engines/storage",
+    "parser",
+]
+resolver = "2"
+
+
+[workspace.dependencies]
+bigdecimal = "=0.4.1"
+bytes = "1.4"
+chrono = { version = "0.4.38", default-features = false }
+env_logger = "0.11"
+log = "^0.4"
+num_cpus = "1.13.0"
+rand = "0.8"
+regex = "1.8"
+rstest = "0.23.0"
+serde_json = "1"
+tempfile = "3"
+thiserror = "1.0.44"
+url = "2.2"
+
+[profile.release]
+lto = true
+codegen-units = 16
+debug = false
+debug-assertions = false
+incremental = false
+opt-level = 3
+overflow-checks = false
+panic = 'unwind'
+rpath = false
+
+[workspace.lints.clippy]
+# Detects large stack-allocated futures that may cause stack overflow crashes (see threshold in clippy.toml)
+large_futures = "warn"
