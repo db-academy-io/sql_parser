@@ -46,3 +46,10 @@ rpath = false
 [workspace.lints.clippy]
 # Detects large stack-allocated futures that may cause stack overflow crashes (see threshold in clippy.toml)
 large_futures = "warn"
+
+[workspace.dev-dependencies]
+pre-commit-hooks = "0.3.0"
+
+[workspace.metadata.precommit]
+fmt = "cargo fmt --check"
+clippy = "cargo clippy"
