@@ -307,13 +307,26 @@ impl<'input> Tokenizer<'input> {
                 } else if *ch == '\'' || *ch == '"' {
                     // String literal
                     let quote_char = *ch;
-                    while let Some(&ch) = self.peek_char() {
-                        if ch == quote_char {
-                            // Closing quote found
-                            break;
+                    self.next_char(); // Consume the opening quote
+                    loop {
+                        match self.next_char() {
+                            Some(ch) => {
+                                if ch == quote_char {
+                                    // Closing quote found
+                                    break;
+                                }
+                                // TODO: Handle escape sequences
+                                // For now, just consume the character
+                            }
+                            None => {
+                                // EOF reached without closing quote
+                                return Some(Err(ParsingError::UnterminatedLiteral(
+                                    &self.raw_content[start_pos..],
+                                )));
+                            }
                         }
-                        // TODO: Handle escape sequences
                     }
+
                     let text = &self.raw_content[start_pos..self.current_pos];
                     return Some(Ok(Token {
                         token_type: TokenType::String(text),
@@ -321,9 +334,6 @@ impl<'input> Tokenizer<'input> {
                     }));
                 } else {
                     // Operators and punctuation
-                    // Consume the character
-                    // self.next_char();
-
                     let token_type = match ch {
                         '+' => TokenType::Plus,
                         '-' => TokenType::Minus,
@@ -452,5 +462,305 @@ impl<'input> Iterator for Tokenizer<'input> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next_token()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Keyword, ParsingError, TokenType, Tokenizer};
+
+    #[test]
+    fn test_empty_input() {
+        let sql = "";
+        let mut tokenizer = Tokenizer::from(sql);
+        let result = tokenizer.next_token();
+        // Since the input is empty, we expect no tokens (None)
+        assert!(
+            result.is_none(),
+            "Tokenizer should return None for empty input"
+        );
+    }
+
+    #[test]
+    fn test_single_keyword() {
+        let sql = "SELECT";
+        let mut tokenizer = Tokenizer::from(sql);
+        let token = tokenizer.next_token();
+
+        let token = token.expect("Expected a token, but got None");
+
+        match token {
+            Ok(token) => {
+                // Verify that the token type is Keyword(Select)
+                assert_eq!(
+                    token.token_type,
+                    TokenType::Keyword(Keyword::Select),
+                    "Expected Keyword(Select), got {:?}",
+                    token.token_type
+                );
+                // Verify the token starts at position 0
+                assert_eq!(
+                    token.position, 0,
+                    "Expected token position 0, got {}",
+                    token.position
+                );
+            }
+            Err(error) => panic!("Unexpected error: {:?}", error),
+        }
+
+        // Ensure there are no more tokens
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_multiple_keywords() {
+        let sql = "SELECT FROM WHERE";
+        let mut tokenizer = Tokenizer::from(sql);
+
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::From),
+            TokenType::Keyword(Keyword::Where),
+        ];
+
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+
+            match token {
+                Ok(token) => {
+                    // Verify that the token type matches the expected token
+                    assert_eq!(
+                        token.token_type, expected_token_type,
+                        "Expected token {:?}, got {:?}",
+                        expected_token_type, token.token_type
+                    );
+                }
+                Err(error) => panic!("Unexpected error: {:?}", error),
+            }
+        }
+
+        // Ensure there are no more tokens
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_case_unsensetive_keywords() {
+        let sql = "Select select SELECT sElEcT SeLeCt";
+        let mut tokenizer = Tokenizer::from(sql);
+
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::Select),
+        ];
+
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+
+            match token {
+                Ok(token) => {
+                    // Verify that the token type matches the expected token
+                    assert_eq!(
+                        token.token_type, expected_token_type,
+                        "Expected token {:?}, got {:?}",
+                        expected_token_type, token.token_type
+                    );
+                }
+                Err(error) => panic!("Unexpected error: {:?}", error),
+            }
+        }
+
+        // Ensure there are no more tokens
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_identifier() {
+        let sql = "my_table";
+        let mut tokenizer = Tokenizer::from(sql);
+        let token = tokenizer.next_token();
+        let token = token.expect("Expected a token, but got None");
+
+        match token {
+            Ok(token) => {
+                assert_eq!(
+                    token.token_type,
+                    TokenType::Id("my_table"),
+                    "Expected Id(\"my_table\"), got {:?}",
+                    token.token_type
+                );
+                assert_eq!(
+                    token.position, 0,
+                    "Expected token position 0, got {}",
+                    token.position
+                );
+            }
+            Err(error) => panic!("Unexpected error: {:?}", error),
+        }
+
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_integer_literal() {
+        let sql = "42";
+        let mut tokenizer = Tokenizer::from(sql);
+
+        let token = tokenizer.next_token();
+        let token = token.expect("Expected a token, but got None");
+
+        match token {
+            Ok(token) => {
+                assert_eq!(
+                    token.token_type,
+                    TokenType::Integer("42"),
+                    "Expected Integer(\"42\"), got {:?}",
+                    token.token_type
+                );
+                assert_eq!(
+                    token.position, 0,
+                    "Expected token position 0, got {}",
+                    token.position
+                );
+            }
+            Err(error) => panic!("Unexpected error: {:?}", error),
+        }
+
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_float_literal() {
+        let sql = "3.14";
+        let mut tokenizer = Tokenizer::from(sql);
+        let token = tokenizer.next_token();
+        let token = token.expect("Expected a token, but got None");
+
+        match token {
+            Ok(token) => {
+                assert_eq!(
+                    token.token_type,
+                    TokenType::Float("3.14"),
+                    "Expected Float(\"3.14\"), got {:?}",
+                    token.token_type
+                );
+                assert_eq!(
+                    token.position, 0,
+                    "Expected token position 0, got {}",
+                    token.position
+                );
+            }
+            Err(error) => panic!("Unexpected error: {:?}", error),
+        }
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_string_literal_single_quotes() {
+        let sql = "'hello'";
+        let mut tokenizer = Tokenizer::from(sql);
+        let token = tokenizer.next_token();
+        let token = token.expect("Expected a token, but got None");
+
+        match token {
+            Ok(token) => {
+                assert_eq!(
+                    token.token_type,
+                    TokenType::String("'hello'"),
+                    "Expected String(\"'hello'\"), got {:?}",
+                    token.token_type
+                );
+                assert_eq!(
+                    token.position, 0,
+                    "Expected token position 0, got {}",
+                    token.position
+                );
+            }
+            Err(error) => panic!("Unexpected error: {:?}", error),
+        }
+
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_string_literal_double_quotes() {
+        let sql = "\"hello world\"";
+        let mut tokenizer = Tokenizer::from(sql);
+        let token = tokenizer.next_token();
+        let token = token.expect("Expected a token, but got None");
+
+        match token {
+            Ok(token) => {
+                assert_eq!(
+                    token.token_type,
+                    TokenType::String("\"hello world\""),
+                    "Expected String(\"\\\"hello world\\\"\"), got {:?}",
+                    token.token_type
+                );
+                assert_eq!(
+                    token.position, 0,
+                    "Expected token position 0, got {}",
+                    token.position
+                );
+            }
+            Err(error) => panic!("Unexpected error: {:?}", error),
+        }
+
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_unclosed_string_literal() {
+        let sql = "'unclosed string";
+        let mut tokenizer = Tokenizer::from(sql);
+        let token = tokenizer.next_token();
+        let token = token.expect("Expected a token, but got None");
+
+        match token {
+            Ok(_token) => {
+                panic!("Expected an error due to unterminated string literal, but got a token");
+            }
+            Err(error) => match error {
+                ParsingError::UnterminatedLiteral(s) => {
+                    assert_eq!(
+                        s, "'unclosed string",
+                        "Expected unterminated literal '{}', got '{}'",
+                        "'unclosed string", s
+                    );
+                }
+                _ => panic!(
+                    "Expected ParsingError::UnterminatedLiteral, got {:?}",
+                    error
+                ),
+            },
+        }
     }
 }
