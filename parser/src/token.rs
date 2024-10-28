@@ -18,6 +18,9 @@ pub enum TokenType<'a> {
     Integer(&'a str),
     Float(&'a str),
 
+    SingleLineComment(&'a str),
+    MultiLineComment(&'a str),
+
     // Operator tokens
     // The following sequences of special characters are recognized as tokens:
     /// - H41415: SQLite shall recognize the 1-character sequenence "+" (u002b) as token PLUS

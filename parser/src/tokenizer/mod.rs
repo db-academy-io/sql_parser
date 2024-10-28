@@ -334,11 +334,68 @@ impl<'input> Tokenizer<'input> {
                     }));
                 } else {
                     // Operators and punctuation
+                    // Consume operator or punctuation char
+                    let ch = *ch;
+                    self.next_char();
+
                     let token_type = match ch {
                         '+' => TokenType::Plus,
-                        '-' => TokenType::Minus,
+                        '-' => {
+                            // Check for '--' (single line comment)
+                            if let Some(&next_ch) = self.peek_char() {
+                                if next_ch == '-' {
+                                    // Consume the second '-'
+                                    self.next_char();
+                                    let start_pos = self.current_pos;
+                                    while let Some(ch) = self.next_char() {
+                                        if ch == '\n' {
+                                            break;
+                                        }
+                                    }
+                                    TokenType::SingleLineComment(
+                                        &self.raw_content[start_pos..self.current_pos],
+                                    )
+                                } else {
+                                    TokenType::Minus
+                                }
+                            } else {
+                                TokenType::Minus
+                            }
+                        }
                         '*' => TokenType::Star,
-                        '/' => TokenType::Slash,
+                        '/' => {
+                            // Check for '/*' (multi-line comment)
+                            if let Some(&next_ch) = self.peek_char() {
+                                if next_ch == '*' {
+                                    self.next_char(); // Consume '*'
+                                    let start_pos = self.current_pos;
+                                    let mut terminated = false;
+                                    while let Some(ch) = self.next_char() {
+                                        // search for closing "*/"
+                                        if ch == '*' {
+                                            if let Some(&next_ch) = self.peek_char() {
+                                                if next_ch == '/' {
+                                                    self.next_char(); // Consume '/'
+                                                    terminated = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if !terminated {
+                                        return Some(Err(ParsingError::UnterminatedBlockComment));
+                                    }
+                                    // minus 2 characters to ignore */ symbols
+                                    TokenType::MultiLineComment(
+                                        &self.raw_content[start_pos..self.current_pos - 2],
+                                    )
+                                } else {
+                                    TokenType::Slash
+                                }
+                            } else {
+                                TokenType::Slash
+                            }
+                        }
                         '%' => TokenType::Remainder,
                         '(' => TokenType::LeftParen,
                         ')' => TokenType::RightParen,
@@ -763,4 +820,272 @@ mod tests {
             },
         }
     }
+
+    #[test]
+    fn test_single_character_operators() {
+        let operators = "+ - * / % & ~ | = < >";
+        let expected_tokens = vec![
+            TokenType::Plus,
+            TokenType::Minus,
+            TokenType::Star,
+            TokenType::Slash,
+            TokenType::Remainder,
+            TokenType::BitAnd,
+            TokenType::BitNot,
+            TokenType::Bitor,
+            TokenType::Equals,
+            TokenType::LessThan,
+            TokenType::GreaterThan,
+        ];
+
+        let mut tokenizer = Tokenizer::from(operators);
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+
+            match token {
+                Ok(token) => {
+                    assert_eq!(
+                        token.token_type, expected_token_type,
+                        "Expected token {:?}, got {:?}",
+                        expected_token_type, token.token_type
+                    );
+                }
+                Err(error) => panic!("Unexpected error: {:?}", error),
+            }
+        }
+
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_multi_character_operators() {
+        let operators = "== != >= <= <> << >> ||";
+        let expected_tokens = vec![
+            TokenType::Equals,
+            TokenType::NotEquals,
+            TokenType::GreaterEquals,
+            TokenType::LessEquals,
+            TokenType::NotEquals,
+            TokenType::LeftShift,
+            TokenType::RightShift,
+            TokenType::Concat,
+        ];
+
+        let mut tokenizer = Tokenizer::from(operators);
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+
+            match token {
+                Ok(token) => {
+                    assert_eq!(
+                        token.token_type, expected_token_type,
+                        "Expected token {:?}, got {:?}",
+                        expected_token_type, token.token_type
+                    );
+                }
+                Err(error) => panic!("Unexpected error: {:?}", error),
+            }
+        }
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_punctuation() {
+        let punctuations = ", ; ( )";
+        let expected_tokens = vec![
+            TokenType::Comma,
+            TokenType::Semi,
+            TokenType::LeftParen,
+            TokenType::RightParen,
+        ];
+        let mut tokenizer = Tokenizer::from(punctuations);
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+
+            match token {
+                Ok(token) => {
+                    assert_eq!(
+                        token.token_type, expected_token_type,
+                        "Expected token {:?}, got {:?}",
+                        expected_token_type, token.token_type
+                    );
+                }
+                Err(error) => panic!("Unexpected error: {:?}", error),
+            }
+        }
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_whitespace_handling() {
+        let sql = "SELECT   \t\n  *  FROM   users\n\t";
+        let mut tokenizer = Tokenizer::from(sql);
+
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Star,
+            TokenType::Keyword(Keyword::From),
+            TokenType::Id("users"),
+        ];
+
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+            match token {
+                Ok(token) => {
+                    assert_eq!(
+                        token.token_type, expected_token_type,
+                        "Expected token {:?}, got {:?}",
+                        expected_token_type, token.token_type
+                    );
+                }
+                Err(error) => panic!("Unexpected error: {:?}", error),
+            }
+        }
+
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_single_line_comments() {
+        let sql = "SELECT * FROM users -- This is a comment\nWHERE id = 1;";
+        let mut tokenizer = Tokenizer::from(sql);
+
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Star,
+            TokenType::Keyword(Keyword::From),
+            TokenType::Id("users"),
+            TokenType::SingleLineComment(" This is a comment\n"),
+            TokenType::Keyword(Keyword::Where),
+            TokenType::Id("id"),
+            TokenType::Equals,
+            TokenType::Integer("1"),
+            TokenType::Semi,
+        ];
+
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+
+            match token {
+                Ok(token) => {
+                    assert_eq!(
+                        token.token_type, expected_token_type,
+                        "Expected token {:?}, got {:?}",
+                        expected_token_type, token.token_type
+                    );
+                }
+                Err(error) => panic!("Unexpected error: {:?}", error),
+            }
+        }
+
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    #[test]
+    fn test_multi_line_comments() {
+        let sql = "SELECT /* This is a \nmulti-line comment */ * FROM users;";
+        let mut tokenizer = Tokenizer::from(sql);
+        tokenizer.current_pos = 0;
+
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::MultiLineComment(" This is a \nmulti-line comment "),
+            TokenType::Star,
+            TokenType::Keyword(Keyword::From),
+            TokenType::Id("users"),
+            TokenType::Semi,
+        ];
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+
+            match token {
+                Ok(token) => {
+                    assert_eq!(
+                        token.token_type, expected_token_type,
+                        "Expected token {:?}, got {:?}",
+                        expected_token_type, token.token_type
+                    );
+                }
+                Err(error) => panic!("Unexpected error: {:?}", error),
+            }
+        }
+
+        assert!(
+            tokenizer.next_token().is_none(),
+            "Tokenizer should have no more tokens"
+        );
+    }
+
+    // #[test]
+    // fn test_unterminated_multi_line_comment() {
+    //     let sql = "SELECT * FROM users /* Unterminated comment";
+    //     let mut tokenizer = Tokenizer::from(sql);
+    //     tokenizer.current_pos = 0;
+
+    //     // We expect tokens up until the comment, then an error
+    //     let expected_tokens = vec![
+    //         TokenType::Keyword(Keyword::Select),
+    //         TokenType::Star,
+    //         TokenType::Keyword(Keyword::From),
+    //         TokenType::Id("users"),
+    //     ];
+
+    //     for expected_token_type in expected_tokens {
+    //         if let Some(result) = tokenizer.next_token() {
+    //             match result {
+    //                 Ok(token) => {
+    //                     assert_eq!(
+    //                         token.token_type, expected_token_type,
+    //                         "Expected token {:?}, got {:?}",
+    //                         expected_token_type, token.token_type
+    //                     );
+    //                 }
+    //                 Err(error) => panic!("Unexpected error before comment: {:?}", error),
+    //             }
+    //         } else {
+    //             panic!("Expected a token before comment, but got None");
+    //         }
+    //     }
+
+    //     // The next call to next_token() should return an error
+    //     if let Some(result) = tokenizer.next_token() {
+    //         match result {
+    //             Ok(_token) => {
+    //                 panic!("Expected an error due to unterminated comment, but got a token");
+    //             }
+    //             Err(error) => match error {
+    //                 ParsingError::UnterminatedBlockComment => {
+    //                     // Test passes
+    //                 }
+    //                 _ => panic!(
+    //                     "Expected ParsingError::UnterminatedBlockComment, got {:?}",
+    //                     error
+    //                 ),
+    //             },
+    //         }
+    //     } else {
+    //         panic!("Expected an error due to unterminated comment, but got None");
+    //     }
+    // }
 }
