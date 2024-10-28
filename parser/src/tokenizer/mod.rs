@@ -3,7 +3,7 @@ pub use crate::errors::*;
 use std::iter::Peekable;
 use std::str::Chars;
 
-use crate::{Token, TokenType};
+use crate::{Keyword, Token, TokenType};
 
 /// When processing SQL statements, SQLite (as does every other SQL database
 /// engine) breaks the SQL statement up into [`token`](crate::Token) which are then forwarded
@@ -191,29 +191,258 @@ use crate::{Token, TokenType};
 ///   followed by one or more NUMERIC characters.
 #[derive(Debug)]
 pub struct Tokenizer<'input> {
-    _raw_content: &'input str,
-    _chars: Peekable<Chars<'input>>,
+    raw_content: &'input str,
+    chars: Peekable<Chars<'input>>,
+    current_pos: usize,
 }
 
 impl<'input> Tokenizer<'input> {
+    /// Consumes the next character, updates `current_pos`, and returns the character.
+    fn next_char(&mut self) -> Option<char> {
+        if let Some(ch) = self.chars.next() {
+            self.current_pos += ch.len_utf8();
+            Some(ch)
+        } else {
+            None
+        }
+    }
+
+    /// Peeks at the next character without consuming it.
+    fn peek_char(&mut self) -> Option<&char> {
+        self.chars.peek()
+    }
+
+    /// Skips over whitespace characters, updating `current_pos`.
+    fn skip_whitespace(&mut self) {
+        while let Some(&ch) = self.peek_char() {
+            if Self::is_whitespace(&ch) {
+                // Consume the whitespace character
+                self.next_char();
+            } else {
+                break;
+            }
+        }
+    }
+
+    /// Checks if a character is a valid start character for an identifier.
+    fn is_id_start_char(c: &char) -> bool {
+        c.is_ascii_alphabetic() || *c == '_'
+    }
+
+    /// Checks if a character is a valid part of an identifier.
+    fn is_id_char(c: char) -> bool {
+        c.is_ascii_alphanumeric() || c == '_'
+    }
+
     /// There are 5 symbols by the specification considered as whitespace, which
     /// maps to the ASCII whitespaces. Unicode whitespace from Rust's
     /// `char::is_whitespace()` is too restrictive, as it's considers way more
-    /// charaters as whitespaces
+    /// charaters as whitespaces, so we're using only ASCII whitespaces
     pub fn is_whitespace(char: &char) -> bool {
         char.is_ascii_whitespace()
     }
 
+    /// Reads the next token from the input
     pub fn next_token(&mut self) -> Option<Result<Token<'input>, ParsingError<'input>>> {
-        todo!()
+        self.skip_whitespace();
+
+        let start_pos = self.current_pos;
+
+        // Peek at the next character
+        let ch = self.peek_char();
+
+        match ch {
+            Some(ch) => {
+                // Match based on the character
+                if Self::is_id_start_char(ch) {
+                    // Identifier or keyword
+                    while let Some(&ch) = self.peek_char() {
+                        if Self::is_id_char(ch) {
+                            self.next_char();
+                        } else {
+                            break;
+                        }
+                    }
+
+                    let text = &self.raw_content[start_pos..self.current_pos];
+                    // Check if it's a keyword
+                    if let Ok(keyword) = Keyword::try_from(text) {
+                        return Some(Ok(Token {
+                            token_type: TokenType::Keyword(keyword),
+                            position: start_pos,
+                        }));
+                    } else {
+                        // It's an identifier
+                        return Some(Ok(Token {
+                            token_type: TokenType::Id(text),
+                            position: start_pos,
+                        }));
+                    }
+                } else if ch.is_ascii_digit() {
+                    // Numeric literal (integer or float)
+                    let mut has_dot = false;
+                    while let Some(&ch) = self.peek_char() {
+                        if ch.is_ascii_digit() {
+                            self.next_char();
+                        } else if ch == '.' && !has_dot {
+                            // Handle floating point numbers
+                            has_dot = true;
+                            self.next_char();
+                        } else {
+                            break;
+                        }
+                    }
+                    let text = &self.raw_content[start_pos..self.current_pos];
+                    if has_dot {
+                        return Some(Ok(Token {
+                            token_type: TokenType::Float(text),
+                            position: start_pos,
+                        }));
+                    } else {
+                        return Some(Ok(Token {
+                            token_type: TokenType::Integer(text),
+                            position: start_pos,
+                        }));
+                    }
+                } else if *ch == '\'' || *ch == '"' {
+                    // String literal
+                    let quote_char = *ch;
+                    while let Some(&ch) = self.peek_char() {
+                        if ch == quote_char {
+                            // Closing quote found
+                            break;
+                        }
+                        // TODO: Handle escape sequences
+                    }
+                    let text = &self.raw_content[start_pos..self.current_pos];
+                    return Some(Ok(Token {
+                        token_type: TokenType::String(text),
+                        position: start_pos,
+                    }));
+                } else {
+                    // Operators and punctuation
+                    // Consume the character
+                    // self.next_char();
+
+                    let token_type = match ch {
+                        '+' => TokenType::Plus,
+                        '-' => TokenType::Minus,
+                        '*' => TokenType::Star,
+                        '/' => TokenType::Slash,
+                        '%' => TokenType::Remainder,
+                        '(' => TokenType::LeftParen,
+                        ')' => TokenType::RightParen,
+                        ';' => TokenType::Semi,
+                        ',' => TokenType::Comma,
+                        '&' => TokenType::BitAnd,
+                        '~' => TokenType::BitNot,
+                        '|' => {
+                            // Check for '||' (concatenation operator)
+                            if let Some(&next_ch) = self.peek_char() {
+                                if next_ch == '|' {
+                                    // Consume the second '|'
+                                    self.next_char();
+                                    TokenType::Concat
+                                } else {
+                                    TokenType::Bitor
+                                }
+                            } else {
+                                TokenType::Bitor
+                            }
+                        }
+                        '=' => {
+                            // Check for '==' (equality operator)
+                            if let Some(&next_ch) = self.peek_char() {
+                                if next_ch == '=' {
+                                    // Consume the second '='
+                                    self.next_char();
+                                }
+                            }
+                            TokenType::Equals
+                        }
+                        '<' => {
+                            // Could be '<', '<=', '<>', '<<'
+                            if let Some(&next_ch) = self.peek_char() {
+                                match next_ch {
+                                    '=' => {
+                                        // Consume '='
+                                        self.next_char();
+                                        TokenType::LessEquals
+                                    }
+                                    '>' => {
+                                        // Consume '>'
+                                        self.next_char();
+                                        TokenType::NotEquals
+                                    }
+                                    '<' => {
+                                        // Consume '<'
+                                        self.next_char();
+                                        TokenType::LeftShift
+                                    }
+                                    _ => TokenType::LessThan,
+                                }
+                            } else {
+                                TokenType::LessThan
+                            }
+                        }
+                        '>' => {
+                            // Could be '>', '>=', '>>'
+                            if let Some(&next_ch) = self.peek_char() {
+                                match next_ch {
+                                    '=' => {
+                                        // Consume '='
+                                        self.next_char();
+                                        TokenType::GreaterEquals
+                                    }
+                                    '>' => {
+                                        // Consume '>'
+                                        self.next_char();
+                                        TokenType::RightShift
+                                    }
+                                    _ => TokenType::GreaterThan,
+                                }
+                            } else {
+                                TokenType::GreaterThan
+                            }
+                        }
+                        '!' => {
+                            // Could be '!='
+                            if let Some(&next_ch) = self.peek_char() {
+                                if next_ch == '=' {
+                                    // Consume '='
+                                    self.next_char();
+                                    TokenType::NotEquals
+                                } else {
+                                    // Return an error for unrecognized token
+                                    return Some(Err(ParsingError::UnrecognizedToken));
+                                }
+                            } else {
+                                // Unexpected end of input after '!'
+                                return Some(Err(ParsingError::UnexpectedEOF));
+                            }
+                        }
+                        _ => {
+                            // Unrecognized character
+                            return Some(Err(ParsingError::UnrecognizedToken));
+                        }
+                    };
+                    return Some(Ok(Token {
+                        token_type,
+                        position: start_pos,
+                    }));
+                }
+            }
+            None => None,
+        }
     }
 }
 
 impl<'a> From<&'a str> for Tokenizer<'a> {
     fn from(text: &'a str) -> Self {
         Tokenizer {
-            _raw_content: text,
-            _chars: text.chars().peekable(),
+            raw_content: text,
+            chars: text.chars().peekable(),
+            current_pos: 0,
         }
     }
 }
