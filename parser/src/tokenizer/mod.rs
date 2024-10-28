@@ -3,7 +3,7 @@ pub use crate::errors::*;
 use std::iter::Peekable;
 use std::str::Chars;
 
-use crate::Token;
+use crate::{Token, TokenType};
 
 /// When processing SQL statements, SQLite (as does every other SQL database
 /// engine) breaks the SQL statement up into [`token`](crate::Token) which are then forwarded

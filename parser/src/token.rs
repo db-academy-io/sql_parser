@@ -1,7 +1,13 @@
 use crate::Keyword;
 
+#[derive(Debug)]
+pub struct Token<'a> {
+    pub token_type: TokenType<'a>,
+    pub position: usize,
+}
+
 #[derive(Debug, PartialEq, Eq)]
-pub enum Token<'a> {
+pub enum TokenType<'a> {
     Keyword(Keyword),
 
     String(&'a str),
