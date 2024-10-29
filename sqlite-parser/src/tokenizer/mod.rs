@@ -545,25 +545,27 @@ mod tests {
         let token = tokenizer.next_token();
 
         let token = token.expect("Expected a token, but got None");
+        let token = token.expect(
+            format!(
+                "Expected {:?}, got Unexpected error: ",
+                TokenType::Keyword(Keyword::Select)
+            )
+            .as_str(),
+        );
 
-        match token {
-            Ok(token) => {
-                // Verify that the token type is Keyword(Select)
-                assert_eq!(
-                    token.token_type,
-                    TokenType::Keyword(Keyword::Select),
-                    "Expected Keyword(Select), got {:?}",
-                    token.token_type
-                );
-                // Verify the token starts at position 0
-                assert_eq!(
-                    token.position, 0,
-                    "Expected token position 0, got {}",
-                    token.position
-                );
-            }
-            Err(error) => panic!("Unexpected error: {:?}", error),
-        }
+        // Verify that the token type is Keyword(Select)
+        assert_eq!(
+            token.token_type,
+            TokenType::Keyword(Keyword::Select),
+            "Expected Keyword(Select), got {:?}",
+            token.token_type
+        );
+        // Verify the token starts at position 0
+        assert_eq!(
+            token.position, 0,
+            "Expected token position 0, got {}",
+            token.position
+        );
 
         // Ensure there are no more tokens
         assert!(
@@ -586,18 +588,16 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
 
-            match token {
-                Ok(token) => {
-                    // Verify that the token type matches the expected token
-                    assert_eq!(
-                        token.token_type, expected_token_type,
-                        "Expected token {:?}, got {:?}",
-                        expected_token_type, token.token_type
-                    );
-                }
-                Err(error) => panic!("Unexpected error: {:?}", error),
-            }
+            // Verify that the token type matches the expected token
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
         }
 
         // Ensure there are no more tokens
@@ -623,18 +623,16 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
 
-            match token {
-                Ok(token) => {
-                    // Verify that the token type matches the expected token
-                    assert_eq!(
-                        token.token_type, expected_token_type,
-                        "Expected token {:?}, got {:?}",
-                        expected_token_type, token.token_type
-                    );
-                }
-                Err(error) => panic!("Unexpected error: {:?}", error),
-            }
+            // Verify that the token type matches the expected token
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
         }
 
         // Ensure there are no more tokens
@@ -650,23 +648,25 @@ mod tests {
         let mut tokenizer = Tokenizer::from(sql);
         let token = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
+        let token = token.expect(
+            format!(
+                "Expected {:?}, got Unexpected error: ",
+                TokenType::Id("my_table"),
+            )
+            .as_str(),
+        );
 
-        match token {
-            Ok(token) => {
-                assert_eq!(
-                    token.token_type,
-                    TokenType::Id("my_table"),
-                    "Expected Id(\"my_table\"), got {:?}",
-                    token.token_type
-                );
-                assert_eq!(
-                    token.position, 0,
-                    "Expected token position 0, got {}",
-                    token.position
-                );
-            }
-            Err(error) => panic!("Unexpected error: {:?}", error),
-        }
+        assert_eq!(
+            token.token_type,
+            TokenType::Id("my_table"),
+            "Expected Id(\"my_table\"), got {:?}",
+            token.token_type
+        );
+        assert_eq!(
+            token.position, 0,
+            "Expected token position 0, got {}",
+            token.position
+        );
 
         assert!(
             tokenizer.next_token().is_none(),
@@ -681,23 +681,25 @@ mod tests {
 
         let token = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
+        let token = token.expect(
+            format!(
+                "Expected {:?}, got Unexpected error: ",
+                TokenType::Integer("42")
+            )
+            .as_str(),
+        );
 
-        match token {
-            Ok(token) => {
-                assert_eq!(
-                    token.token_type,
-                    TokenType::Integer("42"),
-                    "Expected Integer(\"42\"), got {:?}",
-                    token.token_type
-                );
-                assert_eq!(
-                    token.position, 0,
-                    "Expected token position 0, got {}",
-                    token.position
-                );
-            }
-            Err(error) => panic!("Unexpected error: {:?}", error),
-        }
+        assert_eq!(
+            token.token_type,
+            TokenType::Integer("42"),
+            "Expected Integer(\"42\"), got {:?}",
+            token.token_type
+        );
+        assert_eq!(
+            token.position, 0,
+            "Expected token position 0, got {}",
+            token.position
+        );
 
         assert!(
             tokenizer.next_token().is_none(),
@@ -711,23 +713,26 @@ mod tests {
         let mut tokenizer = Tokenizer::from(sql);
         let token = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
+        let token = token.expect(
+            format!(
+                "Expected {:?}, got Unexpected error: ",
+                TokenType::Float("3.14")
+            )
+            .as_str(),
+        );
 
-        match token {
-            Ok(token) => {
-                assert_eq!(
-                    token.token_type,
-                    TokenType::Float("3.14"),
-                    "Expected Float(\"3.14\"), got {:?}",
-                    token.token_type
-                );
-                assert_eq!(
-                    token.position, 0,
-                    "Expected token position 0, got {}",
-                    token.position
-                );
-            }
-            Err(error) => panic!("Unexpected error: {:?}", error),
-        }
+        assert_eq!(
+            token.token_type,
+            TokenType::Float("3.14"),
+            "Expected Float(\"3.14\"), got {:?}",
+            token.token_type
+        );
+        assert_eq!(
+            token.position, 0,
+            "Expected token position 0, got {}",
+            token.position
+        );
+
         assert!(
             tokenizer.next_token().is_none(),
             "Tokenizer should have no more tokens"
@@ -740,23 +745,25 @@ mod tests {
         let mut tokenizer = Tokenizer::from(sql);
         let token = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
+        let token = token.expect(
+            format!(
+                "Expected {:?}, got Unexpected error: ",
+                TokenType::String("'hello'")
+            )
+            .as_str(),
+        );
 
-        match token {
-            Ok(token) => {
-                assert_eq!(
-                    token.token_type,
-                    TokenType::String("'hello'"),
-                    "Expected String(\"'hello'\"), got {:?}",
-                    token.token_type
-                );
-                assert_eq!(
-                    token.position, 0,
-                    "Expected token position 0, got {}",
-                    token.position
-                );
-            }
-            Err(error) => panic!("Unexpected error: {:?}", error),
-        }
+        assert_eq!(
+            token.token_type,
+            TokenType::String("'hello'"),
+            "Expected String(\"'hello'\"), got {:?}",
+            token.token_type
+        );
+        assert_eq!(
+            token.position, 0,
+            "Expected token position 0, got {}",
+            token.position
+        );
 
         assert!(
             tokenizer.next_token().is_none(),
@@ -770,23 +777,25 @@ mod tests {
         let mut tokenizer = Tokenizer::from(sql);
         let token = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
+        let token = token.expect(
+            format!(
+                "Expected {:?}, got Unexpected error: ",
+                TokenType::String("\"hello world\"")
+            )
+            .as_str(),
+        );
 
-        match token {
-            Ok(token) => {
-                assert_eq!(
-                    token.token_type,
-                    TokenType::String("\"hello world\""),
-                    "Expected String(\"\\\"hello world\\\"\"), got {:?}",
-                    token.token_type
-                );
-                assert_eq!(
-                    token.position, 0,
-                    "Expected token position 0, got {}",
-                    token.position
-                );
-            }
-            Err(error) => panic!("Unexpected error: {:?}", error),
-        }
+        assert_eq!(
+            token.token_type,
+            TokenType::String("\"hello world\""),
+            "Expected String(\"\\\"hello world\\\"\"), got {:?}",
+            token.token_type
+        );
+        assert_eq!(
+            token.position, 0,
+            "Expected token position 0, got {}",
+            token.position
+        );
 
         assert!(
             tokenizer.next_token().is_none(),
@@ -800,24 +809,21 @@ mod tests {
         let mut tokenizer = Tokenizer::from(sql);
         let token = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
+        let token_status =
+            token.expect_err("Expected an error due to unterminated comment, but got a token");
 
-        match token {
-            Ok(_token) => {
-                panic!("Expected an error due to unterminated string literal, but got a token");
+        match token_status {
+            ParsingError::UnterminatedLiteral(s) => {
+                assert_eq!(
+                    s, "'unclosed string",
+                    "Expected unterminated literal '{}', got '{}'",
+                    "'unclosed string", s
+                );
             }
-            Err(error) => match error {
-                ParsingError::UnterminatedLiteral(s) => {
-                    assert_eq!(
-                        s, "'unclosed string",
-                        "Expected unterminated literal '{}', got '{}'",
-                        "'unclosed string", s
-                    );
-                }
-                _ => panic!(
-                    "Expected ParsingError::UnterminatedLiteral, got {:?}",
-                    error
-                ),
-            },
+            _ => panic!(
+                "Expected ParsingError::UnterminatedLiteral, got {:?}",
+                token_status
+            ),
         }
     }
 
@@ -842,17 +848,15 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
 
-            match token {
-                Ok(token) => {
-                    assert_eq!(
-                        token.token_type, expected_token_type,
-                        "Expected token {:?}, got {:?}",
-                        expected_token_type, token.token_type
-                    );
-                }
-                Err(error) => panic!("Unexpected error: {:?}", error),
-            }
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
         }
 
         assert!(
@@ -879,17 +883,15 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
 
-            match token {
-                Ok(token) => {
-                    assert_eq!(
-                        token.token_type, expected_token_type,
-                        "Expected token {:?}, got {:?}",
-                        expected_token_type, token.token_type
-                    );
-                }
-                Err(error) => panic!("Unexpected error: {:?}", error),
-            }
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
         }
         assert!(
             tokenizer.next_token().is_none(),
@@ -910,17 +912,15 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
 
-            match token {
-                Ok(token) => {
-                    assert_eq!(
-                        token.token_type, expected_token_type,
-                        "Expected token {:?}, got {:?}",
-                        expected_token_type, token.token_type
-                    );
-                }
-                Err(error) => panic!("Unexpected error: {:?}", error),
-            }
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
         }
         assert!(
             tokenizer.next_token().is_none(),
@@ -943,16 +943,14 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
-            match token {
-                Ok(token) => {
-                    assert_eq!(
-                        token.token_type, expected_token_type,
-                        "Expected token {:?}, got {:?}",
-                        expected_token_type, token.token_type
-                    );
-                }
-                Err(error) => panic!("Unexpected error: {:?}", error),
-            }
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
         }
 
         assert!(
@@ -982,17 +980,15 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
 
-            match token {
-                Ok(token) => {
-                    assert_eq!(
-                        token.token_type, expected_token_type,
-                        "Expected token {:?}, got {:?}",
-                        expected_token_type, token.token_type
-                    );
-                }
-                Err(error) => panic!("Unexpected error: {:?}", error),
-            }
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
         }
 
         assert!(
@@ -1005,7 +1001,6 @@ mod tests {
     fn test_multi_line_comments() {
         let sql = "SELECT /* This is a \nmulti-line comment */ * FROM users;";
         let mut tokenizer = Tokenizer::from(sql);
-        tokenizer.current_pos = 0;
 
         let expected_tokens = vec![
             TokenType::Keyword(Keyword::Select),
@@ -1018,17 +1013,15 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
 
-            match token {
-                Ok(token) => {
-                    assert_eq!(
-                        token.token_type, expected_token_type,
-                        "Expected token {:?}, got {:?}",
-                        expected_token_type, token.token_type
-                    );
-                }
-                Err(error) => panic!("Unexpected error: {:?}", error),
-            }
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
         }
 
         assert!(
@@ -1037,55 +1030,47 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn test_unterminated_multi_line_comment() {
-    //     let sql = "SELECT * FROM users /* Unterminated comment";
-    //     let mut tokenizer = Tokenizer::from(sql);
-    //     tokenizer.current_pos = 0;
+    #[test]
+    fn test_unterminated_multi_line_comment() {
+        let sql = "SELECT * FROM users /* Unterminated comment";
+        let mut tokenizer = Tokenizer::from(sql);
 
-    //     // We expect tokens up until the comment, then an error
-    //     let expected_tokens = vec![
-    //         TokenType::Keyword(Keyword::Select),
-    //         TokenType::Star,
-    //         TokenType::Keyword(Keyword::From),
-    //         TokenType::Id("users"),
-    //     ];
+        // We expect tokens up until the comment, then an error
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Star,
+            TokenType::Keyword(Keyword::From),
+            TokenType::Id("users"),
+        ];
 
-    //     for expected_token_type in expected_tokens {
-    //         if let Some(result) = tokenizer.next_token() {
-    //             match result {
-    //                 Ok(token) => {
-    //                     assert_eq!(
-    //                         token.token_type, expected_token_type,
-    //                         "Expected token {:?}, got {:?}",
-    //                         expected_token_type, token.token_type
-    //                     );
-    //                 }
-    //                 Err(error) => panic!("Unexpected error before comment: {:?}", error),
-    //             }
-    //         } else {
-    //             panic!("Expected a token before comment, but got None");
-    //         }
-    //     }
+        for expected_token_type in expected_tokens {
+            let token = tokenizer.next_token();
+            let token = token.expect("Expected a token, but got None");
+            let token = token.expect(
+                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
+            );
 
-    //     // The next call to next_token() should return an error
-    //     if let Some(result) = tokenizer.next_token() {
-    //         match result {
-    //             Ok(_token) => {
-    //                 panic!("Expected an error due to unterminated comment, but got a token");
-    //             }
-    //             Err(error) => match error {
-    //                 ParsingError::UnterminatedBlockComment => {
-    //                     // Test passes
-    //                 }
-    //                 _ => panic!(
-    //                     "Expected ParsingError::UnterminatedBlockComment, got {:?}",
-    //                     error
-    //                 ),
-    //             },
-    //         }
-    //     } else {
-    //         panic!("Expected an error due to unterminated comment, but got None");
-    //     }
-    // }
+            assert_eq!(
+                token.token_type, expected_token_type,
+                "Expected token {:?}, got {:?}",
+                expected_token_type, token.token_type
+            );
+        }
+
+        // The next call to next_token() should return an error
+        let token: Option<Result<crate::Token<'_>, ParsingError<'_>>> = tokenizer.next_token();
+        let token = token.expect("Expected a token, but got None");
+        let token_status =
+            token.expect_err("Expected an error due to unterminated comment, but got a token");
+
+        match token_status {
+            ParsingError::UnterminatedBlockComment => {
+                // Test passes
+            }
+            _ => panic!(
+                "Expected ParsingError::UnterminatedBlockComment, got {:?}",
+                token_status
+            ),
+        }
+    }
 }
