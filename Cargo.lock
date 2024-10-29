@@ -9,7 +9,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 
 [[package]]
-name = "processing"
+name = "processing_engine"
 version = "0.0.1-alpha"
 
 [[package]]
@@ -20,5 +20,5 @@ dependencies = [
 ]
 
 [[package]]
-name = "storage"
+name = "storage_engine"
 version = "0.0.1-alpha"
