@@ -290,30 +290,82 @@ impl<'input> Tokenizer<'input> {
                     }
                 } else if ch.is_ascii_digit() {
                     // Numeric literal (integer or float)
+                    let start_pos = self.current_pos;
                     let mut has_dot = false;
-                    while let Some(&ch) = self.peek_char() {
-                        if ch.is_ascii_digit() {
+                    let mut has_exponent = false;
+                    let mut is_valid = true;
+
+                    while let Some(&next_ch) = self.peek_char() {
+                        if next_ch.is_ascii_digit() {
                             self.next_char();
-                        } else if ch == '.' && !has_dot {
-                            // Handle floating point numbers
-                            has_dot = true;
+                        } else if next_ch == '.' {
+                            // already has dot in a previous characters
+                            if has_dot {
+                                return Some(Err(ParsingError::BadNumber));
+                            } else {
+                                has_dot = true;
+                                self.next_char();
+                                // Check for digits after '.'
+                                if let Some(&after_dot_ch) = self.peek_char() {
+                                    if !after_dot_ch.is_ascii_digit() {
+                                        is_valid = false;
+                                        break;
+                                    }
+                                } else {
+                                    is_valid = false;
+                                    break;
+                                }
+                            }
+                        } else if (next_ch == 'e' || next_ch == 'E') && !has_exponent {
+                            has_exponent = true;
                             self.next_char();
+                            // Exponent can be followed by '+' or '-' or digits
+                            if let Some(&exp_ch) = self.peek_char() {
+                                if exp_ch == '+' || exp_ch == '-' {
+                                    self.next_char();
+                                }
+                            }
+                            // There should be digits after exponent
+                            if let Some(&digit_ch) = self.peek_char() {
+                                if !digit_ch.is_ascii_digit() {
+                                    is_valid = false;
+                                    break;
+                                }
+                            } else {
+                                is_valid = false;
+                                break;
+                            }
                         } else {
                             break;
                         }
                     }
-                    let text = &self.raw_content[start_pos..self.current_pos];
-                    if has_dot {
-                        return Some(Ok(Token {
-                            token_type: TokenType::Float(text),
-                            position: start_pos,
-                        }));
-                    } else {
-                        return Some(Ok(Token {
-                            token_type: TokenType::Integer(text),
-                            position: start_pos,
-                        }));
+
+                    // Check for invalid characters in the number
+                    if is_valid {
+                        // Ensure that the next character is not an identifier character
+                        if let Some(&next_ch) = self.peek_char() {
+                            if Self::is_id_char(next_ch) {
+                                // Invalid number: contains invalid character
+                                is_valid = false;
+                            }
+                        }
                     }
+
+                    if !is_valid {
+                        return Some(Err(ParsingError::BadNumber));
+                    }
+
+                    let text = &self.raw_content[start_pos..self.current_pos];
+                    let token_type = if has_dot || has_exponent {
+                        TokenType::Float(text)
+                    } else {
+                        TokenType::Integer(text)
+                    };
+
+                    return Some(Ok(Token {
+                        token_type,
+                        position: start_pos,
+                    }));
                 } else if *ch == '\'' || *ch == '"' {
                     // String literal
                     let quote_char = *ch;
@@ -685,14 +737,13 @@ mod tests {
         // The next call to next_token() should return an error
         let token: Option<Result<crate::Token<'_>, ParsingError<'_>>> = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
-        let token_status =
-            token.expect_err("Expected an error due to unterminated comment, but got a token");
+        let token_status = token.expect_err("Expected an error, but got a token");
 
         if token_status != expected_error {
             assert_eq!(
                 token_status, expected_error,
                 "Expected {:?}, got {:?}",
-                token_status, expected_error,
+                expected_error, token_status,
             )
         }
     }
@@ -747,23 +798,80 @@ mod tests {
 
     #[test]
     fn test_identifier() {
-        let sql = "my_table";
-        let expected_tokens = vec![TokenType::Id("my_table")];
-        run_sunny_day_test(sql, expected_tokens);
+        let expected_tokens = vec![TokenType::Id("my_table"), TokenType::Id("abc012")];
+        run_sunny_day_test("my_table abc012", expected_tokens);
     }
 
     #[test]
-    fn test_integer_literal() {
-        let sql = "42";
-        let expected_tokens = vec![TokenType::Integer("42")];
+    fn test_integer_literals() {
+        let sql = "0 42 123 999999999999999999999999999999999";
+        let expected_tokens = vec![
+            TokenType::Integer("0"),
+            TokenType::Integer("42"),
+            TokenType::Integer("123"),
+            TokenType::Integer("999999999999999999999999999999999"),
+        ];
         run_sunny_day_test(sql, expected_tokens);
+
+        let sql = "0 -42 -123 -999999999999999999999999999999999";
+        let expected_tokens = vec![
+            TokenType::Integer("0"),
+            TokenType::Minus,
+            TokenType::Integer("42"),
+            TokenType::Minus,
+            TokenType::Integer("123"),
+            TokenType::Minus,
+            TokenType::Integer("999999999999999999999999999999999"),
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+
+        run_rainy_day_test("0abc", vec![], ParsingError::BadNumber);
     }
 
     #[test]
-    fn test_float_literal() {
-        let sql = "3.14";
-        let expected_tokens = vec![TokenType::Float("3.14")];
+    fn test_float_literals() {
+        let sql = "0.0 123.456 3.14";
+
+        let expected_tokens = vec![
+            TokenType::Float("0.0"),
+            TokenType::Float("123.456"),
+            TokenType::Float("3.14"),
+        ];
         run_sunny_day_test(sql, expected_tokens);
+
+        let sql = "1e10 3.14E-2 2.5e+3";
+        let expected_tokens = vec![
+            TokenType::Float("1e10"),
+            TokenType::Float("3.14E-2"),
+            TokenType::Float("2.5e+3"),
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+
+        let sql = "42.0 3.1415 1e-4";
+        let expected_tokens = vec![
+            TokenType::Float("42.0"),
+            TokenType::Float("3.1415"),
+            TokenType::Float("1e-4"),
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+
+        let sql = "-42.0 -0.1 -1e-4";
+        let expected_tokens = vec![
+            TokenType::Minus,
+            TokenType::Float("42.0"),
+            TokenType::Minus,
+            TokenType::Float("0.1"),
+            TokenType::Minus,
+            TokenType::Float("1e-4"),
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+
+        run_rainy_day_test("123.abc", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("123.0abc", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("12.34.56", vec![], ParsingError::BadNumber);
+
+        run_rainy_day_test("1e", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("3.14e1.5", vec![], ParsingError::BadNumber);
     }
 
     #[test]
