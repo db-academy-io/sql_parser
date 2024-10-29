@@ -28,8 +28,8 @@ pub enum ParsingError<'input> {
     /// Expected an equals sign but found something else
     ExpectedEqualsSign,
 
-    /// Blob literal is malformed
-    MalformedBlobLiteral,
+    /// Blob literal is malformed (&str, position)
+    MalformedBlobLiteral(&'input str, usize),
 
     /// Hexadecimal integer is malformed
     MalformedHexInteger,

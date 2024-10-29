@@ -226,22 +226,22 @@ impl<'input> Tokenizer<'input> {
 
     /// Checks if a character is a valid start character for an identifier.
     fn is_id_start_char(c: &char) -> bool {
-        c.is_ascii_alphabetic() || *c == '_'
+        c.is_alphabetic() || *c == '_'
     }
 
     /// Checks if a character is a valid part of an identifier.
     fn is_id_char(c: char) -> bool {
-        c.is_ascii_alphanumeric() || c == '_'
+        c.is_alphanumeric() || c == '_'
     }
 
     /// Checks if a character is a valid start character for a parameter name.
     fn is_param_name_start_char(c: char) -> bool {
-        c.is_ascii_alphabetic() || c == '$'
+        c.is_alphabetic() || c == '$'
     }
 
     /// Checks if a character is valid within a parameter name.
     fn is_param_name_char(c: char) -> bool {
-        c.is_ascii_alphanumeric() || c == '$' || c == ':'
+        c.is_alphanumeric() || c == '$' || c == ':'
     }
 
     /// There are 5 symbols by the specification considered as whitespace, which
@@ -259,12 +259,57 @@ impl<'input> Tokenizer<'input> {
         let start_pos = self.current_pos;
 
         // Peek at the next character
-        let ch = self.peek_char();
+        let ch = self.next_char();
 
         match ch {
             Some(ch) => {
                 // Match based on the character
-                if Self::is_id_start_char(ch) {
+                if Self::is_id_start_char(&ch) {
+                    //  Check if BLOB token started
+                    if (ch == 'X' || ch == 'x') && (self.peek_char() == Some(&'\'')) {
+                        self.next_char(); // Consume opening single quote '
+
+                        // Collect hexadecimal characters
+                        while let Some(&c) = self.peek_char() {
+                            if c == '\'' {
+                                break; // End of BLOB
+                            }
+                            if c.is_ascii_hexdigit() {
+                                self.next_char();
+                            } else {
+                                // Invalid character in BLOB
+                                return Some(Err(ParsingError::MalformedBlobLiteral(
+                                    &self.raw_content[start_pos..],
+                                    self.current_pos,
+                                )));
+                            }
+                        }
+
+                        // Ensure closing single quote is present
+                        if self.peek_char() == Some(&'\'') {
+                            self.next_char(); // Consume closing single quote
+                        } else {
+                            // Unterminated BLOB literal
+                            return Some(Err(ParsingError::UnterminatedLiteral(
+                                &self.raw_content[start_pos..],
+                            )));
+                        }
+
+                        let hex_digits = &self.raw_content[start_pos..self.current_pos];
+
+                        // Check if the number of hex digits is even (minus 3 for x and two \' symbols)
+                        if (hex_digits.len() - 3) % 2 != 0 {
+                            return Some(Err(ParsingError::MalformedBlobLiteral(
+                                &self.raw_content[start_pos..],
+                                self.current_pos,
+                            )));
+                        }
+
+                        return Some(Ok(Token {
+                            token_type: TokenType::Blob(hex_digits),
+                            position: start_pos,
+                        }));
+                    }
                     // Identifier or keyword
                     while let Some(&ch) = self.peek_char() {
                         if Self::is_id_char(ch) {
@@ -290,7 +335,6 @@ impl<'input> Tokenizer<'input> {
                     }
                 } else if ch.is_ascii_digit() {
                     // Numeric literal (integer or float)
-                    let start_pos = self.current_pos;
                     let mut has_dot = false;
                     let mut has_exponent = false;
                     let mut is_valid = true;
@@ -366,9 +410,9 @@ impl<'input> Tokenizer<'input> {
                         token_type,
                         position: start_pos,
                     }));
-                } else if *ch == '\'' || *ch == '"' {
+                } else if ch == '\'' || ch == '"' {
                     // String literal
-                    let quote_char = *ch;
+                    let quote_char = ch;
                     self.next_char(); // Consume the opening quote
                     loop {
                         match self.next_char() {
@@ -397,9 +441,6 @@ impl<'input> Tokenizer<'input> {
                 } else {
                     // Operators and punctuation
                     // Consume operator or punctuation char
-                    let ch = *ch;
-                    self.next_char();
-
                     let token_type = match ch {
                         '+' => TokenType::Plus,
                         '-' => {
@@ -459,6 +500,7 @@ impl<'input> Tokenizer<'input> {
                             }
                         }
                         '%' => TokenType::Remainder,
+                        '.' => TokenType::Dot,
                         '(' => TokenType::LeftParen,
                         ')' => TokenType::RightParen,
                         ';' => TokenType::Semi,
@@ -552,8 +594,6 @@ impl<'input> Tokenizer<'input> {
                         }
                         '?' => {
                             // H40310: SQLite shall recognize as a VARIABLE token the question-mark followed by zero or more NUMERIC characters.
-                            let start_pos = self.current_pos;
-
                             while let Some(&next_ch) = self.peek_char() {
                                 if next_ch.is_ascii_digit() {
                                     self.next_char();
@@ -562,7 +602,7 @@ impl<'input> Tokenizer<'input> {
                                 }
                             }
 
-                            let text = &self.raw_content[start_pos - 1..self.current_pos];
+                            let text = &self.raw_content[start_pos..self.current_pos];
                             return Some(Ok(Token {
                                 token_type: TokenType::Variable(text),
                                 position: start_pos,
@@ -571,8 +611,6 @@ impl<'input> Tokenizer<'input> {
                         ':' | '@' | '$' => {
                             // H40320: SQLite shall recognize as a VARIABLE token one of the characters at-sign,
                             // dollar-sign, or colon followed by a parameter name.
-                            let start_pos = self.current_pos;
-
                             if let Some(&next_ch) = self.peek_char() {
                                 if !Self::is_param_name_start_char(next_ch) {
                                     // Invalid parameter name
@@ -601,7 +639,7 @@ impl<'input> Tokenizer<'input> {
                                 }
                             }
 
-                            let text = &self.raw_content[start_pos - 1..self.current_pos];
+                            let text = &self.raw_content[start_pos..self.current_pos];
                             return Some(Ok(Token {
                                 token_type: TokenType::Variable(text),
                                 position: start_pos,
@@ -610,8 +648,6 @@ impl<'input> Tokenizer<'input> {
                         '#' => {
                             // H40330: SQLite shall recognize as a VARIABLE token the sharp-sign followed
                             // by a parameter name that does not begin with a NUMERIC character.
-                            let start_pos = self.current_pos;
-
                             if let Some(&next_ch) = self.peek_char() {
                                 if !Self::is_param_name_start_char(next_ch) {
                                     // Invalid parameter name
@@ -638,7 +674,7 @@ impl<'input> Tokenizer<'input> {
                                             break;
                                         }
                                     }
-                                    let text = &self.raw_content[start_pos - 1..self.current_pos];
+                                    let text = &self.raw_content[start_pos..self.current_pos];
                                     return Some(Ok(Token {
                                         token_type: TokenType::Variable(text),
                                         position: start_pos,
@@ -975,6 +1011,11 @@ mod tests {
             TokenType::Semi,
         ];
         run_sunny_day_test(sql, expected_tokens);
+
+        run_sunny_day_test(
+            "/* SELECT * FROM table */",
+            vec![TokenType::MultiLineComment(" SELECT * FROM table ")],
+        );
     }
 
     #[test]
@@ -1008,8 +1049,9 @@ mod tests {
 
     #[test]
     fn test_variable_placeholders() {
-        let sql = "?1 :name @var $value #param";
+        let sql = "? ?1 :name @var $value #param";
         let expected_tokens = vec![
+            TokenType::Variable("?"),
             TokenType::Variable("?1"),
             TokenType::Variable(":name"),
             TokenType::Variable("@var"),
@@ -1017,5 +1059,77 @@ mod tests {
             TokenType::Variable("#param"),
         ];
         run_sunny_day_test(sql, expected_tokens);
+
+        run_rainy_day_test(":123", vec![], ParsingError::BadVariableName);
+        run_rainy_day_test(": ", vec![], ParsingError::BadVariableName);
+        run_rainy_day_test("@ ", vec![], ParsingError::BadVariableName);
+        run_rainy_day_test("$ ", vec![], ParsingError::BadVariableName);
+        run_rainy_day_test("# ", vec![], ParsingError::BadVariableName);
     }
+
+    #[test]
+    fn test_unicode_identifiers() {
+        let expected_tokens = vec![TokenType::Id("таблица"), TokenType::Id("Столбец")];
+        run_sunny_day_test("таблица Столбец", expected_tokens);
+    }
+
+    #[test]
+    fn test_blob_literals() {
+        run_sunny_day_test("x'1A2B'", vec![TokenType::Blob("x'1A2B'")]);
+        run_rainy_day_test(
+            "x'1A2B' x'ZZ'",
+            vec![TokenType::Blob("x'1A2B'")],
+            ParsingError::MalformedBlobLiteral(&"x'ZZ'", 10),
+        );
+    }
+
+    #[test]
+    fn test_unrecognized_tokens() {
+        run_rainy_day_test("^", vec![], ParsingError::UnrecognizedToken);
+    }
+
+    #[test]
+    fn test_general_select_statement() {
+        use Keyword::*;
+        let sql = "SELECT * FROM public.users WHERE id = 42;";
+        let expected_tokens = vec![
+            TokenType::Keyword(Select),
+            TokenType::Star,
+            TokenType::Keyword(From),
+            TokenType::Id("public"),
+            TokenType::Dot,
+            TokenType::Id("users"),
+            TokenType::Keyword(Where),
+            TokenType::Id("id"),
+            TokenType::Equals,
+            TokenType::Integer("42"),
+            TokenType::Semi,
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_sql_injection() {
+        use Keyword::*;
+        let sql = "SELECT * FROM users WHERE ' OR '1'='1";
+        let expected_tokens = vec![
+            TokenType::Keyword(Select),
+            TokenType::Star,
+            TokenType::Keyword(From),
+            TokenType::Id("users"),
+            TokenType::Keyword(Where),
+            TokenType::String("' OR '"),
+            TokenType::Integer("1"),
+            TokenType::String("'='"),
+            TokenType::Integer("1"),
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    // Test Line and Column Tracking
+    // Tokenize hexadecimal integers (e.g., "0x1A3F")
+    // Tokenize strings containing escape sequences (e.g., "'Line\\nBreak'")
+    // Tokenize strings with escaped quotes (e.g., "'He said, ''Hello''")
+    // Tokenize identifiers enclosed in backticks (e.g., `table_name`)
+    // Tokenize identifiers enclosed in brackets (e.g., "[column]")
 }
