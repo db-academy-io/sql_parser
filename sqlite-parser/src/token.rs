@@ -1,24 +1,49 @@
 use crate::Keyword;
 
+/// Represents a single lexical token identified by the tokenizer.
+///
+/// This struct contains the type of the token and its position within
+/// the input stream
 #[derive(Debug)]
 pub struct Token<'a> {
+    /// The specific type of the token
     pub token_type: TokenType<'a>,
+
+    /// The position (e.g., byte index) of the token in the input string
+    /// This is useful for error reporting and tracking the token's location
     pub position: usize,
 }
 
+/// Enumeration of all possible token types that the tokenizer can recognize
 #[derive(Debug, PartialEq, Eq)]
 pub enum TokenType<'a> {
+    /// Represents a SQL keyword, such as SELECT, FROM, WHERE etc.
+    /// See [Keyword] for details
     Keyword(Keyword),
 
+    /// Represents a string literal, enclosed in quotes
     String(&'a str),
+
+    /// Represents an identifier, such as table or column names
     Id(&'a str),
+
+    /// Represents a variable, prefixed with a special character
+    /// (e.g., `$variable`).
     Variable(&'a str),
+
+    /// Represents a blob literal, used for binary data
     Blob(&'a str),
 
+    /// Represents an integer literal
     Integer(&'a str),
+
+    /// Represents a floating-point number literal
     Float(&'a str),
 
+    /// Represents a single-line comment starting with `--`
     SingleLineComment(&'a str),
+
+    /// Represents a multi-line comment, enclosed between `/*` and `*/`
     MultiLineComment(&'a str),
 
     // Operator tokens

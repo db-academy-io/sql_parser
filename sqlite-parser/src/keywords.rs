@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-/// #### Keyword tokens
+/// Keyword token
 ///
 /// The following keywords are recognized as distinct tokens:
 ///
