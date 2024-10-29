@@ -234,6 +234,16 @@ impl<'input> Tokenizer<'input> {
         c.is_ascii_alphanumeric() || c == '_'
     }
 
+    /// Checks if a character is a valid start character for a parameter name.
+    fn is_param_name_start_char(c: char) -> bool {
+        c.is_ascii_alphabetic() || c == '$'
+    }
+
+    /// Checks if a character is valid within a parameter name.
+    fn is_param_name_char(c: char) -> bool {
+        c.is_ascii_alphanumeric() || c == '$' || c == ':'
+    }
+
     /// There are 5 symbols by the specification considered as whitespace, which
     /// maps to the ASCII whitespaces. Unicode whitespace from Rust's
     /// `char::is_whitespace()` is too restrictive, as it's considers way more
@@ -485,6 +495,105 @@ impl<'input> Tokenizer<'input> {
                                 }
                             } else {
                                 // Unexpected end of input after '!'
+                                return Some(Err(ParsingError::UnexpectedEOF));
+                            }
+                        }
+                        '?' => {
+                            // H40310: SQLite shall recognize as a VARIABLE token the question-mark followed by zero or more NUMERIC characters.
+                            let start_pos = self.current_pos;
+
+                            while let Some(&next_ch) = self.peek_char() {
+                                if next_ch.is_ascii_digit() {
+                                    self.next_char();
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            let text = &self.raw_content[start_pos - 1..self.current_pos];
+                            return Some(Ok(Token {
+                                token_type: TokenType::Variable(text),
+                                position: start_pos,
+                            }));
+                        }
+                        ':' | '@' | '$' => {
+                            // H40320: SQLite shall recognize as a VARIABLE token one of the characters at-sign,
+                            // dollar-sign, or colon followed by a parameter name.
+                            let start_pos = self.current_pos;
+
+                            if let Some(&next_ch) = self.peek_char() {
+                                if !Self::is_param_name_start_char(next_ch) {
+                                    // Invalid parameter name
+                                    return Some(Err(ParsingError::BadVariableName));
+                                }
+                            } else {
+                                // Unexpected EOF
+                                return Some(Err(ParsingError::UnexpectedEOF));
+                            }
+
+                            while let Some(&next_ch) = self.peek_char() {
+                                if Self::is_param_name_char(next_ch) {
+                                    self.next_char();
+                                } else if next_ch == '(' {
+                                    // Consume the '(' and characters until ')'
+                                    self.next_char(); // Consume '('
+                                    while let Some(ch) = self.next_char() {
+                                        if ch == ')' {
+                                            break;
+                                        } else if ch == '\0' || ch.is_whitespace() {
+                                            return Some(Err(ParsingError::BadVariableName));
+                                        }
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            let text = &self.raw_content[start_pos - 1..self.current_pos];
+                            return Some(Ok(Token {
+                                token_type: TokenType::Variable(text),
+                                position: start_pos,
+                            }));
+                        }
+                        '#' => {
+                            // H40330: SQLite shall recognize as a VARIABLE token the sharp-sign followed
+                            // by a parameter name that does not begin with a NUMERIC character.
+                            let start_pos = self.current_pos;
+
+                            if let Some(&next_ch) = self.peek_char() {
+                                if !Self::is_param_name_start_char(next_ch) {
+                                    // Invalid parameter name
+                                    return Some(Err(ParsingError::BadVariableName));
+                                } else {
+                                    // Variable token
+                                    while let Some(&next_ch) = self.peek_char() {
+                                        if Self::is_param_name_char(next_ch) {
+                                            self.next_char();
+                                        } else if next_ch == '(' {
+                                            // Consume the '(' and characters until ')'
+                                            self.next_char(); // Consume '('
+                                            while let Some(ch) = self.next_char() {
+                                                if ch == ')' {
+                                                    break;
+                                                } else if ch == '\0' || ch.is_whitespace() {
+                                                    // Invalid character in parentheses
+                                                    return Some(Err(
+                                                        ParsingError::BadVariableName,
+                                                    ));
+                                                }
+                                            }
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    let text = &self.raw_content[start_pos - 1..self.current_pos];
+                                    return Some(Ok(Token {
+                                        token_type: TokenType::Variable(text),
+                                        position: start_pos,
+                                    }));
+                                }
+                            } else {
+                                // Unexpected end of input after '#'
                                 return Some(Err(ParsingError::UnexpectedEOF));
                             }
                         }
@@ -787,5 +896,18 @@ mod tests {
         ];
 
         run_rainy_day_test(sql, expected_tokens, ParsingError::UnterminatedBlockComment);
+    }
+
+    #[test]
+    fn test_variable_placeholders() {
+        let sql = "?1 :name @var $value #param";
+        let expected_tokens = vec![
+            TokenType::Variable("?1"),
+            TokenType::Variable(":name"),
+            TokenType::Variable("@var"),
+            TokenType::Variable("$value"),
+            TokenType::Variable("#param"),
+        ];
+        run_sunny_day_test(sql, expected_tokens);
     }
 }
