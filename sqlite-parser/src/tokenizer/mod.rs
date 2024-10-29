@@ -526,64 +526,8 @@ impl<'input> Iterator for Tokenizer<'input> {
 mod tests {
     use crate::{Keyword, ParsingError, TokenType, Tokenizer};
 
-    #[test]
-    fn test_empty_input() {
-        let sql = "";
+    fn run_sunny_day_test<'a>(sql: &'a str, expected_tokens: Vec<TokenType<'a>>) {
         let mut tokenizer = Tokenizer::from(sql);
-        let result = tokenizer.next_token();
-        // Since the input is empty, we expect no tokens (None)
-        assert!(
-            result.is_none(),
-            "Tokenizer should return None for empty input"
-        );
-    }
-
-    #[test]
-    fn test_single_keyword() {
-        let sql = "SELECT";
-        let mut tokenizer = Tokenizer::from(sql);
-        let token = tokenizer.next_token();
-
-        let token = token.expect("Expected a token, but got None");
-        let token = token.expect(
-            format!(
-                "Expected {:?}, got Unexpected error: ",
-                TokenType::Keyword(Keyword::Select)
-            )
-            .as_str(),
-        );
-
-        // Verify that the token type is Keyword(Select)
-        assert_eq!(
-            token.token_type,
-            TokenType::Keyword(Keyword::Select),
-            "Expected Keyword(Select), got {:?}",
-            token.token_type
-        );
-        // Verify the token starts at position 0
-        assert_eq!(
-            token.position, 0,
-            "Expected token position 0, got {}",
-            token.position
-        );
-
-        // Ensure there are no more tokens
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_multiple_keywords() {
-        let sql = "SELECT FROM WHERE";
-        let mut tokenizer = Tokenizer::from(sql);
-
-        let expected_tokens = vec![
-            TokenType::Keyword(Keyword::Select),
-            TokenType::Keyword(Keyword::From),
-            TokenType::Keyword(Keyword::Where),
-        ];
 
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
@@ -607,442 +551,14 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_case_unsensetive_keywords() {
-        let sql = "Select select SELECT sElEcT SeLeCt";
-        let mut tokenizer = Tokenizer::from(sql);
-
-        let expected_tokens = vec![
-            TokenType::Keyword(Keyword::Select),
-            TokenType::Keyword(Keyword::Select),
-            TokenType::Keyword(Keyword::Select),
-            TokenType::Keyword(Keyword::Select),
-            TokenType::Keyword(Keyword::Select),
-        ];
-
-        for expected_token_type in expected_tokens {
-            let token = tokenizer.next_token();
-            let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
-
-            // Verify that the token type matches the expected token
-            assert_eq!(
-                token.token_type, expected_token_type,
-                "Expected token {:?}, got {:?}",
-                expected_token_type, token.token_type
-            );
-        }
-
-        // Ensure there are no more tokens
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_identifier() {
-        let sql = "my_table";
-        let mut tokenizer = Tokenizer::from(sql);
-        let token = tokenizer.next_token();
-        let token = token.expect("Expected a token, but got None");
-        let token = token.expect(
-            format!(
-                "Expected {:?}, got Unexpected error: ",
-                TokenType::Id("my_table"),
-            )
-            .as_str(),
-        );
-
-        assert_eq!(
-            token.token_type,
-            TokenType::Id("my_table"),
-            "Expected Id(\"my_table\"), got {:?}",
-            token.token_type
-        );
-        assert_eq!(
-            token.position, 0,
-            "Expected token position 0, got {}",
-            token.position
-        );
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_integer_literal() {
-        let sql = "42";
-        let mut tokenizer = Tokenizer::from(sql);
-
-        let token = tokenizer.next_token();
-        let token = token.expect("Expected a token, but got None");
-        let token = token.expect(
-            format!(
-                "Expected {:?}, got Unexpected error: ",
-                TokenType::Integer("42")
-            )
-            .as_str(),
-        );
-
-        assert_eq!(
-            token.token_type,
-            TokenType::Integer("42"),
-            "Expected Integer(\"42\"), got {:?}",
-            token.token_type
-        );
-        assert_eq!(
-            token.position, 0,
-            "Expected token position 0, got {}",
-            token.position
-        );
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_float_literal() {
-        let sql = "3.14";
-        let mut tokenizer = Tokenizer::from(sql);
-        let token = tokenizer.next_token();
-        let token = token.expect("Expected a token, but got None");
-        let token = token.expect(
-            format!(
-                "Expected {:?}, got Unexpected error: ",
-                TokenType::Float("3.14")
-            )
-            .as_str(),
-        );
-
-        assert_eq!(
-            token.token_type,
-            TokenType::Float("3.14"),
-            "Expected Float(\"3.14\"), got {:?}",
-            token.token_type
-        );
-        assert_eq!(
-            token.position, 0,
-            "Expected token position 0, got {}",
-            token.position
-        );
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_string_literal_single_quotes() {
-        let sql = "'hello'";
-        let mut tokenizer = Tokenizer::from(sql);
-        let token = tokenizer.next_token();
-        let token = token.expect("Expected a token, but got None");
-        let token = token.expect(
-            format!(
-                "Expected {:?}, got Unexpected error: ",
-                TokenType::String("'hello'")
-            )
-            .as_str(),
-        );
-
-        assert_eq!(
-            token.token_type,
-            TokenType::String("'hello'"),
-            "Expected String(\"'hello'\"), got {:?}",
-            token.token_type
-        );
-        assert_eq!(
-            token.position, 0,
-            "Expected token position 0, got {}",
-            token.position
-        );
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_string_literal_double_quotes() {
-        let sql = "\"hello world\"";
-        let mut tokenizer = Tokenizer::from(sql);
-        let token = tokenizer.next_token();
-        let token = token.expect("Expected a token, but got None");
-        let token = token.expect(
-            format!(
-                "Expected {:?}, got Unexpected error: ",
-                TokenType::String("\"hello world\"")
-            )
-            .as_str(),
-        );
-
-        assert_eq!(
-            token.token_type,
-            TokenType::String("\"hello world\""),
-            "Expected String(\"\\\"hello world\\\"\"), got {:?}",
-            token.token_type
-        );
-        assert_eq!(
-            token.position, 0,
-            "Expected token position 0, got {}",
-            token.position
-        );
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_unclosed_string_literal() {
-        let sql = "'unclosed string";
-        let mut tokenizer = Tokenizer::from(sql);
-        let token = tokenizer.next_token();
-        let token = token.expect("Expected a token, but got None");
-        let token_status =
-            token.expect_err("Expected an error due to unterminated comment, but got a token");
-
-        match token_status {
-            ParsingError::UnterminatedLiteral(s) => {
-                assert_eq!(
-                    s, "'unclosed string",
-                    "Expected unterminated literal '{}', got '{}'",
-                    "'unclosed string", s
-                );
-            }
-            _ => panic!(
-                "Expected ParsingError::UnterminatedLiteral, got {:?}",
-                token_status
-            ),
-        }
-    }
-
-    #[test]
-    fn test_single_character_operators() {
-        let operators = "+ - * / % & ~ | = < >";
-        let expected_tokens = vec![
-            TokenType::Plus,
-            TokenType::Minus,
-            TokenType::Star,
-            TokenType::Slash,
-            TokenType::Remainder,
-            TokenType::BitAnd,
-            TokenType::BitNot,
-            TokenType::Bitor,
-            TokenType::Equals,
-            TokenType::LessThan,
-            TokenType::GreaterThan,
-        ];
-
-        let mut tokenizer = Tokenizer::from(operators);
-        for expected_token_type in expected_tokens {
-            let token = tokenizer.next_token();
-            let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
-
-            assert_eq!(
-                token.token_type, expected_token_type,
-                "Expected token {:?}, got {:?}",
-                expected_token_type, token.token_type
-            );
-        }
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_multi_character_operators() {
-        let operators = "== != >= <= <> << >> ||";
-        let expected_tokens = vec![
-            TokenType::Equals,
-            TokenType::NotEquals,
-            TokenType::GreaterEquals,
-            TokenType::LessEquals,
-            TokenType::NotEquals,
-            TokenType::LeftShift,
-            TokenType::RightShift,
-            TokenType::Concat,
-        ];
-
-        let mut tokenizer = Tokenizer::from(operators);
-        for expected_token_type in expected_tokens {
-            let token = tokenizer.next_token();
-            let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
-
-            assert_eq!(
-                token.token_type, expected_token_type,
-                "Expected token {:?}, got {:?}",
-                expected_token_type, token.token_type
-            );
-        }
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_punctuation() {
-        let punctuations = ", ; ( )";
-        let expected_tokens = vec![
-            TokenType::Comma,
-            TokenType::Semi,
-            TokenType::LeftParen,
-            TokenType::RightParen,
-        ];
-        let mut tokenizer = Tokenizer::from(punctuations);
-        for expected_token_type in expected_tokens {
-            let token = tokenizer.next_token();
-            let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
-
-            assert_eq!(
-                token.token_type, expected_token_type,
-                "Expected token {:?}, got {:?}",
-                expected_token_type, token.token_type
-            );
-        }
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_whitespace_handling() {
-        let sql = "SELECT   \t\n  *  FROM   users\n\t";
-        let mut tokenizer = Tokenizer::from(sql);
-
-        let expected_tokens = vec![
-            TokenType::Keyword(Keyword::Select),
-            TokenType::Star,
-            TokenType::Keyword(Keyword::From),
-            TokenType::Id("users"),
-        ];
-
-        for expected_token_type in expected_tokens {
-            let token = tokenizer.next_token();
-            let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
-            assert_eq!(
-                token.token_type, expected_token_type,
-                "Expected token {:?}, got {:?}",
-                expected_token_type, token.token_type
-            );
-        }
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_single_line_comments() {
-        let sql = "SELECT * FROM users -- This is a comment\nWHERE id = 1;";
-        let mut tokenizer = Tokenizer::from(sql);
-
-        let expected_tokens = vec![
-            TokenType::Keyword(Keyword::Select),
-            TokenType::Star,
-            TokenType::Keyword(Keyword::From),
-            TokenType::Id("users"),
-            TokenType::SingleLineComment(" This is a comment\n"),
-            TokenType::Keyword(Keyword::Where),
-            TokenType::Id("id"),
-            TokenType::Equals,
-            TokenType::Integer("1"),
-            TokenType::Semi,
-        ];
-
-        for expected_token_type in expected_tokens {
-            let token = tokenizer.next_token();
-            let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
-
-            assert_eq!(
-                token.token_type, expected_token_type,
-                "Expected token {:?}, got {:?}",
-                expected_token_type, token.token_type
-            );
-        }
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_multi_line_comments() {
-        let sql = "SELECT /* This is a \nmulti-line comment */ * FROM users;";
-        let mut tokenizer = Tokenizer::from(sql);
-
-        let expected_tokens = vec![
-            TokenType::Keyword(Keyword::Select),
-            TokenType::MultiLineComment(" This is a \nmulti-line comment "),
-            TokenType::Star,
-            TokenType::Keyword(Keyword::From),
-            TokenType::Id("users"),
-            TokenType::Semi,
-        ];
-        for expected_token_type in expected_tokens {
-            let token = tokenizer.next_token();
-            let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
-
-            assert_eq!(
-                token.token_type, expected_token_type,
-                "Expected token {:?}, got {:?}",
-                expected_token_type, token.token_type
-            );
-        }
-
-        assert!(
-            tokenizer.next_token().is_none(),
-            "Tokenizer should have no more tokens"
-        );
-    }
-
-    #[test]
-    fn test_unterminated_multi_line_comment() {
-        let sql = "SELECT * FROM users /* Unterminated comment";
+    fn run_rainy_day_test<'a>(
+        sql: &'a str,
+        expected_tokens: Vec<TokenType<'a>>,
+        expected_error: ParsingError,
+    ) {
         let mut tokenizer = Tokenizer::from(sql);
 
         // We expect tokens up until the comment, then an error
-        let expected_tokens = vec![
-            TokenType::Keyword(Keyword::Select),
-            TokenType::Star,
-            TokenType::Keyword(Keyword::From),
-            TokenType::Id("users"),
-        ];
-
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
@@ -1063,14 +579,213 @@ mod tests {
         let token_status =
             token.expect_err("Expected an error due to unterminated comment, but got a token");
 
-        match token_status {
-            ParsingError::UnterminatedBlockComment => {
-                // Test passes
-            }
-            _ => panic!(
-                "Expected ParsingError::UnterminatedBlockComment, got {:?}",
-                token_status
-            ),
+        if token_status != expected_error {
+            assert_eq!(
+                token_status, expected_error,
+                "Expected {:?}, got {:?}",
+                token_status, expected_error,
+            )
         }
+    }
+
+    #[test]
+    fn test_empty_input() {
+        let sql = "";
+        let mut tokenizer = Tokenizer::from(sql);
+        let result = tokenizer.next_token();
+
+        // Since the input is empty, we expect no tokens (None)
+        assert!(
+            result.is_none(),
+            "Tokenizer should return None for empty input"
+        );
+    }
+
+    #[test]
+    fn test_single_keyword() {
+        let sql = "SELECT";
+        let expected_tokens = vec![TokenType::Keyword(Keyword::Select)];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_multiple_keywords() {
+        let sql = "SELECT FROM WHERE";
+
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::From),
+            TokenType::Keyword(Keyword::Where),
+        ];
+
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_case_unsensetive_keywords() {
+        let sql = "Select select SELECT sElEcT SeLeCt";
+
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Keyword(Keyword::Select),
+        ];
+
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_identifier() {
+        let sql = "my_table";
+        let expected_tokens = vec![TokenType::Id("my_table")];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_integer_literal() {
+        let sql = "42";
+        let expected_tokens = vec![TokenType::Integer("42")];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_float_literal() {
+        let sql = "3.14";
+        let expected_tokens = vec![TokenType::Float("3.14")];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_string_literal_single_quotes() {
+        let sql = "'hello'";
+        let expected_tokens = vec![TokenType::String("'hello'")];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_string_literal_double_quotes() {
+        let sql = "\"hello world\"";
+        let expected_tokens = vec![TokenType::String("\"hello world\"")];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_unclosed_string_literal() {
+        let sql = "'unclosed string";
+        run_rainy_day_test(
+            sql,
+            vec![],
+            ParsingError::UnterminatedLiteral("'unclosed string"),
+        );
+    }
+
+    #[test]
+    fn test_single_character_operators() {
+        let operators = "+ - * / % & ~ | = < >";
+        let expected_tokens = vec![
+            TokenType::Plus,
+            TokenType::Minus,
+            TokenType::Star,
+            TokenType::Slash,
+            TokenType::Remainder,
+            TokenType::BitAnd,
+            TokenType::BitNot,
+            TokenType::Bitor,
+            TokenType::Equals,
+            TokenType::LessThan,
+            TokenType::GreaterThan,
+        ];
+        run_sunny_day_test(operators, expected_tokens);
+    }
+
+    #[test]
+    fn test_multi_character_operators() {
+        let operators = "== != >= <= <> << >> ||";
+        let expected_tokens = vec![
+            TokenType::Equals,
+            TokenType::NotEquals,
+            TokenType::GreaterEquals,
+            TokenType::LessEquals,
+            TokenType::NotEquals,
+            TokenType::LeftShift,
+            TokenType::RightShift,
+            TokenType::Concat,
+        ];
+        run_sunny_day_test(operators, expected_tokens);
+    }
+
+    #[test]
+    fn test_punctuation() {
+        let punctuations = ", ; ( )";
+        let expected_tokens = vec![
+            TokenType::Comma,
+            TokenType::Semi,
+            TokenType::LeftParen,
+            TokenType::RightParen,
+        ];
+
+        run_sunny_day_test(punctuations, expected_tokens);
+    }
+
+    #[test]
+    fn test_whitespace_handling() {
+        let sql = "SELECT   \t\n  *  FROM   users\n\t";
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Star,
+            TokenType::Keyword(Keyword::From),
+            TokenType::Id("users"),
+        ];
+
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_single_line_comments() {
+        let sql = "SELECT * FROM users -- This is a comment\nWHERE id = 1;";
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Star,
+            TokenType::Keyword(Keyword::From),
+            TokenType::Id("users"),
+            TokenType::SingleLineComment(" This is a comment\n"),
+            TokenType::Keyword(Keyword::Where),
+            TokenType::Id("id"),
+            TokenType::Equals,
+            TokenType::Integer("1"),
+            TokenType::Semi,
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_multi_line_comments() {
+        let sql = "SELECT /* This is a \nmulti-line comment */ * FROM users;";
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::MultiLineComment(" This is a \nmulti-line comment "),
+            TokenType::Star,
+            TokenType::Keyword(Keyword::From),
+            TokenType::Id("users"),
+            TokenType::Semi,
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_unterminated_multi_line_comment() {
+        let sql = "SELECT * FROM users /* Unterminated comment";
+
+        // We expect tokens up until the comment, then an error
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Star,
+            TokenType::Keyword(Keyword::From),
+            TokenType::Id("users"),
+        ];
+
+        run_rainy_day_test(sql, expected_tokens, ParsingError::UnterminatedBlockComment);
     }
 }
