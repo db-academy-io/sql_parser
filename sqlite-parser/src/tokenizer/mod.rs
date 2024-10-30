@@ -246,10 +246,310 @@ impl<'input> Tokenizer<'input> {
 
     /// There are 5 symbols by the specification considered as whitespace, which
     /// maps to the ASCII whitespaces. Unicode whitespace from Rust's
-    /// `char::is_whitespace()` is too restrictive, as it's considers way more
-    /// charaters as whitespaces, so we're using only ASCII whitespaces
-    pub fn is_whitespace(char: &char) -> bool {
+    /// `char::is_whitespace()` considers way more charaters as whitespaces, so
+    /// we're using only ASCII whitespaces
+    fn is_whitespace(char: &char) -> bool {
         char.is_ascii_whitespace()
+    }
+
+    /// Parses a Blob literal from the steam of characters
+    fn parse_blob_literal(
+        &mut self,
+        start_pos: usize,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        // Collect hexadecimal characters
+        while let Some(&c) = self.peek_char() {
+            if c == '\'' {
+                break; // End of BLOB
+            }
+            if c.is_ascii_hexdigit() {
+                self.next_char();
+            } else {
+                // Invalid character in BLOB
+                return Some(Err(ParsingError::MalformedBlobLiteral(
+                    &self.raw_content[start_pos..],
+                    self.current_pos,
+                )));
+            }
+        }
+
+        // Ensure closing single quote is present
+        if self.peek_char() == Some(&'\'') {
+            self.next_char(); // Consume closing single quote
+        } else {
+            // Unterminated BLOB literal
+            return Some(Err(ParsingError::UnterminatedLiteral(
+                &self.raw_content[start_pos..],
+            )));
+        }
+
+        let hex_digits = &self.raw_content[start_pos..self.current_pos];
+
+        // Check if the number of hex digits is even (minus 3 for x and two \' symbols)
+        if (hex_digits.len() - 3) % 2 != 0 {
+            return Some(Err(ParsingError::MalformedBlobLiteral(
+                &self.raw_content[start_pos..],
+                self.current_pos,
+            )));
+        }
+
+        Some(Ok(Token {
+            token_type: TokenType::Blob(hex_digits),
+            position: start_pos,
+        }))
+    }
+
+    /// Parses a Id, Keyword or Blob literals from the steam of characters
+    fn parse_literal(
+        &mut self,
+        start_pos: usize,
+        ch: char,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        //  Check if BLOB token started
+        if (ch == 'X' || ch == 'x') && (self.peek_char() == Some(&'\'')) {
+            self.next_char(); // Consume opening single quote '
+            return self.parse_blob_literal(start_pos);
+        }
+
+        // Identifier or keyword
+        while let Some(&ch) = self.peek_char() {
+            if Self::is_id_char(ch) {
+                self.next_char();
+            } else {
+                break;
+            }
+        }
+
+        let text = &self.raw_content[start_pos..self.current_pos];
+        // Check if it's a keyword
+        if let Ok(keyword) = Keyword::try_from(text) {
+            return Some(Ok(Token {
+                token_type: TokenType::Keyword(keyword),
+                position: start_pos,
+            }));
+        } else {
+            // It's an identifier
+            return Some(Ok(Token {
+                token_type: TokenType::Id(text),
+                position: start_pos,
+            }));
+        }
+    }
+
+    /// Parses a numberic literal: Integer or Float, including scientific notation
+    fn parse_numberic_literal(
+        &mut self,
+        start_pos: usize,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        let mut has_dot = false;
+        let mut has_exponent = false;
+        let mut is_valid = true;
+
+        while let Some(&next_ch) = self.peek_char() {
+            if next_ch.is_ascii_digit() {
+                self.next_char();
+            } else if next_ch == '.' {
+                // already has dot in a previous characters
+                if has_dot {
+                    return Some(Err(ParsingError::BadNumber));
+                } else {
+                    has_dot = true;
+                    self.next_char();
+                    // Check for digits after '.'
+                    if let Some(&after_dot_ch) = self.peek_char() {
+                        if !after_dot_ch.is_ascii_digit() {
+                            is_valid = false;
+                            break;
+                        }
+                    } else {
+                        is_valid = false;
+                        break;
+                    }
+                }
+            } else if (next_ch == 'e' || next_ch == 'E') && !has_exponent {
+                has_exponent = true;
+                self.next_char();
+                // Exponent can be followed by '+' or '-' or digits
+                if let Some(&exp_ch) = self.peek_char() {
+                    if exp_ch == '+' || exp_ch == '-' {
+                        self.next_char();
+                    }
+                }
+                // There should be digits after exponent
+                if let Some(&digit_ch) = self.peek_char() {
+                    if !digit_ch.is_ascii_digit() {
+                        is_valid = false;
+                        break;
+                    }
+                } else {
+                    is_valid = false;
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // Check for invalid characters in the number
+        if is_valid {
+            // Ensure that the next character is not an identifier character
+            if let Some(&next_ch) = self.peek_char() {
+                if Self::is_id_char(next_ch) {
+                    // Invalid number: contains invalid character
+                    is_valid = false;
+                }
+            }
+        }
+
+        if !is_valid {
+            return Some(Err(ParsingError::BadNumber));
+        }
+
+        let text = &self.raw_content[start_pos..self.current_pos];
+        let token_type = if has_dot || has_exponent {
+            TokenType::Float(text)
+        } else {
+            TokenType::Integer(text)
+        };
+
+        Some(Ok(Token {
+            token_type,
+            position: start_pos,
+        }))
+    }
+
+    /// Parses a string literal within single and double quotes
+    fn parse_string_literal(
+        &mut self,
+        start_pos: usize,
+        quote_char: char,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        loop {
+            match self.next_char() {
+                Some(ch) => {
+                    if ch == quote_char {
+                        // Closing quote found
+                        break;
+                    }
+                    // TODO: Handle escape sequences
+                    // For now, just consume the character
+                }
+                None => {
+                    // EOF reached without closing quote
+                    return Some(Err(ParsingError::UnterminatedLiteral(
+                        &self.raw_content[start_pos..],
+                    )));
+                }
+            }
+        }
+
+        let text = &self.raw_content[start_pos..self.current_pos];
+        Some(Ok(Token {
+            token_type: TokenType::String(text),
+            position: start_pos,
+        }))
+    }
+
+    /// Parses a variable placeholder as a single token one of the characters
+    /// (@)at-sign, ($)dollar-sign, or (:) colon followed by a parameter name.
+    fn parse_variable_placeholder(
+        &mut self,
+        start_pos: usize,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        if let Some(&next_ch) = self.peek_char() {
+            if !Self::is_param_name_start_char(next_ch) {
+                // Invalid parameter name
+                return Some(Err(ParsingError::BadVariableName));
+            }
+        } else {
+            // Unexpected EOF
+            return Some(Err(ParsingError::UnexpectedEOF));
+        }
+
+        while let Some(&next_ch) = self.peek_char() {
+            if Self::is_param_name_char(next_ch) {
+                self.next_char();
+            } else if next_ch == '(' {
+                // Consume the '(' and characters until ')'
+                self.next_char(); // Consume '('
+                while let Some(ch) = self.next_char() {
+                    if ch == ')' {
+                        break;
+                    } else if ch == '\0' || ch.is_whitespace() {
+                        return Some(Err(ParsingError::BadVariableName));
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+
+        let text = &self.raw_content[start_pos..self.current_pos];
+        Some(Ok(Token {
+            token_type: TokenType::Variable(text),
+            position: start_pos,
+        }))
+    }
+
+    /// Parses a (#)sharp-sign variable placeholder as a single token one of the characters
+    fn parse_variable_placeholder_sharp_sign(
+        &mut self,
+        start_pos: usize,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        if let Some(&next_ch) = self.peek_char() {
+            if !Self::is_param_name_start_char(next_ch) {
+                // Invalid parameter name
+                Some(Err(ParsingError::BadVariableName))
+            } else {
+                // Variable token
+                while let Some(&next_ch) = self.peek_char() {
+                    if Self::is_param_name_char(next_ch) {
+                        self.next_char();
+                    } else if next_ch == '(' {
+                        // Consume the '(' and characters until ')'
+                        self.next_char(); // Consume '('
+                        while let Some(ch) = self.next_char() {
+                            if ch == ')' {
+                                break;
+                            } else if ch == '\0' || ch.is_whitespace() {
+                                // Invalid character in parentheses
+                                return Some(Err(ParsingError::BadVariableName));
+                            }
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                let text = &self.raw_content[start_pos..self.current_pos];
+                return Some(Ok(Token {
+                    token_type: TokenType::Variable(text),
+                    position: start_pos,
+                }));
+            }
+        } else {
+            // Unexpected end of input after '#'
+            Some(Err(ParsingError::UnexpectedEOF))
+        }
+    }
+
+    /// Parses a (#)sharp-sign variable placeholder as a single token one of the characters
+    fn parse_variable_placeholder_question_mark_sign(
+        &mut self,
+        start_pos: usize,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        while let Some(&next_ch) = self.peek_char() {
+            if next_ch.is_ascii_digit() {
+                self.next_char();
+            } else {
+                break;
+            }
+        }
+
+        let text = &self.raw_content[start_pos..self.current_pos];
+        Some(Ok(Token {
+            token_type: TokenType::Variable(text),
+            position: start_pos,
+        }))
     }
 
     /// Reads the next token from the input
@@ -265,184 +565,27 @@ impl<'input> Tokenizer<'input> {
             Some(ch) => {
                 // Match based on the character
                 if Self::is_id_start_char(&ch) {
-                    //  Check if BLOB token started
-                    if (ch == 'X' || ch == 'x') && (self.peek_char() == Some(&'\'')) {
-                        self.next_char(); // Consume opening single quote '
-
-                        // Collect hexadecimal characters
-                        while let Some(&c) = self.peek_char() {
-                            if c == '\'' {
-                                break; // End of BLOB
-                            }
-                            if c.is_ascii_hexdigit() {
-                                self.next_char();
-                            } else {
-                                // Invalid character in BLOB
-                                return Some(Err(ParsingError::MalformedBlobLiteral(
-                                    &self.raw_content[start_pos..],
-                                    self.current_pos,
-                                )));
-                            }
-                        }
-
-                        // Ensure closing single quote is present
-                        if self.peek_char() == Some(&'\'') {
-                            self.next_char(); // Consume closing single quote
-                        } else {
-                            // Unterminated BLOB literal
-                            return Some(Err(ParsingError::UnterminatedLiteral(
-                                &self.raw_content[start_pos..],
-                            )));
-                        }
-
-                        let hex_digits = &self.raw_content[start_pos..self.current_pos];
-
-                        // Check if the number of hex digits is even (minus 3 for x and two \' symbols)
-                        if (hex_digits.len() - 3) % 2 != 0 {
-                            return Some(Err(ParsingError::MalformedBlobLiteral(
-                                &self.raw_content[start_pos..],
-                                self.current_pos,
-                            )));
-                        }
-
-                        return Some(Ok(Token {
-                            token_type: TokenType::Blob(hex_digits),
-                            position: start_pos,
-                        }));
-                    }
-                    // Identifier or keyword
-                    while let Some(&ch) = self.peek_char() {
-                        if Self::is_id_char(ch) {
-                            self.next_char();
-                        } else {
-                            break;
-                        }
-                    }
-
-                    let text = &self.raw_content[start_pos..self.current_pos];
-                    // Check if it's a keyword
-                    if let Ok(keyword) = Keyword::try_from(text) {
-                        return Some(Ok(Token {
-                            token_type: TokenType::Keyword(keyword),
-                            position: start_pos,
-                        }));
-                    } else {
-                        // It's an identifier
-                        return Some(Ok(Token {
-                            token_type: TokenType::Id(text),
-                            position: start_pos,
-                        }));
-                    }
+                    return self.parse_literal(start_pos, ch);
                 } else if ch.is_ascii_digit() {
                     // Numeric literal (integer or float)
-                    let mut has_dot = false;
-                    let mut has_exponent = false;
-                    let mut is_valid = true;
-
-                    while let Some(&next_ch) = self.peek_char() {
-                        if next_ch.is_ascii_digit() {
-                            self.next_char();
-                        } else if next_ch == '.' {
-                            // already has dot in a previous characters
-                            if has_dot {
-                                return Some(Err(ParsingError::BadNumber));
-                            } else {
-                                has_dot = true;
-                                self.next_char();
-                                // Check for digits after '.'
-                                if let Some(&after_dot_ch) = self.peek_char() {
-                                    if !after_dot_ch.is_ascii_digit() {
-                                        is_valid = false;
-                                        break;
-                                    }
-                                } else {
-                                    is_valid = false;
-                                    break;
-                                }
-                            }
-                        } else if (next_ch == 'e' || next_ch == 'E') && !has_exponent {
-                            has_exponent = true;
-                            self.next_char();
-                            // Exponent can be followed by '+' or '-' or digits
-                            if let Some(&exp_ch) = self.peek_char() {
-                                if exp_ch == '+' || exp_ch == '-' {
-                                    self.next_char();
-                                }
-                            }
-                            // There should be digits after exponent
-                            if let Some(&digit_ch) = self.peek_char() {
-                                if !digit_ch.is_ascii_digit() {
-                                    is_valid = false;
-                                    break;
-                                }
-                            } else {
-                                is_valid = false;
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-
-                    // Check for invalid characters in the number
-                    if is_valid {
-                        // Ensure that the next character is not an identifier character
-                        if let Some(&next_ch) = self.peek_char() {
-                            if Self::is_id_char(next_ch) {
-                                // Invalid number: contains invalid character
-                                is_valid = false;
-                            }
-                        }
-                    }
-
-                    if !is_valid {
-                        return Some(Err(ParsingError::BadNumber));
-                    }
-
-                    let text = &self.raw_content[start_pos..self.current_pos];
-                    let token_type = if has_dot || has_exponent {
-                        TokenType::Float(text)
-                    } else {
-                        TokenType::Integer(text)
-                    };
-
-                    return Some(Ok(Token {
-                        token_type,
-                        position: start_pos,
-                    }));
+                    return self.parse_numberic_literal(start_pos);
                 } else if ch == '\'' || ch == '"' {
                     // String literal
-                    let quote_char = ch;
-                    self.next_char(); // Consume the opening quote
-                    loop {
-                        match self.next_char() {
-                            Some(ch) => {
-                                if ch == quote_char {
-                                    // Closing quote found
-                                    break;
-                                }
-                                // TODO: Handle escape sequences
-                                // For now, just consume the character
-                            }
-                            None => {
-                                // EOF reached without closing quote
-                                return Some(Err(ParsingError::UnterminatedLiteral(
-                                    &self.raw_content[start_pos..],
-                                )));
-                            }
-                        }
-                    }
-
-                    let text = &self.raw_content[start_pos..self.current_pos];
-                    return Some(Ok(Token {
-                        token_type: TokenType::String(text),
-                        position: start_pos,
-                    }));
+                    return self.parse_string_literal(start_pos, ch);
                 } else {
                     // Operators and punctuation
                     // Consume operator or punctuation char
                     let token_type = match ch {
                         '+' => TokenType::Plus,
+                        '*' => TokenType::Star,
+                        '%' => TokenType::Remainder,
+                        '.' => TokenType::Dot,
+                        '(' => TokenType::LeftParen,
+                        ')' => TokenType::RightParen,
+                        ';' => TokenType::Semi,
+                        ',' => TokenType::Comma,
+                        '&' => TokenType::BitAnd,
+                        '~' => TokenType::BitNot,
                         '-' => {
                             // Check for '--' (single line comment)
                             if let Some(&next_ch) = self.peek_char() {
@@ -465,7 +608,6 @@ impl<'input> Tokenizer<'input> {
                                 TokenType::Minus
                             }
                         }
-                        '*' => TokenType::Star,
                         '/' => {
                             // Check for '/*' (multi-line comment)
                             if let Some(&next_ch) = self.peek_char() {
@@ -499,14 +641,7 @@ impl<'input> Tokenizer<'input> {
                                 TokenType::Slash
                             }
                         }
-                        '%' => TokenType::Remainder,
-                        '.' => TokenType::Dot,
-                        '(' => TokenType::LeftParen,
-                        ')' => TokenType::RightParen,
-                        ';' => TokenType::Semi,
-                        ',' => TokenType::Comma,
-                        '&' => TokenType::BitAnd,
-                        '~' => TokenType::BitNot,
+
                         '|' => {
                             // Check for '||' (concatenation operator)
                             if let Some(&next_ch) = self.peek_char() {
@@ -594,96 +729,17 @@ impl<'input> Tokenizer<'input> {
                         }
                         '?' => {
                             // H40310: SQLite shall recognize as a VARIABLE token the question-mark followed by zero or more NUMERIC characters.
-                            while let Some(&next_ch) = self.peek_char() {
-                                if next_ch.is_ascii_digit() {
-                                    self.next_char();
-                                } else {
-                                    break;
-                                }
-                            }
-
-                            let text = &self.raw_content[start_pos..self.current_pos];
-                            return Some(Ok(Token {
-                                token_type: TokenType::Variable(text),
-                                position: start_pos,
-                            }));
+                            return self.parse_variable_placeholder_question_mark_sign(start_pos);
                         }
                         ':' | '@' | '$' => {
                             // H40320: SQLite shall recognize as a VARIABLE token one of the characters at-sign,
                             // dollar-sign, or colon followed by a parameter name.
-                            if let Some(&next_ch) = self.peek_char() {
-                                if !Self::is_param_name_start_char(next_ch) {
-                                    // Invalid parameter name
-                                    return Some(Err(ParsingError::BadVariableName));
-                                }
-                            } else {
-                                // Unexpected EOF
-                                return Some(Err(ParsingError::UnexpectedEOF));
-                            }
-
-                            while let Some(&next_ch) = self.peek_char() {
-                                if Self::is_param_name_char(next_ch) {
-                                    self.next_char();
-                                } else if next_ch == '(' {
-                                    // Consume the '(' and characters until ')'
-                                    self.next_char(); // Consume '('
-                                    while let Some(ch) = self.next_char() {
-                                        if ch == ')' {
-                                            break;
-                                        } else if ch == '\0' || ch.is_whitespace() {
-                                            return Some(Err(ParsingError::BadVariableName));
-                                        }
-                                    }
-                                } else {
-                                    break;
-                                }
-                            }
-
-                            let text = &self.raw_content[start_pos..self.current_pos];
-                            return Some(Ok(Token {
-                                token_type: TokenType::Variable(text),
-                                position: start_pos,
-                            }));
+                            return self.parse_variable_placeholder(start_pos);
                         }
                         '#' => {
                             // H40330: SQLite shall recognize as a VARIABLE token the sharp-sign followed
                             // by a parameter name that does not begin with a NUMERIC character.
-                            if let Some(&next_ch) = self.peek_char() {
-                                if !Self::is_param_name_start_char(next_ch) {
-                                    // Invalid parameter name
-                                    return Some(Err(ParsingError::BadVariableName));
-                                } else {
-                                    // Variable token
-                                    while let Some(&next_ch) = self.peek_char() {
-                                        if Self::is_param_name_char(next_ch) {
-                                            self.next_char();
-                                        } else if next_ch == '(' {
-                                            // Consume the '(' and characters until ')'
-                                            self.next_char(); // Consume '('
-                                            while let Some(ch) = self.next_char() {
-                                                if ch == ')' {
-                                                    break;
-                                                } else if ch == '\0' || ch.is_whitespace() {
-                                                    // Invalid character in parentheses
-                                                    return Some(Err(
-                                                        ParsingError::BadVariableName,
-                                                    ));
-                                                }
-                                            }
-                                        } else {
-                                            break;
-                                        }
-                                    }
-                                    let text = &self.raw_content[start_pos..self.current_pos];
-                                    return Some(Ok(Token {
-                                        token_type: TokenType::Variable(text),
-                                        position: start_pos,
-                                    }));
-                                }
-                            } else {
-                                // Unexpected end of input after '#'
-                                return Some(Err(ParsingError::UnexpectedEOF));
-                            }
+                            return self.parse_variable_placeholder_sharp_sign(start_pos);
                         }
                         _ => {
                             // Unrecognized character
@@ -921,6 +977,10 @@ mod tests {
     fn test_string_literal_double_quotes() {
         let sql = "\"hello world\"";
         let expected_tokens = vec![TokenType::String("\"hello world\"")];
+        run_sunny_day_test(sql, expected_tokens);
+
+        let sql = "\"\"";
+        let expected_tokens = vec![TokenType::String("\"\"")];
         run_sunny_day_test(sql, expected_tokens);
     }
 
