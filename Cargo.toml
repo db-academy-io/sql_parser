@@ -12,7 +12,7 @@ exclude = []
 members = [ 
     "engines/processing",
     "engines/storage",
-    "sqlite-parser",
+    "sql-parser",
 ]
 resolver = "2"
 
