@@ -337,13 +337,60 @@ impl<'input> Tokenizer<'input> {
     }
 
     /// Parses a numberic literal: Integer or Float, including scientific notation
+    fn parse_hex_numberic_literal(
+        &mut self,
+        start_pos: usize,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        while let Some(&next_ch) = self.peek_char() {
+            if next_ch.is_ascii_hexdigit() {
+                self.next_char(); // consume hex digit
+            } else {
+                break;
+            }
+        }
+
+        // If next character is an EOF, return the Literal
+        if self.peek_char().is_none() {
+            let token = Token {
+                token_type: TokenType::Integer(&self.raw_content[start_pos..self.current_pos]),
+                position: start_pos,
+            };
+            return Some(Ok(token));
+        }
+
+        // If next character is a whitespace, return the Literal
+        if let Some(&next_ch) = self.peek_char() {
+            if Self::is_whitespace(&next_ch) {
+                // Invalid number: contains invalid character
+                let token = Token {
+                    token_type: TokenType::Integer(&self.raw_content[start_pos..self.current_pos]),
+                    position: start_pos,
+                };
+                return Some(Ok(token));
+            }
+        }
+        Some(Err(ParsingError::BadNumber))
+    }
+
+    /// Parses a numberic literal: Integer or Float, including scientific notation
     fn parse_numberic_literal(
         &mut self,
         start_pos: usize,
+        current_char: char,
     ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
         let mut has_dot = false;
         let mut has_exponent = false;
         let mut is_valid = true;
+
+        // check for the hex literal 0x[value]
+        if current_char == '0' {
+            if let Some(&next_ch) = self.peek_char() {
+                if next_ch == 'x' {
+                    self.next_char(); // consume 'x'
+                    return self.parse_hex_numberic_literal(start_pos);
+                }
+            }
+        }
 
         while let Some(&next_ch) = self.peek_char() {
             if next_ch.is_ascii_digit() {
@@ -568,7 +615,7 @@ impl<'input> Tokenizer<'input> {
                     return self.parse_literal(start_pos, ch);
                 } else if ch.is_ascii_digit() {
                     // Numeric literal (integer or float)
-                    return self.parse_numberic_literal(start_pos);
+                    return self.parse_numberic_literal(start_pos, ch);
                 } else if ch == '\'' || ch == '"' {
                     // String literal
                     return self.parse_string_literal(start_pos, ch);
@@ -896,7 +943,7 @@ mod tests {
 
     #[test]
     fn test_integer_literals() {
-        let sql = "0 42 123 999999999999999999999999999999999";
+        let sql = "0 42 123 999999999999999999999999999999999 ";
         let expected_tokens = vec![
             TokenType::Integer("0"),
             TokenType::Integer("42"),
@@ -905,7 +952,7 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
 
-        let sql = "0 -42 -123 -999999999999999999999999999999999";
+        let sql = "0 -42 -123 -999999999999999999999999999999999 ";
         let expected_tokens = vec![
             TokenType::Integer("0"),
             TokenType::Minus,
@@ -914,15 +961,25 @@ mod tests {
             TokenType::Integer("123"),
             TokenType::Minus,
             TokenType::Integer("999999999999999999999999999999999"),
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+
+        let sql = "0x1 0x1234567890ABCDF 0xFFFF";
+        let expected_tokens = vec![
+            TokenType::Integer("0x1"),
+            TokenType::Integer("0x1234567890ABCDF"),
+            TokenType::Integer("0xFFFF"),
         ];
         run_sunny_day_test(sql, expected_tokens);
 
         run_rainy_day_test("0abc", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("0xABCDFG", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("0xEEEXZY", vec![], ParsingError::BadNumber);
     }
 
     #[test]
     fn test_float_literals() {
-        let sql = "0.0 123.456 3.14";
+        let sql = "0.0 123.456 3.14 ";
 
         let expected_tokens = vec![
             TokenType::Float("0.0"),
@@ -931,7 +988,7 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
 
-        let sql = "1e10 3.14E-2 2.5e+3";
+        let sql = "1e10 3.14E-2 2.5e+3 ";
         let expected_tokens = vec![
             TokenType::Float("1e10"),
             TokenType::Float("3.14E-2"),
@@ -958,8 +1015,8 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
 
-        run_rainy_day_test("123.abc", vec![], ParsingError::BadNumber);
-        run_rainy_day_test("123.0abc", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("123.abc ", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("123.0abc ", vec![], ParsingError::BadNumber);
         run_rainy_day_test("12.34.56", vec![], ParsingError::BadNumber);
 
         run_rainy_day_test("1e", vec![], ParsingError::BadNumber);
@@ -968,7 +1025,7 @@ mod tests {
 
     #[test]
     fn test_string_literal_single_quotes() {
-        let sql = "'hello'";
+        let sql = "'hello' ";
         let expected_tokens = vec![TokenType::String("'hello'")];
         run_sunny_day_test(sql, expected_tokens);
     }
@@ -1187,7 +1244,6 @@ mod tests {
     }
 
     // Test Line and Column Tracking
-    // Tokenize hexadecimal integers (e.g., "0x1A3F")
     // Tokenize strings containing escape sequences (e.g., "'Line\\nBreak'")
     // Tokenize strings with escaped quotes (e.g., "'He said, ''Hello''")
     // Tokenize identifiers enclosed in backticks (e.g., `table_name`)
