@@ -1030,27 +1030,25 @@ mod tests {
 
     #[test]
     fn test_string_literal_single_quotes() {
-        let sql = "'hello' ";
-        let expected_tokens = vec![TokenType::String("'hello'")];
-        run_sunny_day_test(sql, expected_tokens);
+        run_sunny_day_test("'hello' ", vec![TokenType::String("'hello'")]);
     }
 
     #[test]
     fn test_string_literal_double_quotes() {
-        let sql = "\"hello world\"";
-        let expected_tokens = vec![TokenType::String("\"hello world\"")];
-        run_sunny_day_test(sql, expected_tokens);
+        run_sunny_day_test(
+            "\"hello world\"",
+            vec![TokenType::String("\"hello world\"")],
+        );
 
-        let sql = "\"\"";
-        let expected_tokens = vec![TokenType::String("\"\"")];
-        run_sunny_day_test(sql, expected_tokens);
+        run_sunny_day_test("\"\"", vec![TokenType::String("\"\"")]);
+
+        run_sunny_day_test("'Line\\nBreak'", vec![TokenType::String("'Line\\nBreak'")]);
     }
 
     #[test]
     fn test_unclosed_string_literal() {
-        let sql = "'unclosed string";
         run_rainy_day_test(
-            sql,
+            "'unclosed string",
             vec![],
             ParsingError::UnterminatedLiteral("'unclosed string"),
         );
@@ -1249,7 +1247,6 @@ mod tests {
     }
 
     // Test Line and Column Tracking
-    // Tokenize strings containing escape sequences (e.g., "'Line\\nBreak'")
     // Tokenize strings with escaped quotes (e.g., "'He said, ''Hello''")
     // Tokenize identifiers enclosed in backticks (e.g., `table_name`)
     // Tokenize identifiers enclosed in brackets (e.g., "[column]")
