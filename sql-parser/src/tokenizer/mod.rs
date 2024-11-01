@@ -303,10 +303,10 @@ impl<'input> Tokenizer<'input> {
     fn parse_literal(
         &mut self,
         start_pos: usize,
-        ch: char,
+        current_char: char,
     ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
         //  Check if BLOB token started
-        if (ch == 'X' || ch == 'x') && (self.peek_char() == Some(&'\'')) {
+        if (current_char == 'X' || current_char == 'x') && (self.peek_char() == Some(&'\'')) {
             self.next_char(); // Consume opening single quote '
             return self.parse_blob_literal(start_pos);
         }
@@ -599,6 +599,187 @@ impl<'input> Tokenizer<'input> {
         }))
     }
 
+    fn parse_operators(
+        &mut self,
+        start_pos: usize,
+        current_char: char,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        // Operators and punctuation
+        let token_type = match current_char {
+            '+' => TokenType::Plus,
+            '*' => TokenType::Star,
+            '%' => TokenType::Remainder,
+            '.' => TokenType::Dot,
+            '(' => TokenType::LeftParen,
+            ')' => TokenType::RightParen,
+            ';' => TokenType::Semi,
+            ',' => TokenType::Comma,
+            '&' => TokenType::BitAnd,
+            '~' => TokenType::BitNot,
+            '-' => {
+                // Check for '--' (single line comment)
+                if let Some(&next_ch) = self.peek_char() {
+                    if next_ch == '-' {
+                        // Consume the second '-'
+                        self.next_char();
+                        let start_pos = self.current_pos;
+                        while let Some(ch) = self.next_char() {
+                            if ch == '\n' {
+                                break;
+                            }
+                        }
+                        TokenType::SingleLineComment(&self.raw_content[start_pos..self.current_pos])
+                    } else {
+                        TokenType::Minus
+                    }
+                } else {
+                    TokenType::Minus
+                }
+            }
+            '/' => {
+                // Check for '/*' (multi-line comment)
+                if let Some(&next_ch) = self.peek_char() {
+                    if next_ch == '*' {
+                        self.next_char(); // Consume '*'
+                        let start_pos = self.current_pos;
+                        let mut terminated = false;
+                        while let Some(ch) = self.next_char() {
+                            // search for closing "*/"
+                            if ch == '*' {
+                                if let Some(&next_ch) = self.peek_char() {
+                                    if next_ch == '/' {
+                                        self.next_char(); // Consume '/'
+                                        terminated = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if !terminated {
+                            return Some(Err(ParsingError::UnterminatedBlockComment));
+                        }
+                        // minus 2 characters to ignore */ symbols
+                        TokenType::MultiLineComment(
+                            &self.raw_content[start_pos..self.current_pos - 2],
+                        )
+                    } else {
+                        TokenType::Slash
+                    }
+                } else {
+                    TokenType::Slash
+                }
+            }
+
+            '|' => {
+                // Check for '||' (concatenation operator)
+                if let Some(&next_ch) = self.peek_char() {
+                    if next_ch == '|' {
+                        // Consume the second '|'
+                        self.next_char();
+                        TokenType::Concat
+                    } else {
+                        TokenType::Bitor
+                    }
+                } else {
+                    TokenType::Bitor
+                }
+            }
+            '=' => {
+                // Check for '==' (equality operator)
+                if let Some(&next_ch) = self.peek_char() {
+                    if next_ch == '=' {
+                        // Consume the second '='
+                        self.next_char();
+                    }
+                }
+                TokenType::Equals
+            }
+            '<' => {
+                // Could be '<', '<=', '<>', '<<'
+                if let Some(&next_ch) = self.peek_char() {
+                    match next_ch {
+                        '=' => {
+                            // Consume '='
+                            self.next_char();
+                            TokenType::LessEquals
+                        }
+                        '>' => {
+                            // Consume '>'
+                            self.next_char();
+                            TokenType::NotEquals
+                        }
+                        '<' => {
+                            // Consume '<'
+                            self.next_char();
+                            TokenType::LeftShift
+                        }
+                        _ => TokenType::LessThan,
+                    }
+                } else {
+                    TokenType::LessThan
+                }
+            }
+            '>' => {
+                // Could be '>', '>=', '>>'
+                if let Some(&next_ch) = self.peek_char() {
+                    match next_ch {
+                        '=' => {
+                            // Consume '='
+                            self.next_char();
+                            TokenType::GreaterEquals
+                        }
+                        '>' => {
+                            // Consume '>'
+                            self.next_char();
+                            TokenType::RightShift
+                        }
+                        _ => TokenType::GreaterThan,
+                    }
+                } else {
+                    TokenType::GreaterThan
+                }
+            }
+            '!' => {
+                // Could be '!='
+                if let Some(&next_ch) = self.peek_char() {
+                    if next_ch == '=' {
+                        // Consume '='
+                        self.next_char();
+                        TokenType::NotEquals
+                    } else {
+                        // Return an error for unrecognized token
+                        return Some(Err(ParsingError::UnrecognizedToken));
+                    }
+                } else {
+                    // Unexpected end of input after '!'
+                    return Some(Err(ParsingError::UnexpectedEOF));
+                }
+            }
+            '?' => {
+                // H40310: SQLite shall recognize as a VARIABLE token the question-mark followed by zero or more NUMERIC characters.
+                return self.parse_variable_placeholder_question_mark_sign(start_pos);
+            }
+            ':' | '@' | '$' => {
+                // H40320: SQLite shall recognize as a VARIABLE token one of the characters at-sign,
+                // dollar-sign, or colon followed by a parameter name.
+                return self.parse_variable_placeholder(start_pos);
+            }
+            '#' => {
+                // H40330: SQLite shall recognize as a VARIABLE token the sharp-sign followed
+                // by a parameter name that does not begin with a NUMERIC character.
+                return self.parse_variable_placeholder_sharp_sign(start_pos);
+            }
+            _ => {
+                // Unrecognized character
+                return Some(Err(ParsingError::UnrecognizedToken));
+            }
+        };
+        Some(Ok(Token {
+            token_type,
+            position: start_pos,
+        }))
+    }
+
     /// Reads the next token from the input
     pub fn next_token(&mut self) -> Option<Result<Token<'input>, ParsingError<'input>>> {
         self.skip_whitespace();
@@ -620,183 +801,7 @@ impl<'input> Tokenizer<'input> {
                     // String literal
                     return self.parse_string_literal(start_pos, ch);
                 } else {
-                    // Operators and punctuation
-                    // Consume operator or punctuation char
-                    let token_type = match ch {
-                        '+' => TokenType::Plus,
-                        '*' => TokenType::Star,
-                        '%' => TokenType::Remainder,
-                        '.' => TokenType::Dot,
-                        '(' => TokenType::LeftParen,
-                        ')' => TokenType::RightParen,
-                        ';' => TokenType::Semi,
-                        ',' => TokenType::Comma,
-                        '&' => TokenType::BitAnd,
-                        '~' => TokenType::BitNot,
-                        '-' => {
-                            // Check for '--' (single line comment)
-                            if let Some(&next_ch) = self.peek_char() {
-                                if next_ch == '-' {
-                                    // Consume the second '-'
-                                    self.next_char();
-                                    let start_pos = self.current_pos;
-                                    while let Some(ch) = self.next_char() {
-                                        if ch == '\n' {
-                                            break;
-                                        }
-                                    }
-                                    TokenType::SingleLineComment(
-                                        &self.raw_content[start_pos..self.current_pos],
-                                    )
-                                } else {
-                                    TokenType::Minus
-                                }
-                            } else {
-                                TokenType::Minus
-                            }
-                        }
-                        '/' => {
-                            // Check for '/*' (multi-line comment)
-                            if let Some(&next_ch) = self.peek_char() {
-                                if next_ch == '*' {
-                                    self.next_char(); // Consume '*'
-                                    let start_pos = self.current_pos;
-                                    let mut terminated = false;
-                                    while let Some(ch) = self.next_char() {
-                                        // search for closing "*/"
-                                        if ch == '*' {
-                                            if let Some(&next_ch) = self.peek_char() {
-                                                if next_ch == '/' {
-                                                    self.next_char(); // Consume '/'
-                                                    terminated = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if !terminated {
-                                        return Some(Err(ParsingError::UnterminatedBlockComment));
-                                    }
-                                    // minus 2 characters to ignore */ symbols
-                                    TokenType::MultiLineComment(
-                                        &self.raw_content[start_pos..self.current_pos - 2],
-                                    )
-                                } else {
-                                    TokenType::Slash
-                                }
-                            } else {
-                                TokenType::Slash
-                            }
-                        }
-
-                        '|' => {
-                            // Check for '||' (concatenation operator)
-                            if let Some(&next_ch) = self.peek_char() {
-                                if next_ch == '|' {
-                                    // Consume the second '|'
-                                    self.next_char();
-                                    TokenType::Concat
-                                } else {
-                                    TokenType::Bitor
-                                }
-                            } else {
-                                TokenType::Bitor
-                            }
-                        }
-                        '=' => {
-                            // Check for '==' (equality operator)
-                            if let Some(&next_ch) = self.peek_char() {
-                                if next_ch == '=' {
-                                    // Consume the second '='
-                                    self.next_char();
-                                }
-                            }
-                            TokenType::Equals
-                        }
-                        '<' => {
-                            // Could be '<', '<=', '<>', '<<'
-                            if let Some(&next_ch) = self.peek_char() {
-                                match next_ch {
-                                    '=' => {
-                                        // Consume '='
-                                        self.next_char();
-                                        TokenType::LessEquals
-                                    }
-                                    '>' => {
-                                        // Consume '>'
-                                        self.next_char();
-                                        TokenType::NotEquals
-                                    }
-                                    '<' => {
-                                        // Consume '<'
-                                        self.next_char();
-                                        TokenType::LeftShift
-                                    }
-                                    _ => TokenType::LessThan,
-                                }
-                            } else {
-                                TokenType::LessThan
-                            }
-                        }
-                        '>' => {
-                            // Could be '>', '>=', '>>'
-                            if let Some(&next_ch) = self.peek_char() {
-                                match next_ch {
-                                    '=' => {
-                                        // Consume '='
-                                        self.next_char();
-                                        TokenType::GreaterEquals
-                                    }
-                                    '>' => {
-                                        // Consume '>'
-                                        self.next_char();
-                                        TokenType::RightShift
-                                    }
-                                    _ => TokenType::GreaterThan,
-                                }
-                            } else {
-                                TokenType::GreaterThan
-                            }
-                        }
-                        '!' => {
-                            // Could be '!='
-                            if let Some(&next_ch) = self.peek_char() {
-                                if next_ch == '=' {
-                                    // Consume '='
-                                    self.next_char();
-                                    TokenType::NotEquals
-                                } else {
-                                    // Return an error for unrecognized token
-                                    return Some(Err(ParsingError::UnrecognizedToken));
-                                }
-                            } else {
-                                // Unexpected end of input after '!'
-                                return Some(Err(ParsingError::UnexpectedEOF));
-                            }
-                        }
-                        '?' => {
-                            // H40310: SQLite shall recognize as a VARIABLE token the question-mark followed by zero or more NUMERIC characters.
-                            return self.parse_variable_placeholder_question_mark_sign(start_pos);
-                        }
-                        ':' | '@' | '$' => {
-                            // H40320: SQLite shall recognize as a VARIABLE token one of the characters at-sign,
-                            // dollar-sign, or colon followed by a parameter name.
-                            return self.parse_variable_placeholder(start_pos);
-                        }
-                        '#' => {
-                            // H40330: SQLite shall recognize as a VARIABLE token the sharp-sign followed
-                            // by a parameter name that does not begin with a NUMERIC character.
-                            return self.parse_variable_placeholder_sharp_sign(start_pos);
-                        }
-                        _ => {
-                            // Unrecognized character
-                            return Some(Err(ParsingError::UnrecognizedToken));
-                        }
-                    };
-                    return Some(Ok(Token {
-                        token_type,
-                        position: start_pos,
-                    }));
+                    return self.parse_operators(start_pos, ch);
                 }
             }
             None => None,
