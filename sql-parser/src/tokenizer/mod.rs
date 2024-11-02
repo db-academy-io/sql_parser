@@ -299,7 +299,7 @@ impl<'input> Tokenizer<'input> {
         }))
     }
 
-    /// Parses a Id, Keyword or Blob literals from the steam of characters
+    /// Parses an Id, Keyword or Blob literals from the steam of characters
     fn parse_literal(
         &mut self,
         start_pos: usize,
@@ -334,6 +334,59 @@ impl<'input> Tokenizer<'input> {
                 position: start_pos,
             }));
         }
+    }
+
+    /// Parses an Id placed between square brackets [id]  
+    fn parse_identifier_between_square_brackets(
+        &mut self,
+        start_pos: usize,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        while let Some(c) = self.next_char() {
+            if c == ']' {
+                // Single ] terminator symbol found
+                let text = &self.raw_content[start_pos..self.current_pos];
+                return Some(Ok(Token {
+                    token_type: TokenType::Id(text),
+                    position: start_pos,
+                }));
+            } else {
+                // Regular character, continue
+            }
+        }
+
+        // Unexpected EOF, an identifier is not closed properly
+        Some(Err(ParsingError::UnexpectedEOF))
+    }
+
+    /// Parses an Id placed between grave_accent symbols `id` or square brackets [id]  
+    fn parse_identifier_between_grave_accent(
+        &mut self,
+        start_pos: usize,
+    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+        while let Some(c) = self.next_char() {
+            if c == '\u{0060}' {
+                // Grave accent found
+                if let Some(&next_c) = self.peek_char() {
+                    if next_c == '\u{0060}' {
+                        // Pair of grave accents, consume next ` symbol
+                        self.next_char();
+                        continue;
+                    }
+                }
+                // Single grave accent, terminator found
+
+                let text = &self.raw_content[start_pos..self.current_pos];
+                return Some(Ok(Token {
+                    token_type: TokenType::Id(text),
+                    position: start_pos,
+                }));
+            } else {
+                // Regular character, continue
+            }
+        }
+
+        // Unexpected EOF, no closing grave_accent found
+        Some(Err(ParsingError::UnexpectedEOF))
     }
 
     /// Parses a numberic literal: Integer or Float, including scientific notation
@@ -792,13 +845,20 @@ impl<'input> Tokenizer<'input> {
         match ch {
             Some(ch) => {
                 // Match based on the character
-                if Self::is_id_start_char(&ch) {
+                if ch == '`' {
+                    return self.parse_identifier_between_grave_accent(start_pos);
+                } else if ch == '[' {
+                    return self.parse_identifier_between_square_brackets(start_pos);
+                } else if Self::is_id_start_char(&ch) {
                     return self.parse_literal(start_pos, ch);
                 } else if ch.is_ascii_digit() {
                     // Numeric literal (integer or float)
                     return self.parse_numberic_literal(start_pos, ch);
                 } else if ch == '\'' || ch == '"' {
                     // String literal
+                    return self.parse_string_literal(start_pos, ch);
+                } else if ch == '[' || ch == '`' {
+                    // Identifier literal
                     return self.parse_string_literal(start_pos, ch);
                 } else {
                     return self.parse_operators(start_pos, ch);
@@ -942,8 +1002,46 @@ mod tests {
 
     #[test]
     fn test_identifier() {
-        let expected_tokens = vec![TokenType::Id("my_table"), TokenType::Id("abc012")];
-        run_sunny_day_test("my_table abc012", expected_tokens);
+        run_sunny_day_test(
+            "my_table abc012",
+            vec![TokenType::Id("my_table"), TokenType::Id("abc012")],
+        );
+
+        // tokenize unicode identifiers
+        run_sunny_day_test(
+            "таблица Столбец",
+            vec![TokenType::Id("таблица"), TokenType::Id("Столбец")],
+        );
+
+        // tokenize identifiers between grave accents
+        run_sunny_day_test(
+            "`table_name` `id``entifier`",
+            vec![
+                TokenType::Id("`table_name`"),
+                TokenType::Id("`id``entifier`"),
+            ],
+        );
+
+        run_rainy_day_test("`unterminated", vec![], ParsingError::UnexpectedEOF);
+        run_rainy_day_test("`abc``def``", vec![], ParsingError::UnexpectedEOF);
+
+        // tokenize identifiers between [square-brackets]
+        run_sunny_day_test(
+            "[table_name] [id``entifier] [123123] [^!@%#!@*$!@]",
+            vec![
+                TokenType::Id("[table_name]"),
+                TokenType::Id("[id``entifier]"),
+                TokenType::Id("[123123]"),
+                TokenType::Id("[^!@%#!@*$!@]"),
+            ],
+        );
+
+        run_rainy_day_test("[unterminated", vec![], ParsingError::UnexpectedEOF);
+        run_rainy_day_test(
+            "[abc]]",
+            vec![TokenType::Id("[abc]")],
+            ParsingError::UnrecognizedToken,
+        );
     }
 
     #[test]
@@ -1188,12 +1286,6 @@ mod tests {
     }
 
     #[test]
-    fn test_unicode_identifiers() {
-        let expected_tokens = vec![TokenType::Id("таблица"), TokenType::Id("Столбец")];
-        run_sunny_day_test("таблица Столбец", expected_tokens);
-    }
-
-    #[test]
     fn test_blob_literals() {
         run_sunny_day_test("x'1A2B'", vec![TokenType::Blob("x'1A2B'")]);
         run_rainy_day_test(
@@ -1248,6 +1340,4 @@ mod tests {
 
     // Test Line and Column Tracking
     // Tokenize strings with escaped quotes (e.g., "'He said, ''Hello''")
-    // Tokenize identifiers enclosed in backticks (e.g., `table_name`)
-    // Tokenize identifiers enclosed in brackets (e.g., "[column]")
 }
