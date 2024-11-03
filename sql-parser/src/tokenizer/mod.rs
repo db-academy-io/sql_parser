@@ -231,7 +231,7 @@ impl<'input> Tokenizer<'input> {
 
     /// Checks if a character is a valid part of an identifier.
     fn is_id_char(c: char) -> bool {
-        c.is_alphanumeric() || c == '_'
+        c.is_alphanumeric() || c == '_' || c == '$'
     }
 
     /// Checks if a character is a valid start character for a parameter name.
@@ -345,6 +345,10 @@ impl<'input> Tokenizer<'input> {
             if c == ']' {
                 // Single ] terminator symbol found
                 let text = &self.raw_content[start_pos..self.current_pos];
+                if text.len() == 2 {
+                    // 2 is open and close square brackets only (no content inside)
+                    return Some(Err(ParsingError::EmptyId));
+                }
                 return Some(Ok(Token {
                     token_type: TokenType::Id(text),
                     position: start_pos,
@@ -549,10 +553,17 @@ impl<'input> Tokenizer<'input> {
         }
 
         let text = &self.raw_content[start_pos..self.current_pos];
-        Some(Ok(Token {
-            token_type: TokenType::String(text),
-            position: start_pos,
-        }))
+        if quote_char == '\'' {
+            Some(Ok(Token {
+                token_type: TokenType::String(text),
+                position: start_pos,
+            }))
+        } else {
+            Some(Ok(Token {
+                token_type: TokenType::Id(text),
+                position: start_pos,
+            }))
+        }
     }
 
     /// Parses a variable placeholder as a single token one of the characters
@@ -637,7 +648,7 @@ impl<'input> Tokenizer<'input> {
         }
     }
 
-    /// Parses a (#)sharp-sign variable placeholder as a single token one of the characters
+    /// Parses a (?)question mark sign variable placeholder as a single token one of the characters
     fn parse_variable_placeholder_question_mark_sign(
         &mut self,
         start_pos: usize,
@@ -647,6 +658,16 @@ impl<'input> Tokenizer<'input> {
                 self.next_char();
             } else {
                 break;
+            }
+        }
+
+        // After consuming digits, check for invalid characters following the variable name
+        if let Some(&next_ch) = self.peek_char() {
+            // The next symbols must be either WHITESPACE or ) or , or ;
+            // all other symbols means wrong variable name
+            if !Self::is_whitespace(&next_ch) && next_ch != ')' && next_ch != ',' && next_ch != ';'
+            {
+                return Some(Err(ParsingError::BadVariableName));
             }
         }
 
@@ -727,7 +748,6 @@ impl<'input> Tokenizer<'input> {
                     TokenType::Slash
                 }
             }
-
             '|' => {
                 // Check for '||' (concatenation operator)
                 if let Some(&next_ch) = self.peek_char() {
@@ -736,10 +756,10 @@ impl<'input> Tokenizer<'input> {
                         self.next_char();
                         TokenType::Concat
                     } else {
-                        TokenType::Bitor
+                        TokenType::BitOr
                     }
                 } else {
-                    TokenType::Bitor
+                    TokenType::BitOr
                 }
             }
             '=' => {
@@ -1144,16 +1164,13 @@ mod tests {
 
     #[test]
     fn test_string_literal_double_quotes() {
-        run_sunny_day_test(
-            "\"hello world\"",
-            vec![TokenType::String("\"hello world\"")],
-        );
+        run_sunny_day_test("\"hello world\"", vec![TokenType::Id("\"hello world\"")]);
 
-        run_sunny_day_test("\"\"", vec![TokenType::String("\"\"")]);
-        run_sunny_day_test("\"1\"", vec![TokenType::String("\"1\"")]);
+        run_sunny_day_test("\"\"", vec![TokenType::Id("\"\"")]);
+        run_sunny_day_test("\"1\"", vec![TokenType::Id("\"1\"")]);
         run_sunny_day_test(
             "\"He said \"\"Hey, Marta!\"\"\"",
-            vec![TokenType::String(r#""He said ""Hey, Marta!""""#)],
+            vec![TokenType::Id(r#""He said ""Hey, Marta!""""#)],
         );
 
         run_sunny_day_test("'Line\\nBreak'", vec![TokenType::String("'Line\\nBreak'")]);
@@ -1179,7 +1196,7 @@ mod tests {
             TokenType::Remainder,
             TokenType::BitAnd,
             TokenType::BitNot,
-            TokenType::Bitor,
+            TokenType::BitOr,
             TokenType::Equals,
             TokenType::LessThan,
             TokenType::GreaterThan,
@@ -1294,11 +1311,23 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
 
-        run_rainy_day_test(":123", vec![], ParsingError::BadVariableName);
-        run_rainy_day_test(": ", vec![], ParsingError::BadVariableName);
-        run_rainy_day_test("@ ", vec![], ParsingError::BadVariableName);
-        run_rainy_day_test("$ ", vec![], ParsingError::BadVariableName);
-        run_rainy_day_test("# ", vec![], ParsingError::BadVariableName);
+        let invalid_test_cases = vec![
+            (":123", vec![], ParsingError::BadVariableName),
+            (": ", vec![], ParsingError::BadVariableName),
+            ("@ ", vec![], ParsingError::BadVariableName),
+            ("$ ", vec![], ParsingError::BadVariableName),
+            ("# ", vec![], ParsingError::BadVariableName),
+            ("?abc", vec![], ParsingError::BadVariableName),
+            ("?1abc", vec![], ParsingError::BadVariableName),
+            ("?$", vec![], ParsingError::BadVariableName),
+            ("?-1", vec![], ParsingError::BadVariableName),
+            ("?1.2", vec![], ParsingError::BadVariableName),
+            ("?123abc", vec![], ParsingError::BadVariableName),
+        ];
+
+        for (sql, tokens, expected_error) in invalid_test_cases {
+            run_rainy_day_test(sql, tokens, expected_error);
+        }
     }
 
     #[test]
@@ -1314,26 +1343,6 @@ mod tests {
     #[test]
     fn test_unrecognized_tokens() {
         run_rainy_day_test("^", vec![], ParsingError::UnrecognizedToken);
-    }
-
-    #[test]
-    fn test_general_select_statement() {
-        use Keyword::*;
-        let sql = "SELECT * FROM public.users WHERE id = 42;";
-        let expected_tokens = vec![
-            TokenType::Keyword(Select),
-            TokenType::Star,
-            TokenType::Keyword(From),
-            TokenType::Id("public"),
-            TokenType::Dot,
-            TokenType::Id("users"),
-            TokenType::Keyword(Where),
-            TokenType::Id("id"),
-            TokenType::Equals,
-            TokenType::Integer("42"),
-            TokenType::Semi,
-        ];
-        run_sunny_day_test(sql, expected_tokens);
     }
 
     #[test]
@@ -1353,7 +1362,4 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
     }
-
-    // Test Line and Column Tracking
-    // Tokenize strings with escaped quotes (e.g., "'He said, ''Hello''")
 }

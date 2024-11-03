@@ -33,4 +33,7 @@ pub enum ParsingError<'input> {
 
     /// Hexadecimal integer is malformed
     MalformedHexInteger,
+
+    /// An empty ID is given
+    EmptyId,
 }

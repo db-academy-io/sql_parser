@@ -15,7 +15,7 @@ pub struct Token<'a> {
 }
 
 /// Enumeration of all possible token types that the tokenizer can recognize
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType<'a> {
     /// Represents a SQL keyword, such as SELECT, FROM, WHERE etc.
     /// See [Keyword] for details
@@ -75,7 +75,7 @@ pub enum TokenType<'a> {
     /// - H41463: SQLite shall recognize the 1-character sequenence "~" (u007e) as token BITNOT
     BitNot,
     /// - H41466: SQLite shall recognize the 1-character sequenence "|" (u007c) as token BITOR
-    Bitor,
+    BitOr,
     /// - H41472: SQLite shall recognize the 1-character sequenence "." (u002e) as token DOT
     Dot,
 
