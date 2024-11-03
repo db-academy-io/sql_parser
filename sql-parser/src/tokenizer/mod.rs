@@ -528,11 +528,16 @@ impl<'input> Tokenizer<'input> {
             match self.next_char() {
                 Some(ch) => {
                     if ch == quote_char {
-                        // Closing quote found
-                        break;
+                        match self.peek_char() {
+                            Some(next_char) if *next_char == quote_char => {
+                                // second quote (quote escaping)
+                                self.next_char(); // Consume second quote symbol
+                                continue;
+                            }
+                            // Closing quote found
+                            _ => break,
+                        }
                     }
-                    // TODO: Handle escape sequences
-                    // For now, just consume the character
                 }
                 None => {
                     // EOF reached without closing quote
@@ -1129,6 +1134,12 @@ mod tests {
     #[test]
     fn test_string_literal_single_quotes() {
         run_sunny_day_test("'hello' ", vec![TokenType::String("'hello'")]);
+        run_sunny_day_test("''", vec![TokenType::String("''")]);
+        run_sunny_day_test("'1'", vec![TokenType::String("'1'")]);
+        run_sunny_day_test(
+            "'He said ''Hey, Marta!'''",
+            vec![TokenType::String("'He said ''Hey, Marta!'''")],
+        );
     }
 
     #[test]
@@ -1139,6 +1150,11 @@ mod tests {
         );
 
         run_sunny_day_test("\"\"", vec![TokenType::String("\"\"")]);
+        run_sunny_day_test("\"1\"", vec![TokenType::String("\"1\"")]);
+        run_sunny_day_test(
+            "\"He said \"\"Hey, Marta!\"\"\"",
+            vec![TokenType::String(r#""He said ""Hey, Marta!""""#)],
+        );
 
         run_sunny_day_test("'Line\\nBreak'", vec![TokenType::String("'Line\\nBreak'")]);
     }
