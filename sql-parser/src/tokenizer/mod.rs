@@ -1362,4 +1362,18 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
     }
+
+    #[test]
+    fn test_literal_and_keyword() {
+        use Keyword::*;
+        let sql = "SELECT all \"name\"as name";
+        let expected_tokens = vec![
+            TokenType::Keyword(Select),
+            TokenType::Keyword(All),
+            TokenType::Id("\"name\""),
+            TokenType::Keyword(As),
+            TokenType::Id("name"),
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+    }
 }
