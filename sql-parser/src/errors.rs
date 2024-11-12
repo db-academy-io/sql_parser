@@ -1,8 +1,10 @@
+use crate::{Keyword, Token};
+
 /// The [ParsingError] enum represents the various types of errors that can
 /// occur during the parsing of SQL input. Each variant corresponds to a
 /// specific parsing error that the parser might encounter.
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ParsingError<'input> {
     /// Token is not recognized by the parser
     UnrecognizedToken,
@@ -36,4 +38,13 @@ pub enum ParsingError<'input> {
 
     /// An empty ID is given
     EmptyId,
+
+    /// Expected a [Keyword], something else was given
+    ExpectedKeyword(Keyword),
+
+    /// Unexpected [Keyword]
+    UnexpectedKeyword(Keyword),
+
+    /// Unexpected token
+    UnexpectedToken(Token<'input>),
 }

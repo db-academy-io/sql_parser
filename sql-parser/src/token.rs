@@ -1,10 +1,10 @@
-use crate::Keyword;
+use crate::{Keyword, ParsingError};
 
 /// Represents a single lexical token identified by the tokenizer.
 ///
 /// This struct contains the type of the token and its position within
 /// the input stream
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Token<'a> {
     /// The specific type of the token
     pub token_type: TokenType<'a>,
@@ -12,6 +12,17 @@ pub struct Token<'a> {
     /// The position (e.g., byte index) of the token in the input string
     /// This is useful for error reporting and tracking the token's location
     pub position: usize,
+}
+
+impl<'a> TryInto<Keyword> for &Token<'a> {
+    type Error = ParsingError<'a>;
+
+    fn try_into(self) -> Result<Keyword, Self::Error> {
+        match self.token_type {
+            TokenType::Keyword(keyword) => Ok(keyword),
+            _ => return Err(ParsingError::UnexpectedToken(self.clone())),
+        }
+    }
 }
 
 /// Enumeration of all possible token types that the tokenizer can recognize

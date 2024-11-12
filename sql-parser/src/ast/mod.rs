@@ -15,7 +15,7 @@ use create::{
     CreateVirtualTableStatement,
 };
 use delete::DeleteStatement;
-use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
+pub use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
 use explain::ExplainStatement;
 use insert::InsertStatement;
 use select::SelectStatement;
@@ -30,6 +30,7 @@ use trx::{
 use update::UpdateStatement;
 
 /// Top-level AST node representing any SQLite statement
+#[derive(Debug, PartialEq)]
 pub enum Statement {
     /// Data Query Language (DQL), see [SelectStatement]
     Select(SelectStatement),
