@@ -1,9 +1,8 @@
-mod drop_statement_parser;
+mod drop;
 use std::iter::Peekable;
 
 use crate::{Keyword, ParsingError, Statement, Token, TokenType, Tokenizer};
-
-use drop_statement_parser::DropTableStatementParser;
+use drop::DropStatementParser;
 
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,
