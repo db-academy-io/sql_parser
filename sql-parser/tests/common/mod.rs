@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use sql_parser::{ParsingError, Token, TokenType, Tokenizer};
+use sql_parser::{Token, TokenType, Tokenizer, TokenizerError};
 
 pub fn run_sunny_day_test<'a>(sql: &'a str, expected_tokens: Vec<TokenType<'a>>) {
     let mut tokenizer = Tokenizer::from(sql);
@@ -8,8 +8,9 @@ pub fn run_sunny_day_test<'a>(sql: &'a str, expected_tokens: Vec<TokenType<'a>>)
     for expected_token_type in expected_tokens {
         let token = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
-        let token = token
-            .expect(format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str());
+        let token = token.unwrap_or_else(|_| {
+            panic!("Expected {:?}, got Unexpected error: ", expected_token_type)
+        });
 
         // Verify that the token type matches the expected token
         assert_eq!(
@@ -29,7 +30,7 @@ pub fn run_sunny_day_test<'a>(sql: &'a str, expected_tokens: Vec<TokenType<'a>>)
 pub fn run_rainy_day_test<'a>(
     sql: &'a str,
     expected_tokens: Vec<TokenType<'a>>,
-    expected_error: ParsingError,
+    expected_error: TokenizerError,
 ) {
     let mut tokenizer = Tokenizer::from(sql);
 
@@ -37,8 +38,9 @@ pub fn run_rainy_day_test<'a>(
     for expected_token_type in expected_tokens {
         let token = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
-        let token = token
-            .expect(format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str());
+        let token = token.unwrap_or_else(|_| {
+            panic!("Expected {:?}, got Unexpected error: ", expected_token_type)
+        });
 
         assert_eq!(
             token.token_type, expected_token_type,
@@ -48,7 +50,7 @@ pub fn run_rainy_day_test<'a>(
     }
 
     // The next call to next_token() should return an error
-    let token: Option<Result<Token<'_>, ParsingError<'_>>> = tokenizer.next_token();
+    let token: Option<Result<Token<'_>, TokenizerError<'_>>> = tokenizer.next_token();
     let token = token.expect("Expected a token, but got None");
     let token_status = token.expect_err("Expected an error, but got a token");
 

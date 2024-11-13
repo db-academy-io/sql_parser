@@ -1,5 +1,6 @@
-pub use crate::errors::*;
+mod errors;
 
+pub use errors::*;
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -256,7 +257,7 @@ impl<'input> Tokenizer<'input> {
     fn parse_blob_literal(
         &mut self,
         start_pos: usize,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         // Collect hexadecimal characters
         while let Some(&c) = self.peek_char() {
             if c == '\'' {
@@ -266,7 +267,7 @@ impl<'input> Tokenizer<'input> {
                 self.next_char();
             } else {
                 // Invalid character in BLOB
-                return Some(Err(ParsingError::MalformedBlobLiteral(
+                return Some(Err(TokenizerError::MalformedBlobLiteral(
                     &self.raw_content[start_pos..],
                     self.current_pos,
                 )));
@@ -278,7 +279,7 @@ impl<'input> Tokenizer<'input> {
             self.next_char(); // Consume closing single quote
         } else {
             // Unterminated BLOB literal
-            return Some(Err(ParsingError::UnterminatedLiteral(
+            return Some(Err(TokenizerError::UnterminatedLiteral(
                 &self.raw_content[start_pos..],
             )));
         }
@@ -287,7 +288,7 @@ impl<'input> Tokenizer<'input> {
 
         // Check if the number of hex digits is even (minus 3 for x and two \' symbols)
         if (hex_digits.len() - 3) % 2 != 0 {
-            return Some(Err(ParsingError::MalformedBlobLiteral(
+            return Some(Err(TokenizerError::MalformedBlobLiteral(
                 &self.raw_content[start_pos..],
                 self.current_pos,
             )));
@@ -304,7 +305,7 @@ impl<'input> Tokenizer<'input> {
         &mut self,
         start_pos: usize,
         current_char: char,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         //  Check if BLOB token started
         if (current_char == 'X' || current_char == 'x') && (self.peek_char() == Some(&'\'')) {
             self.next_char(); // Consume opening single quote '
@@ -340,14 +341,14 @@ impl<'input> Tokenizer<'input> {
     fn parse_identifier_between_square_brackets(
         &mut self,
         start_pos: usize,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         while let Some(c) = self.next_char() {
             if c == ']' {
                 // Single ] terminator symbol found
                 let text = &self.raw_content[start_pos..self.current_pos];
                 if text.len() == 2 {
                     // 2 is open and close square brackets only (no content inside)
-                    return Some(Err(ParsingError::EmptyId));
+                    return Some(Err(TokenizerError::EmptyId));
                 }
                 return Some(Ok(Token {
                     token_type: TokenType::Id(text),
@@ -359,14 +360,14 @@ impl<'input> Tokenizer<'input> {
         }
 
         // Unexpected EOF, an identifier is not closed properly
-        Some(Err(ParsingError::UnexpectedEOF))
+        Some(Err(TokenizerError::UnexpectedEOF))
     }
 
     /// Parses an Id placed between grave_accent symbols `id` or square brackets [id]  
     fn parse_identifier_between_grave_accent(
         &mut self,
         start_pos: usize,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         while let Some(c) = self.next_char() {
             if c == '\u{0060}' {
                 // Grave accent found
@@ -390,14 +391,14 @@ impl<'input> Tokenizer<'input> {
         }
 
         // Unexpected EOF, no closing grave_accent found
-        Some(Err(ParsingError::UnexpectedEOF))
+        Some(Err(TokenizerError::UnexpectedEOF))
     }
 
     /// Parses a numberic literal: Integer or Float, including scientific notation
     fn parse_hex_numberic_literal(
         &mut self,
         start_pos: usize,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         while let Some(&next_ch) = self.peek_char() {
             if next_ch.is_ascii_hexdigit() {
                 self.next_char(); // consume hex digit
@@ -426,7 +427,7 @@ impl<'input> Tokenizer<'input> {
                 return Some(Ok(token));
             }
         }
-        Some(Err(ParsingError::BadNumber))
+        Some(Err(TokenizerError::BadNumber))
     }
 
     /// Parses a numberic literal: Integer or Float, including scientific notation
@@ -434,7 +435,7 @@ impl<'input> Tokenizer<'input> {
         &mut self,
         start_pos: usize,
         current_char: char,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         let mut has_dot = false;
         let mut has_exponent = false;
         let mut is_valid = true;
@@ -455,7 +456,7 @@ impl<'input> Tokenizer<'input> {
             } else if next_ch == '.' {
                 // already has dot in a previous characters
                 if has_dot {
-                    return Some(Err(ParsingError::BadNumber));
+                    return Some(Err(TokenizerError::BadNumber));
                 } else {
                     has_dot = true;
                     self.next_char();
@@ -506,7 +507,7 @@ impl<'input> Tokenizer<'input> {
         }
 
         if !is_valid {
-            return Some(Err(ParsingError::BadNumber));
+            return Some(Err(TokenizerError::BadNumber));
         }
 
         let text = &self.raw_content[start_pos..self.current_pos];
@@ -527,7 +528,7 @@ impl<'input> Tokenizer<'input> {
         &mut self,
         start_pos: usize,
         quote_char: char,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         loop {
             match self.next_char() {
                 Some(ch) => {
@@ -545,7 +546,7 @@ impl<'input> Tokenizer<'input> {
                 }
                 None => {
                     // EOF reached without closing quote
-                    return Some(Err(ParsingError::UnterminatedLiteral(
+                    return Some(Err(TokenizerError::UnterminatedLiteral(
                         &self.raw_content[start_pos..],
                     )));
                 }
@@ -571,15 +572,15 @@ impl<'input> Tokenizer<'input> {
     fn parse_variable_placeholder(
         &mut self,
         start_pos: usize,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         if let Some(&next_ch) = self.peek_char() {
             if !Self::is_param_name_start_char(next_ch) {
                 // Invalid parameter name
-                return Some(Err(ParsingError::BadVariableName));
+                return Some(Err(TokenizerError::BadVariableName));
             }
         } else {
             // Unexpected EOF
-            return Some(Err(ParsingError::UnexpectedEOF));
+            return Some(Err(TokenizerError::UnexpectedEOF));
         }
 
         while let Some(&next_ch) = self.peek_char() {
@@ -592,7 +593,7 @@ impl<'input> Tokenizer<'input> {
                     if ch == ')' {
                         break;
                     } else if ch == '\0' || ch.is_whitespace() {
-                        return Some(Err(ParsingError::BadVariableName));
+                        return Some(Err(TokenizerError::BadVariableName));
                     }
                 }
             } else {
@@ -611,11 +612,11 @@ impl<'input> Tokenizer<'input> {
     fn parse_variable_placeholder_sharp_sign(
         &mut self,
         start_pos: usize,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         if let Some(&next_ch) = self.peek_char() {
             if !Self::is_param_name_start_char(next_ch) {
                 // Invalid parameter name
-                Some(Err(ParsingError::BadVariableName))
+                Some(Err(TokenizerError::BadVariableName))
             } else {
                 // Variable token
                 while let Some(&next_ch) = self.peek_char() {
@@ -629,7 +630,7 @@ impl<'input> Tokenizer<'input> {
                                 break;
                             } else if ch == '\0' || ch.is_whitespace() {
                                 // Invalid character in parentheses
-                                return Some(Err(ParsingError::BadVariableName));
+                                return Some(Err(TokenizerError::BadVariableName));
                             }
                         }
                     } else {
@@ -644,7 +645,7 @@ impl<'input> Tokenizer<'input> {
             }
         } else {
             // Unexpected end of input after '#'
-            Some(Err(ParsingError::UnexpectedEOF))
+            Some(Err(TokenizerError::UnexpectedEOF))
         }
     }
 
@@ -652,7 +653,7 @@ impl<'input> Tokenizer<'input> {
     fn parse_variable_placeholder_question_mark_sign(
         &mut self,
         start_pos: usize,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         while let Some(&next_ch) = self.peek_char() {
             if next_ch.is_ascii_digit() {
                 self.next_char();
@@ -667,7 +668,7 @@ impl<'input> Tokenizer<'input> {
             // all other symbols means wrong variable name
             if !Self::is_whitespace(&next_ch) && next_ch != ')' && next_ch != ',' && next_ch != ';'
             {
-                return Some(Err(ParsingError::BadVariableName));
+                return Some(Err(TokenizerError::BadVariableName));
             }
         }
 
@@ -682,7 +683,7 @@ impl<'input> Tokenizer<'input> {
         &mut self,
         start_pos: usize,
         current_char: char,
-    ) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    ) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         // Operators and punctuation
         let token_type = match current_char {
             '+' => TokenType::Plus,
@@ -735,7 +736,7 @@ impl<'input> Tokenizer<'input> {
                             }
                         }
                         if !terminated {
-                            return Some(Err(ParsingError::UnterminatedBlockComment));
+                            return Some(Err(TokenizerError::UnterminatedCommentBlock));
                         }
                         // minus 2 characters to ignore */ symbols
                         TokenType::MultiLineComment(
@@ -826,11 +827,11 @@ impl<'input> Tokenizer<'input> {
                         TokenType::NotEquals
                     } else {
                         // Return an error for unrecognized token
-                        return Some(Err(ParsingError::UnrecognizedToken));
+                        return Some(Err(TokenizerError::UnrecognizedToken));
                     }
                 } else {
                     // Unexpected end of input after '!'
-                    return Some(Err(ParsingError::UnexpectedEOF));
+                    return Some(Err(TokenizerError::UnexpectedEOF));
                 }
             }
             '?' => {
@@ -849,7 +850,7 @@ impl<'input> Tokenizer<'input> {
             }
             _ => {
                 // Unrecognized character
-                return Some(Err(ParsingError::UnrecognizedToken));
+                return Some(Err(TokenizerError::UnrecognizedToken));
             }
         };
         Some(Ok(Token {
@@ -859,7 +860,7 @@ impl<'input> Tokenizer<'input> {
     }
 
     /// Reads the next token from the input
-    pub fn next_token(&mut self) -> Option<Result<Token<'input>, ParsingError<'input>>> {
+    pub fn next_token(&mut self) -> Option<Result<Token<'input>, TokenizerError<'input>>> {
         self.skip_whitespace();
 
         let start_pos = self.current_pos;
@@ -905,7 +906,7 @@ impl<'a> From<&'a str> for Tokenizer<'a> {
 }
 
 impl<'input> Iterator for Tokenizer<'input> {
-    type Item = Result<Token<'input>, ParsingError<'input>>;
+    type Item = Result<Token<'input>, TokenizerError<'input>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next_token()
@@ -914,7 +915,8 @@ impl<'input> Iterator for Tokenizer<'input> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Keyword, ParsingError, TokenType, Tokenizer};
+    use super::TokenizerError;
+    use crate::{Keyword, TokenType, Tokenizer};
 
     fn run_sunny_day_test<'a>(sql: &'a str, expected_tokens: Vec<TokenType<'a>>) {
         let mut tokenizer = Tokenizer::from(sql);
@@ -922,9 +924,9 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
+            let token = token.unwrap_or_else(|_| {
+                panic!("Expected {:?}, got Unexpected error: ", expected_token_type)
+            });
 
             // Verify that the token type matches the expected token
             assert_eq!(
@@ -944,7 +946,7 @@ mod tests {
     fn run_rainy_day_test<'a>(
         sql: &'a str,
         expected_tokens: Vec<TokenType<'a>>,
-        expected_error: ParsingError,
+        expected_error: TokenizerError,
     ) {
         let mut tokenizer = Tokenizer::from(sql);
 
@@ -952,9 +954,9 @@ mod tests {
         for expected_token_type in expected_tokens {
             let token = tokenizer.next_token();
             let token = token.expect("Expected a token, but got None");
-            let token = token.expect(
-                format!("Expected {:?}, got Unexpected error: ", expected_token_type).as_str(),
-            );
+            let token = token.unwrap_or_else(|_| {
+                panic!("Expected {:?}, got Unexpected error: ", expected_token_type)
+            });
 
             assert_eq!(
                 token.token_type, expected_token_type,
@@ -964,7 +966,7 @@ mod tests {
         }
 
         // The next call to next_token() should return an error
-        let token: Option<Result<crate::Token<'_>, ParsingError<'_>>> = tokenizer.next_token();
+        let token: Option<Result<crate::Token<'_>, TokenizerError<'_>>> = tokenizer.next_token();
         let token = token.expect("Expected a token, but got None");
         let token_status = token.expect_err("Expected an error, but got a token");
 
@@ -1047,8 +1049,8 @@ mod tests {
             ],
         );
 
-        run_rainy_day_test("`unterminated", vec![], ParsingError::UnexpectedEOF);
-        run_rainy_day_test("`abc``def``", vec![], ParsingError::UnexpectedEOF);
+        run_rainy_day_test("`unterminated", vec![], TokenizerError::UnexpectedEOF);
+        run_rainy_day_test("`abc``def``", vec![], TokenizerError::UnexpectedEOF);
 
         // tokenize identifiers between [square-brackets]
         run_sunny_day_test(
@@ -1061,11 +1063,11 @@ mod tests {
             ],
         );
 
-        run_rainy_day_test("[unterminated", vec![], ParsingError::UnexpectedEOF);
+        run_rainy_day_test("[unterminated", vec![], TokenizerError::UnexpectedEOF);
         run_rainy_day_test(
             "[abc]]",
             vec![TokenType::Id("[abc]")],
-            ParsingError::UnrecognizedToken,
+            TokenizerError::UnrecognizedToken,
         );
     }
 
@@ -1100,9 +1102,9 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
 
-        run_rainy_day_test("0abc", vec![], ParsingError::BadNumber);
-        run_rainy_day_test("0xABCDFG", vec![], ParsingError::BadNumber);
-        run_rainy_day_test("0xEEEXZY", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("0abc", vec![], TokenizerError::BadNumber);
+        run_rainy_day_test("0xABCDFG", vec![], TokenizerError::BadNumber);
+        run_rainy_day_test("0xEEEXZY", vec![], TokenizerError::BadNumber);
     }
 
     #[test]
@@ -1143,12 +1145,12 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
 
-        run_rainy_day_test("123.abc ", vec![], ParsingError::BadNumber);
-        run_rainy_day_test("123.0abc ", vec![], ParsingError::BadNumber);
-        run_rainy_day_test("12.34.56", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("123.abc ", vec![], TokenizerError::BadNumber);
+        run_rainy_day_test("123.0abc ", vec![], TokenizerError::BadNumber);
+        run_rainy_day_test("12.34.56", vec![], TokenizerError::BadNumber);
 
-        run_rainy_day_test("1e", vec![], ParsingError::BadNumber);
-        run_rainy_day_test("3.14e1.5", vec![], ParsingError::BadNumber);
+        run_rainy_day_test("1e", vec![], TokenizerError::BadNumber);
+        run_rainy_day_test("3.14e1.5", vec![], TokenizerError::BadNumber);
     }
 
     #[test]
@@ -1181,7 +1183,7 @@ mod tests {
         run_rainy_day_test(
             "'unclosed string",
             vec![],
-            ParsingError::UnterminatedLiteral("'unclosed string"),
+            TokenizerError::UnterminatedLiteral("'unclosed string"),
         );
     }
 
@@ -1295,7 +1297,11 @@ mod tests {
             TokenType::Id("users"),
         ];
 
-        run_rainy_day_test(sql, expected_tokens, ParsingError::UnterminatedBlockComment);
+        run_rainy_day_test(
+            sql,
+            expected_tokens,
+            TokenizerError::UnterminatedCommentBlock,
+        );
     }
 
     #[test]
@@ -1312,17 +1318,17 @@ mod tests {
         run_sunny_day_test(sql, expected_tokens);
 
         let invalid_test_cases = vec![
-            (":123", vec![], ParsingError::BadVariableName),
-            (": ", vec![], ParsingError::BadVariableName),
-            ("@ ", vec![], ParsingError::BadVariableName),
-            ("$ ", vec![], ParsingError::BadVariableName),
-            ("# ", vec![], ParsingError::BadVariableName),
-            ("?abc", vec![], ParsingError::BadVariableName),
-            ("?1abc", vec![], ParsingError::BadVariableName),
-            ("?$", vec![], ParsingError::BadVariableName),
-            ("?-1", vec![], ParsingError::BadVariableName),
-            ("?1.2", vec![], ParsingError::BadVariableName),
-            ("?123abc", vec![], ParsingError::BadVariableName),
+            (":123", vec![], TokenizerError::BadVariableName),
+            (": ", vec![], TokenizerError::BadVariableName),
+            ("@ ", vec![], TokenizerError::BadVariableName),
+            ("$ ", vec![], TokenizerError::BadVariableName),
+            ("# ", vec![], TokenizerError::BadVariableName),
+            ("?abc", vec![], TokenizerError::BadVariableName),
+            ("?1abc", vec![], TokenizerError::BadVariableName),
+            ("?$", vec![], TokenizerError::BadVariableName),
+            ("?-1", vec![], TokenizerError::BadVariableName),
+            ("?1.2", vec![], TokenizerError::BadVariableName),
+            ("?123abc", vec![], TokenizerError::BadVariableName),
         ];
 
         for (sql, tokens, expected_error) in invalid_test_cases {
@@ -1336,13 +1342,13 @@ mod tests {
         run_rainy_day_test(
             "x'1A2B' x'ZZ'",
             vec![TokenType::Blob("x'1A2B'")],
-            ParsingError::MalformedBlobLiteral(&"x'ZZ'", 10),
+            TokenizerError::MalformedBlobLiteral("x'ZZ'", 10),
         );
     }
 
     #[test]
     fn test_unrecognized_tokens() {
-        run_rainy_day_test("^", vec![], ParsingError::UnrecognizedToken);
+        run_rainy_day_test("^", vec![], TokenizerError::UnrecognizedToken);
     }
 
     #[test]

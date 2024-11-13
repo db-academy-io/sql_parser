@@ -12,7 +12,7 @@
 
 mod common;
 use common::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{ParsingError, TokenType};
+use sql_parser::{TokenType, TokenizerError};
 
 /// H41200: SQLite shall recognize as a STRING token a sequence of characters
 /// that begins with a single-quote (u0027), is followed by zero or more
@@ -63,12 +63,12 @@ fn test_H41200_rainy_day_cases() {
         // Missing closing quote
         (
             "'Missing closing quote",
-            ParsingError::UnterminatedLiteral("'Missing closing quote"),
+            TokenizerError::UnterminatedLiteral("'Missing closing quote"),
         ),
         // Last quote is part of a pair, missing final quote
         (
             "'Ends with pair''",
-            ParsingError::UnterminatedLiteral("'Ends with pair''"),
+            TokenizerError::UnterminatedLiteral("'Ends with pair''"),
         ),
     ];
 

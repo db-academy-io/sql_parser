@@ -12,7 +12,7 @@
 
 mod common;
 use common::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, ParsingError, TokenType};
+use sql_parser::{Keyword, TokenType, TokenizerError};
 
 /// H41220: SQLite shall recognize as an INTEGER token any sequence of one or
 /// more NUMERIC characters.
@@ -92,7 +92,7 @@ fn test_H41220() {
 
 #[test]
 fn test_H41220_rainy_day() {
-    run_rainy_day_test("12abc", vec![], ParsingError::BadNumber);
+    run_rainy_day_test("12abc", vec![], TokenizerError::BadNumber);
 }
 
 /// H41230: SQLite shall recognize as a FLOAT token a sequence of one or more
@@ -176,21 +176,21 @@ fn test_H41230() {
 #[test]
 fn test_H41230_rainy_day() {
     let invalid_test_cases = vec![
-        ("3.14.15e10;", vec![], ParsingError::BadNumber),
+        ("3.14.15e10;", vec![], TokenizerError::BadNumber),
         (
             "3.14e", // Missing exponent value
             vec![],
-            ParsingError::BadNumber,
+            TokenizerError::BadNumber,
         ),
         (
             "2e", // Missing exponent value
             vec![],
-            ParsingError::BadNumber,
+            TokenizerError::BadNumber,
         ),
         (
             "2.0f3", // Invalid exponent notation
             vec![],
-            ParsingError::BadNumber,
+            TokenizerError::BadNumber,
         ),
     ];
 
@@ -282,12 +282,12 @@ fn test_H41240_rainy_day() {
         (
             "3.14.15 ", // Multiple periods
             vec![],
-            ParsingError::BadNumber,
+            TokenizerError::BadNumber,
         ),
         (
             "123.", // Period with no digits after
             vec![],
-            ParsingError::BadNumber,
+            TokenizerError::BadNumber,
         ),
         // (
         //     ".456",// Period with no digits before

@@ -12,7 +12,7 @@
 
 mod common;
 use common::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, ParsingError, TokenType};
+use sql_parser::{Keyword, TokenType, TokenizerError};
 use Keyword::*;
 
 /// H41130: SQLite shall recognize as an ID token any sequence of characters
@@ -177,17 +177,17 @@ fn test_H41140_rainy_day() {
         (
             "SELECT [column FROM table;",
             vec![TokenType::Keyword(Select)],
-            ParsingError::UnexpectedEOF,
+            TokenizerError::UnexpectedEOF,
         ),
         (
             "SELECT column] FROM table;",
             vec![TokenType::Keyword(Select), TokenType::Keyword(Column)],
-            ParsingError::UnrecognizedToken,
+            TokenizerError::UnrecognizedToken,
         ),
         (
             "SELECT [] FROM table;",
             vec![TokenType::Keyword(Select)],
-            ParsingError::EmptyId,
+            TokenizerError::EmptyId,
         ),
     ];
 
@@ -285,12 +285,12 @@ fn test_H41150_rainy_day() {
         (
             "SELECT \"column FROM table;",
             vec![TokenType::Keyword(Select)],
-            ParsingError::UnterminatedLiteral("\"column FROM table;"),
+            TokenizerError::UnterminatedLiteral("\"column FROM table;"),
         ),
         (
             "SELECT column\" FROM table;",
             vec![TokenType::Keyword(Select), TokenType::Keyword(Column)],
-            ParsingError::UnterminatedLiteral("\" FROM table;"),
+            TokenizerError::UnterminatedLiteral("\" FROM table;"),
         ),
         (
             "SELECT \"col\"umn\" FROM table;",
@@ -299,7 +299,7 @@ fn test_H41150_rainy_day() {
                 TokenType::Id("\"col\""), // Invalid ID with mixed quotes
                 TokenType::Id("umn"),
             ],
-            ParsingError::UnterminatedLiteral("\" FROM table;"),
+            TokenizerError::UnterminatedLiteral("\" FROM table;"),
         ),
     ];
 
@@ -397,12 +397,12 @@ fn test_H41160_rainy_day() {
         (
             "SELECT `column FROM table;",
             vec![TokenType::Keyword(Select)],
-            ParsingError::UnexpectedEOF,
+            TokenizerError::UnexpectedEOF,
         ),
         (
             "SELECT column` FROM table;",
             vec![TokenType::Keyword(Select), TokenType::Keyword(Column)],
-            ParsingError::UnexpectedEOF,
+            TokenizerError::UnexpectedEOF,
         ),
         (
             "SELECT `col`umn` FROM table;",
@@ -411,7 +411,7 @@ fn test_H41160_rainy_day() {
                 TokenType::Id("`col`"),
                 TokenType::Id("umn"),
             ],
-            ParsingError::UnexpectedEOF,
+            TokenizerError::UnexpectedEOF,
         ),
     ];
 

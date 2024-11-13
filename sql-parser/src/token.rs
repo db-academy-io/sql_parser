@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{Keyword, ParsingError};
 
 /// Represents a single lexical token identified by the tokenizer.
@@ -14,13 +16,19 @@ pub struct Token<'a> {
     pub position: usize,
 }
 
+impl<'a> Display for Token<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.token_type)
+    }
+}
+
 impl<'a> TryInto<Keyword> for &Token<'a> {
-    type Error = ParsingError<'a>;
+    type Error = ParsingError;
 
     fn try_into(self) -> Result<Keyword, Self::Error> {
         match self.token_type {
             TokenType::Keyword(keyword) => Ok(keyword),
-            _ => return Err(ParsingError::UnexpectedToken(self.clone())),
+            _ => Err(ParsingError::UnexpectedToken(self.to_string())),
         }
     }
 }
@@ -108,4 +116,42 @@ pub enum TokenType<'a> {
     RightShift,
     /// - H41469: SQLite shall recognize the 2-character sequenence "||" (u007c u007c) as token CONCAT
     Concat,
+}
+
+impl<'a> Display for TokenType<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TokenType::Keyword(keyword) => keyword.fmt(f),
+            TokenType::String(string) => write!(f, "{}", string),
+            TokenType::Id(id) => write!(f, "{}", id),
+            TokenType::Variable(var) => write!(f, "{}", var),
+            TokenType::Blob(blob) => write!(f, "{}", blob),
+            TokenType::Integer(int) => write!(f, "{}", int),
+            TokenType::Float(float) => write!(f, "{}", float),
+            TokenType::SingleLineComment(comment) => write!(f, "{}", comment),
+            TokenType::MultiLineComment(comment) => write!(f, "{}", comment),
+            TokenType::Plus => write!(f, "+"),
+            TokenType::Minus => write!(f, "-"),
+            TokenType::Star => write!(f, "*"),
+            TokenType::Slash => write!(f, "/"),
+            TokenType::Remainder => write!(f, "%"),
+            TokenType::LeftParen => write!(f, "("),
+            TokenType::RightParen => write!(f, ")"),
+            TokenType::Semi => write!(f, ";"),
+            TokenType::LessThan => write!(f, "<"),
+            TokenType::GreaterThan => write!(f, ">"),
+            TokenType::Comma => write!(f, ","),
+            TokenType::BitAnd => write!(f, "&"),
+            TokenType::BitNot => write!(f, "~"),
+            TokenType::BitOr => write!(f, "|"),
+            TokenType::Dot => write!(f, "."),
+            TokenType::Equals => write!(f, "=="),
+            TokenType::LessEquals => write!(f, "<="),
+            TokenType::NotEquals => write!(f, "!="),
+            TokenType::LeftShift => write!(f, "<<"),
+            TokenType::GreaterEquals => write!(f, ">="),
+            TokenType::RightShift => write!(f, ">>"),
+            TokenType::Concat => write!(f, "||"),
+        }
+    }
 }

@@ -13,8 +13,8 @@
 mod common;
 use common::{run_rainy_day_test, run_sunny_day_test};
 use sql_parser::Keyword::*;
-use sql_parser::ParsingError;
 use sql_parser::TokenType;
+use sql_parser::TokenizerError;
 // todo!()
 
 /// H40310: SQLite shall recognize as a VARIABLE token the a question-mark
@@ -109,12 +109,12 @@ fn test_H40310() {
 #[test]
 fn test_H40310_rainy_day_cases() {
     let invalid_test_cases = vec![
-        ("?abc", vec![], ParsingError::BadVariableName),
-        ("?1abc", vec![], ParsingError::BadVariableName),
-        ("?$", vec![], ParsingError::BadVariableName),
-        ("?-1", vec![], ParsingError::BadVariableName),
-        ("?1.2", vec![], ParsingError::BadVariableName),
-        ("?123abc", vec![], ParsingError::BadVariableName),
+        ("?abc", vec![], TokenizerError::BadVariableName),
+        ("?1abc", vec![], TokenizerError::BadVariableName),
+        ("?$", vec![], TokenizerError::BadVariableName),
+        ("?-1", vec![], TokenizerError::BadVariableName),
+        ("?1.2", vec![], TokenizerError::BadVariableName),
+        ("?123abc", vec![], TokenizerError::BadVariableName),
     ];
 
     for (sql, tokens, expected_error) in invalid_test_cases {
@@ -239,6 +239,6 @@ fn test_H40320_rainy_day() {
     ];
 
     for (sql, expected_tokens) in invalid_test_cases {
-        run_rainy_day_test(sql, expected_tokens, ParsingError::BadVariableName);
+        run_rainy_day_test(sql, expected_tokens, TokenizerError::BadVariableName);
     }
 }

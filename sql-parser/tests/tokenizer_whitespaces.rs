@@ -12,7 +12,7 @@
 
 mod common;
 use common::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, ParsingError, TokenType};
+use sql_parser::{Keyword, TokenType, TokenizerError};
 
 /// H41100: SQLite shall recognize a sequence of one or more MultiLineComment
 /// characters as a MultiLineComment token.
@@ -354,7 +354,7 @@ fn test_H41120_rainy_day_case() {
         (
             "/* Comment without terminator'",
             vec![],
-            ParsingError::UnterminatedBlockComment,
+            TokenizerError::UnterminatedCommentBlock,
         ),
     ];
 

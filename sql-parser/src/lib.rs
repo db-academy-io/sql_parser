@@ -1,5 +1,4 @@
 mod ast;
-mod errors;
 mod keywords;
 mod parser;
 mod token;

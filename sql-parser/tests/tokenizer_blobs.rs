@@ -12,7 +12,7 @@
 
 mod common;
 use common::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{ParsingError, TokenType};
+use sql_parser::{TokenType, TokenizerError};
 
 /// H41210: SQLite shall recognize as a BLOB token an upper or lower-case "X"
 /// (u0058 or u0078) followed by a single-quote (u0027) followed by a number of
@@ -43,23 +43,23 @@ fn test_H41210() {
 fn test_H41210_rainy_day_cases() {
     let invalid_test_cases = vec![
         // Invalid hex character 'G'
-        ("x'1G'", ParsingError::MalformedBlobLiteral("x'1G'", 3)),
+        ("x'1G'", TokenizerError::MalformedBlobLiteral("x'1G'", 3)),
         // Odd number of hex digits
-        ("x'123'", ParsingError::MalformedBlobLiteral("x'123'", 6)),
+        ("x'123'", TokenizerError::MalformedBlobLiteral("x'123'", 6)),
         // Odd number of hex digits
         (
             "x'1A2B3'",
-            ParsingError::MalformedBlobLiteral("x'1A2B3'", 8),
+            TokenizerError::MalformedBlobLiteral("x'1A2B3'", 8),
         ),
         // Unterminated blob literal
-        ("x'1A2B3C", ParsingError::UnterminatedLiteral("x'1A2B3C")),
+        ("x'1A2B3C", TokenizerError::UnterminatedLiteral("x'1A2B3C")),
         // Wrong quote terminator
         (
             "x'1A2B3C\"",
-            ParsingError::MalformedBlobLiteral("x'1A2B3C\"", 8),
+            TokenizerError::MalformedBlobLiteral("x'1A2B3C\"", 8),
         ),
         // Non-hex characters
-        ("x'ZZ'", ParsingError::MalformedBlobLiteral("x'ZZ'", 2)),
+        ("x'ZZ'", TokenizerError::MalformedBlobLiteral("x'ZZ'", 2)),
         // Extra characters after blob
         // ("x'1234'5", ParsingError::MalformedBlobLiteral("x'1234'", 3)),
 

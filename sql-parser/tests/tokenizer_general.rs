@@ -12,7 +12,7 @@
 
 mod common;
 use common::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, ParsingError, TokenType};
+use sql_parser::{Keyword, TokenType, TokenizerError};
 use Keyword::*;
 
 /// H41010: SQLite shall divide input SQL text into tokens working from left
@@ -198,6 +198,6 @@ fn test_H41050() {
     run_rainy_day_test(
         "SELECT @ FROM users;",
         vec![TokenType::Keyword(Keyword::Select)],
-        ParsingError::BadVariableName,
+        TokenizerError::BadVariableName,
     );
 }

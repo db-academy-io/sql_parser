@@ -80,7 +80,7 @@ impl<'a> DropStatementParser for Parser<'a> {
 
         if let Ok(token) = self.peek_token() {
             if token.token_type != TokenType::Semi {
-                return Err(ParsingError::UnexpectedToken(token.clone()));
+                return Err(ParsingError::UnexpectedToken(token.to_string()));
             }
         }
 
@@ -150,9 +150,9 @@ impl<'a> DropStatementParser for Parser<'a> {
 #[cfg(test)]
 mod drop_table_tests {
     use crate::ast::DropTableStatement;
-    use crate::{Parser, ParsingError, Statement, Token, TokenType};
+    use crate::{Parser, ParsingError, Statement};
 
-    fn run_sunny_day_test<'a>(sql: &'a str, expected_statement: Statement) {
+    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
         let mut parser = Parser::from(sql);
         let actual_statement = parser
             .parse_statement()
@@ -166,16 +166,16 @@ mod drop_table_tests {
         );
     }
 
-    fn run_rainy_day_test<'a>(sql: &'a str, expected_error: ParsingError) {
+    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
         let mut parser = Parser::from(sql);
         let actual_error = parser
             .parse_statement()
             .expect_err("Expected Parsing Error, got parsed Statement");
 
         assert_eq!(
-            actual_error, expected_error,
+            expected_error, actual_error,
             "Expected error {:?}, got {:?}",
-            actual_error, expected_error,
+            expected_error, actual_error,
         );
     }
 
@@ -223,43 +223,25 @@ mod drop_table_tests {
     #[test]
     fn test_drop_table_missing_table_keyword() {
         let sql = "DROP my_table;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("my_table".into()),
-                position: 5,
-            }),
-        );
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_table".to_string()));
     }
 
     #[test]
     fn test_drop_table_invalid_syntax() {
         let sql = "DROP TABLE IF my_table;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("my_table".into()),
-                position: 14,
-            }),
-        )
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_table".to_string()))
     }
 
     #[test]
     fn test_drop_table_extra_tokens() {
         let sql = "DROP TABLE my_table extra;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("extra"),
-                position: 20,
-            }),
-        );
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".to_string()));
     }
 
     #[test]
     fn test_drop_table_invalid_name() {
         let sql = "DROP TABLE 123invalid;";
-        run_rainy_day_test(sql, ParsingError::BadNumber);
+        run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".to_string()));
     }
 
     #[test]
@@ -322,9 +304,9 @@ mod drop_table_tests {
 #[cfg(test)]
 mod drop_index_tests {
     use crate::ast::DropIndexStatement;
-    use crate::{Parser, ParsingError, Statement, Token, TokenType};
+    use crate::{Parser, ParsingError, Statement};
 
-    fn run_sunny_day_test<'a>(sql: &'a str, expected_statement: Statement) {
+    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
         let mut parser = Parser::from(sql);
         let actual_statement = parser
             .parse_statement()
@@ -338,14 +320,14 @@ mod drop_index_tests {
         );
     }
 
-    fn run_rainy_day_test<'a>(sql: &'a str, expected_error: ParsingError) {
+    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
         let mut parser = Parser::from(sql);
         let actual_error = parser
             .parse_statement()
             .expect_err("Expected Parsing Error, got parsed Statement");
 
         assert_eq!(
-            actual_error, expected_error,
+            expected_error, actual_error,
             "Expected error {:?}, got {:?}",
             expected_error, actual_error,
         );
@@ -399,43 +381,25 @@ mod drop_index_tests {
     #[test]
     fn test_drop_index_missing_index_keyword() {
         let sql = "DROP my_index;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("my_index".into()),
-                position: 5,
-            }),
-        );
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_index".into()));
     }
 
     #[test]
     fn test_drop_index_invalid_syntax() {
         let sql = "DROP INDEX IF my_index;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("my_index".into()),
-                position: 14,
-            }),
-        )
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_index".into()))
     }
 
     #[test]
     fn test_drop_index_extra_tokens() {
         let sql = "DROP INDEX my_index extra;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("extra".into()),
-                position: 20,
-            }),
-        );
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
     }
 
     #[test]
     fn test_drop_index_invalid_name() {
         let sql = "DROP INDEX 123invalid;";
-        run_rainy_day_test(sql, ParsingError::BadNumber);
+        run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
     }
 
     #[test]
@@ -501,9 +465,9 @@ mod drop_index_tests {
 #[cfg(test)]
 mod drop_view_tests {
     use crate::ast::DropViewStatement;
-    use crate::{Parser, ParsingError, Statement, Token, TokenType};
+    use crate::{Parser, ParsingError, Statement};
 
-    fn run_sunny_day_test<'a>(sql: &'a str, expected_statement: Statement) {
+    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
         let mut parser = Parser::from(sql);
         let actual_statement = parser
             .parse_statement()
@@ -517,14 +481,14 @@ mod drop_view_tests {
         );
     }
 
-    fn run_rainy_day_test<'a>(sql: &'a str, expected_error: ParsingError) {
+    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
         let mut parser = Parser::from(sql);
         let actual_error = parser
             .parse_statement()
             .expect_err("Expected Parsing Error, got parsed Statement");
 
         assert_eq!(
-            actual_error, expected_error,
+            expected_error, actual_error,
             "Expected error {:?}, got {:?}",
             expected_error, actual_error,
         );
@@ -578,43 +542,25 @@ mod drop_view_tests {
     #[test]
     fn test_drop_view_missing_index_keyword() {
         let sql = "DROP my_view;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("my_view".into()),
-                position: 5,
-            }),
-        );
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_view".into()));
     }
 
     #[test]
     fn test_drop_view_invalid_syntax() {
         let sql = "DROP VIEW IF my_view;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("my_view".into()),
-                position: 13,
-            }),
-        )
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_view".into()))
     }
 
     #[test]
     fn test_drop_view_extra_tokens() {
         let sql = "DROP VIEW my_view extra;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("extra".into()),
-                position: 18,
-            }),
-        );
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
     }
 
     #[test]
     fn test_drop_view_invalid_name() {
         let sql = "DROP VIEW 123invalid;";
-        run_rainy_day_test(sql, ParsingError::BadNumber);
+        run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
     }
 
     #[test]
@@ -680,9 +626,9 @@ mod drop_view_tests {
 #[cfg(test)]
 mod drop_trigger_tests {
     use crate::ast::DropTriggerStatement;
-    use crate::{Parser, ParsingError, Statement, Token, TokenType};
+    use crate::{Parser, ParsingError, Statement};
 
-    fn run_sunny_day_test<'a>(sql: &'a str, expected_statement: Statement) {
+    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
         let mut parser = Parser::from(sql);
         let actual_statement = parser
             .parse_statement()
@@ -696,14 +642,14 @@ mod drop_trigger_tests {
         );
     }
 
-    fn run_rainy_day_test<'a>(sql: &'a str, expected_error: ParsingError) {
+    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
         let mut parser = Parser::from(sql);
         let actual_error = parser
             .parse_statement()
             .expect_err("Expected Parsing Error, got parsed Statement");
 
         assert_eq!(
-            actual_error, expected_error,
+            expected_error, actual_error,
             "Expected error {:?}, got {:?}",
             expected_error, actual_error,
         );
@@ -757,43 +703,25 @@ mod drop_trigger_tests {
     #[test]
     fn test_drop_view_missing_index_keyword() {
         let sql = "DROP my_trigger;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("my_trigger".into()),
-                position: 5,
-            }),
-        );
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_trigger".into()));
     }
 
     #[test]
     fn test_drop_view_invalid_syntax() {
         let sql = "DROP TRIGGER IF my_trigger;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("my_trigger".into()),
-                position: 16,
-            }),
-        )
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_trigger".into()))
     }
 
     #[test]
     fn test_drop_view_extra_tokens() {
         let sql = "DROP TRIGGER my_trigger extra;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::UnexpectedToken(Token {
-                token_type: TokenType::Id("extra".into()),
-                position: 24,
-            }),
-        );
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
     }
 
     #[test]
     fn test_drop_view_invalid_name() {
         let sql = "DROP TRIGGER 123invalid;";
-        run_rainy_day_test(sql, ParsingError::BadNumber);
+        run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
     }
 
     #[test]
