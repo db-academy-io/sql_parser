@@ -79,15 +79,12 @@ impl<'a> DropStatementParser for Parser<'a> {
         }
 
         if let Ok(token) = self.peek_token() {
-            if token.token_type != TokenType::Semi {
-                return Err(ParsingError::UnexpectedToken(token.to_string()));
-            }
-        }
-
-        if let Ok(token) = self.peek_token() {
-            if token.token_type == TokenType::Semi {
-                // consume the ';' token
-                self.consume_token()?;
+            match token.token_type {
+                TokenType::Semi => {
+                    // consume the ';' token
+                    self.consume_token()?;
+                }
+                _ => return Err(ParsingError::UnexpectedToken(token.to_string())),
             }
         }
 
