@@ -4,7 +4,8 @@ The following list of statements is ordered from easy to hard from an
 implementation standpoint. There are some exception statement items in the list
 where the implementation is easier than the previous statement, but the 
 exception is made for grouping purposes only, i.e., grouping related statements
-together
+together.
+The items were taken from the official SQLite documentation from [here](https://www.sqlite.org/lang.html)
 
 ## Easy level
 
@@ -27,15 +28,34 @@ together
 
 ## Intermediate level 
 
+- math-functions
+- date-and-time-functions
+- json-functions
+- expression
+- core-functions
+- aggregate-functions
+
 - attach-stmt
 - alter-table-stmt
 
-## Hard level 
+## Hard level
 
+### SELECT Statement
+
+- indexed-by-part
+- window-functions-part
 - select-stmt
-- insert-stmt
+- with-clause-part (CTE)
 
-## Extra hard level 
+### INSERT Statement
+
+- on-conflict-clause-part
+- returning-clause-part
+- upsert-part
+- insert-stmt
+- replace-stmt
+
+### CREATE Statements
 
 - create-virtual-table-stmt
 - create-index-stmt
@@ -43,12 +63,15 @@ together
 - create-table-stmt
 - create-trigger-stmt
 
+### DELETE Statements
+
 - delete-stmt
 - delete-stmt-limited
 
+### UPDATE Statements
 - update-stmt
 - update-stmt-limited
 
-## Easy 
-Easy to implement, only after implementing all items from Extra hard level group  
+### EXPLAIN Statements 
+After implementing all items above, it must become an easy ride
 - explain-stmt 
