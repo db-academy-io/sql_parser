@@ -109,6 +109,18 @@ mod vacuum_statement_parser {
     }
 
     #[test]
+    fn test_vacuum_without_semicolon() {
+        let sql = "VACUUM";
+        run_sunny_day_test(
+            sql,
+            Statement::Vacuum(VacuumStatement {
+                schema_name: None,
+                file_name: None,
+            }),
+        );
+    }
+
+    #[test]
     fn test_vacuum_with_schema() {
         let sql = "VACUUM main;";
         run_sunny_day_test(
@@ -145,12 +157,6 @@ mod vacuum_statement_parser {
     }
 
     #[test]
-    fn test_vacuum_missing_semicolon() {
-        let sql = "VACUUM";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
-    }
-
-    #[test]
     fn test_vacuum_invalid_syntax() {
         let sql = "VACUUM INTO;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".to_string()));
@@ -159,7 +165,7 @@ mod vacuum_statement_parser {
     #[test]
     fn test_vacuum_missing_filename() {
         let sql = "VACUUM INTO";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]

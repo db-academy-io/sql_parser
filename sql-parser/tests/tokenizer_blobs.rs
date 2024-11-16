@@ -21,16 +21,25 @@ use sql_parser::{TokenType, TokenizerError};
 #[test]
 fn test_H41210() {
     let valid_test_cases = vec![
-        ("x'1A2B3C'", vec![TokenType::Blob("x'1A2B3C'")]),
-        ("X'abc123'", vec![TokenType::Blob("X'abc123'")]),
-        ("x'00FF'", vec![TokenType::Blob("x'00FF'")]),
         (
-            "x''", // Empty blob
-            vec![TokenType::Blob("x''")],
+            "x'1A2B3C';",
+            vec![TokenType::Blob("x'1A2B3C'"), TokenType::Semi],
         ),
         (
-            "x'0123456789ABCDEF'",
-            vec![TokenType::Blob("x'0123456789ABCDEF'")],
+            "X'abc123';",
+            vec![TokenType::Blob("X'abc123'"), TokenType::Semi],
+        ),
+        (
+            "x'00FF';",
+            vec![TokenType::Blob("x'00FF'"), TokenType::Semi],
+        ),
+        (
+            "x'';", // Empty blob
+            vec![TokenType::Blob("x''"), TokenType::Semi],
+        ),
+        (
+            "x'0123456789ABCDEF';",
+            vec![TokenType::Blob("x'0123456789ABCDEF'"), TokenType::Semi],
         ),
     ];
 

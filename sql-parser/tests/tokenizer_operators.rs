@@ -18,21 +18,21 @@ use sql_parser::TokenType;
 /// token MINUS
 #[test]
 fn test_H41403() {
-    run_sunny_day_test("-", vec![TokenType::Minus]);
+    run_sunny_day_test("-", vec![TokenType::Minus, TokenType::Semi]);
 }
 
 /// H41406  SQLite shall recognize the 1-character sequenence "(" (u0028) as
 /// token LP
 #[test]
 fn test_H41406() {
-    run_sunny_day_test("(", vec![TokenType::LeftParen]);
+    run_sunny_day_test("(", vec![TokenType::LeftParen, TokenType::Semi]);
 }
 
 /// H41409  SQLite shall recognize the 1-character sequenence ")" (u0029) as
 /// token RP
 #[test]
 fn test_H41409() {
-    run_sunny_day_test(")", vec![TokenType::RightParen]);
+    run_sunny_day_test(")", vec![TokenType::RightParen, TokenType::Semi]);
 }
 
 /// H41412  SQLite shall recognize the 1-character sequenence ";" (u003b) as
@@ -46,138 +46,138 @@ fn test_H41412() {
 /// token PLUS
 #[test]
 fn test_H41415() {
-    run_sunny_day_test("+", vec![TokenType::Plus]);
+    run_sunny_day_test("+", vec![TokenType::Plus, TokenType::Semi]);
 }
 
 /// H41418  SQLite shall recognize the 1-character sequenence "*" (u002a) as
 /// token STAR
 #[test]
 fn test_H41418() {
-    run_sunny_day_test("*", vec![TokenType::Star]);
+    run_sunny_day_test("*", vec![TokenType::Star, TokenType::Semi]);
 }
 
 /// H41421  SQLite shall recognize the 1-character sequenence "/" (u002f) as
 /// token SLASH
 #[test]
 fn test_H41421() {
-    run_sunny_day_test("/", vec![TokenType::Slash]);
+    run_sunny_day_test("/", vec![TokenType::Slash, TokenType::Semi]);
 }
 
 /// H41424  SQLite shall recognize the 1-character sequenence "%" (u0025) as
 /// token REM
 #[test]
 fn test_H41424() {
-    run_sunny_day_test("%", vec![TokenType::Remainder]);
+    run_sunny_day_test("%", vec![TokenType::Remainder, TokenType::Semi]);
 }
 
 /// H41427  SQLite shall recognize the 1-character sequenence "=" (u003d) as
 /// token EQ
 #[test]
 fn test_H41427() {
-    run_sunny_day_test("=", vec![TokenType::Equals]);
+    run_sunny_day_test("=", vec![TokenType::Equals, TokenType::Semi]);
 }
 
 /// H41430  SQLite shall recognize the 2-character sequenence "=="
 /// (u003d u003d) as token EQ
 #[test]
 fn test_H41430() {
-    run_sunny_day_test("==", vec![TokenType::Equals]);
+    run_sunny_day_test("==", vec![TokenType::Equals, TokenType::Semi]);
 }
 
 /// H41433  SQLite shall recognize the 2-character sequenence "<="
 /// (u003c u003d) as token LE
 #[test]
 fn test_H41433() {
-    run_sunny_day_test("<=", vec![TokenType::LessEquals]);
+    run_sunny_day_test("<=", vec![TokenType::LessEquals, TokenType::Semi]);
 }
 
 /// H41436  SQLite shall recognize the 2-character sequenence "<>"
 /// (u003c u003e) as token NE
 #[test]
 fn test_H41436() {
-    run_sunny_day_test("<>", vec![TokenType::NotEquals]);
+    run_sunny_day_test("<>", vec![TokenType::NotEquals, TokenType::Semi]);
 }
 
 /// H41439  SQLite shall recognize the 2-character sequenence "<<"
 /// (u003c u003c) as token LSHIFT
 #[test]
 fn test_H41439() {
-    run_sunny_day_test("<<", vec![TokenType::LeftShift]);
+    run_sunny_day_test("<<", vec![TokenType::LeftShift, TokenType::Semi]);
 }
 
 /// H41442  SQLite shall recognize the 1-character sequenence "<"
 /// (u003c) as token LT
 #[test]
 fn test_H41442() {
-    run_sunny_day_test("<", vec![TokenType::LessThan]);
+    run_sunny_day_test("<", vec![TokenType::LessThan, TokenType::Semi]);
 }
 
 /// H41445  SQLite shall recognize the 2-character sequenence ">="
 /// (u003e u003d) as token GE
 #[test]
 fn test_H41445() {
-    run_sunny_day_test(">=", vec![TokenType::GreaterEquals]);
+    run_sunny_day_test(">=", vec![TokenType::GreaterEquals, TokenType::Semi]);
 }
 
 /// H41448  SQLite shall recognize the 2-character sequenence ">>"
 /// (u003e u003e) as token RSHIFT
 #[test]
 fn test_H41448() {
-    run_sunny_day_test(">>", vec![TokenType::RightShift]);
+    run_sunny_day_test(">>", vec![TokenType::RightShift, TokenType::Semi]);
 }
 
 /// H41451  SQLite shall recognize the 1-character sequenence ">"
 /// (u003e) as token GT
 #[test]
 fn test_H41451() {
-    run_sunny_day_test(">", vec![TokenType::GreaterThan]);
+    run_sunny_day_test(">", vec![TokenType::GreaterThan, TokenType::Semi]);
 }
 
 /// H41454  SQLite shall recognize the 2-character sequenence "!="
 /// (u0021 u003d) as token NE
 #[test]
 fn test_H41454() {
-    run_sunny_day_test("!=", vec![TokenType::NotEquals]);
+    run_sunny_day_test("!=", vec![TokenType::NotEquals, TokenType::Semi]);
 }
 
 /// H41457  SQLite shall recognize the 1-character sequenence ","
 /// (u002c) as token COMMA
 #[test]
 fn test_H41457() {
-    run_sunny_day_test(",", vec![TokenType::Comma]);
+    run_sunny_day_test(",", vec![TokenType::Comma, TokenType::Semi]);
 }
 
 /// H41460  SQLite shall recognize the 1-character sequenence "&"
 /// (u0026) as token BITAND
 #[test]
 fn test_H41460() {
-    run_sunny_day_test("&", vec![TokenType::BitAnd]);
+    run_sunny_day_test("&", vec![TokenType::BitAnd, TokenType::Semi]);
 }
 
 /// H41463  SQLite shall recognize the 1-character sequenence "~"
 /// (u007e) as token BITNOT
 #[test]
 fn test_H41463() {
-    run_sunny_day_test("~", vec![TokenType::BitNot]);
+    run_sunny_day_test("~", vec![TokenType::BitNot, TokenType::Semi]);
 }
 
 /// H41466  SQLite shall recognize the 1-character sequenence "|"
 /// (u007c) as token BITOR
 #[test]
 fn test_H41466() {
-    run_sunny_day_test("|", vec![TokenType::BitOr]);
+    run_sunny_day_test("|", vec![TokenType::BitOr, TokenType::Semi]);
 }
 
 /// H41469  SQLite shall recognize the 2-character sequenence "||"
 /// (u007c u007c) as token CONCAT
 #[test]
 fn test_H41469() {
-    run_sunny_day_test("||", vec![TokenType::Concat]);
+    run_sunny_day_test("||", vec![TokenType::Concat, TokenType::Semi]);
 }
 
 /// H41472  SQLite shall recognize the 1-character sequenence "."
 /// (u002e) as token DOT
 #[test]
 fn test_H41472() {
-    run_sunny_day_test(".", vec![TokenType::Dot]);
+    run_sunny_day_test(".", vec![TokenType::Dot, TokenType::Semi]);
 }

@@ -21,34 +21,40 @@ use sql_parser::{TokenType, TokenizerError};
 #[test]
 fn test_H41200() {
     let valid_test_cases = vec![
-        ("''", vec![TokenType::String("''")]),
+        ("''", vec![TokenType::String("''"), TokenType::Semi]),
         (
             "'Hello, world!'",
-            vec![TokenType::String("'Hello, world!'")],
+            vec![TokenType::String("'Hello, world!'"), TokenType::Semi],
         ),
         (
             "'It''s a nice day'",
-            vec![TokenType::String("'It''s a nice day'")],
+            vec![TokenType::String("'It''s a nice day'"), TokenType::Semi],
         ),
         (
             "'He said, ''Hello!'' and left.'",
-            vec![TokenType::String("'He said, ''Hello!'' and left.'")],
+            vec![
+                TokenType::String("'He said, ''Hello!'' and left.'"),
+                TokenType::Semi,
+            ],
         ),
         (
             "'''starting with quote'",
-            vec![TokenType::String("'''starting with quote'")],
+            vec![
+                TokenType::String("'''starting with quote'"),
+                TokenType::Semi,
+            ],
         ),
         (
             "'ending with quote'''",
-            vec![TokenType::String("'ending with quote'''")],
+            vec![TokenType::String("'ending with quote'''"), TokenType::Semi],
         ),
         (
             "'multiple ''''quotes'",
-            vec![TokenType::String("'multiple ''''quotes'")],
+            vec![TokenType::String("'multiple ''''quotes'"), TokenType::Semi],
         ),
         (
             "'123''456''789'",
-            vec![TokenType::String("'123''456''789'")],
+            vec![TokenType::String("'123''456''789'"), TokenType::Semi],
         ),
     ];
 

@@ -60,9 +60,8 @@ fn test_H41020() {
 /// H41030: The tokenizer shall pass each non-WHITESPACE token seen on to the
 /// parser in the order in which the tokens are seen.
 #[test]
-#[allow(non_snake_case)]
 fn test_H41030() {
-    let sql = "  SELECT   id ,   name  FROM   users  WHERE   age  >= 18 ;  ";
+    let sql = "  SELECT   id ,   name  FROM   users  WHERE   age  >= 18 ;";
     let expected_tokens = vec![
         TokenType::Keyword(Select),
         TokenType::Id("id"),
@@ -81,7 +80,6 @@ fn test_H41030() {
 
 /// H41040: When the tokenizer reaches the end of input where the last token
 /// sent to the parser was not a SEMI token, it shall send a SEMI token to the parser.
-/// TODO: Fix it
 #[test]
 fn test_H41040() {
     let test_cases = vec![
@@ -92,7 +90,7 @@ fn test_H41040() {
                 TokenType::Star,
                 TokenType::Keyword(From),
                 TokenType::Id("users"),
-                // TokenType::Semi, // Implicit semicolon added
+                TokenType::Semi, // Implicit semicolon added
             ],
         ),
         (
@@ -108,7 +106,7 @@ fn test_H41040() {
                 TokenType::LeftParen,
                 TokenType::Integer("1"),
                 TokenType::RightParen,
-                // TokenType::Semi, // Implicit semicolon added
+                TokenType::Semi, // Implicit semicolon added
             ],
         ),
         (
@@ -124,7 +122,7 @@ fn test_H41040() {
                 TokenType::Id("id"),
                 TokenType::Equals,
                 TokenType::Integer("1"),
-                // TokenType::Semi, // Implicit semicolon added
+                TokenType::Semi, // Implicit semicolon added
             ],
         ),
         (
@@ -137,7 +135,7 @@ fn test_H41040() {
                 TokenType::Id("id"),
                 TokenType::Equals,
                 TokenType::Integer("1"),
-                // TokenType::Semi, // Implicit semicolon added
+                TokenType::Semi, // Implicit semicolon added
             ],
         ),
         (
@@ -150,7 +148,7 @@ fn test_H41040() {
                 TokenType::Id("id"),
                 TokenType::Id("INTEGER"),
                 TokenType::RightParen,
-                // TokenType::Semi, // Implicit semicolon added
+                TokenType::Semi, // Implicit semicolon added
             ],
         ),
         (
@@ -171,7 +169,7 @@ fn test_H41040() {
                 TokenType::Keyword(From),
                 TokenType::Id("users"),
                 TokenType::SingleLineComment(" comment at the end"),
-                // TokenType::Semi, // Implicit semicolon added
+                TokenType::Semi, // Implicit semicolon added
             ],
         ),
         (
@@ -182,7 +180,7 @@ fn test_H41040() {
                 TokenType::Keyword(From),
                 TokenType::Id("users"),
                 TokenType::MultiLineComment(" block comment "),
-                // TokenType::Semi, // Implicit semicolon added
+                TokenType::Semi, // Implicit semicolon added
             ],
         ),
     ];

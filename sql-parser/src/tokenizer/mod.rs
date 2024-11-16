@@ -197,6 +197,7 @@ pub struct Tokenizer<'input> {
     raw_content: &'input str,
     chars: Peekable<Chars<'input>>,
     current_pos: usize,
+    last_semi_token_pos: Option<usize>,
 }
 
 impl<'input> Tokenizer<'input> {
@@ -694,7 +695,10 @@ impl<'input> Tokenizer<'input> {
             '.' => TokenType::Dot,
             '(' => TokenType::LeftParen,
             ')' => TokenType::RightParen,
-            ';' => TokenType::Semi,
+            ';' => {
+                self.last_semi_token_pos = Some(start_pos);
+                TokenType::Semi
+            }
             ',' => TokenType::Comma,
             '&' => TokenType::BitAnd,
             '~' => TokenType::BitNot,
@@ -892,7 +896,26 @@ impl<'input> Tokenizer<'input> {
                     return self.parse_operators(start_pos, ch);
                 }
             }
-            None => None,
+            None => match self.last_semi_token_pos {
+                Some(pos) => {
+                    if self.current_pos - pos > 1 {
+                        self.last_semi_token_pos = Some(self.current_pos);
+                        Some(Ok(Token {
+                            token_type: TokenType::Semi,
+                            position: self.current_pos,
+                        }))
+                    } else {
+                        None
+                    }
+                }
+                None => {
+                    self.last_semi_token_pos = Some(self.current_pos);
+                    Some(Ok(Token {
+                        token_type: TokenType::Semi,
+                        position: self.current_pos,
+                    }))
+                }
+            },
         }
     }
 }
@@ -903,6 +926,7 @@ impl<'a> From<&'a str> for Tokenizer<'a> {
             raw_content: text,
             chars: text.chars().peekable(),
             current_pos: 0,
+            last_semi_token_pos: None,
         }
     }
 }
@@ -983,32 +1007,25 @@ mod tests {
 
     #[test]
     fn test_empty_input() {
-        let sql = "";
-        let mut tokenizer = Tokenizer::from(sql);
-        let result = tokenizer.next_token();
-
-        // Since the input is empty, we expect no tokens (None)
-        assert!(
-            result.is_none(),
-            "Tokenizer should return None for empty input"
-        );
+        run_sunny_day_test("", vec![TokenType::Semi]);
     }
 
     #[test]
     fn test_single_keyword() {
-        let sql = "SELECT";
-        let expected_tokens = vec![TokenType::Keyword(Keyword::Select)];
+        let sql = "SELECT;";
+        let expected_tokens = vec![TokenType::Keyword(Keyword::Select), TokenType::Semi];
         run_sunny_day_test(sql, expected_tokens);
     }
 
     #[test]
     fn test_multiple_keywords() {
-        let sql = "SELECT FROM WHERE";
+        let sql = "SELECT FROM WHERE;";
 
         let expected_tokens = vec![
             TokenType::Keyword(Keyword::Select),
             TokenType::Keyword(Keyword::From),
             TokenType::Keyword(Keyword::Where),
+            TokenType::Semi,
         ];
 
         run_sunny_day_test(sql, expected_tokens);
@@ -1016,7 +1033,7 @@ mod tests {
 
     #[test]
     fn test_case_unsensetive_keywords() {
-        let sql = "Select select SELECT sElEcT SeLeCt";
+        let sql = "Select select SELECT sElEcT SeLeCt;";
 
         let expected_tokens = vec![
             TokenType::Keyword(Keyword::Select),
@@ -1024,6 +1041,7 @@ mod tests {
             TokenType::Keyword(Keyword::Select),
             TokenType::Keyword(Keyword::Select),
             TokenType::Keyword(Keyword::Select),
+            TokenType::Semi,
         ];
 
         run_sunny_day_test(sql, expected_tokens);
@@ -1032,14 +1050,22 @@ mod tests {
     #[test]
     fn test_identifier() {
         run_sunny_day_test(
-            "my_table abc012",
-            vec![TokenType::Id("my_table"), TokenType::Id("abc012")],
+            "my_table abc012;",
+            vec![
+                TokenType::Id("my_table"),
+                TokenType::Id("abc012"),
+                TokenType::Semi,
+            ],
         );
 
         // tokenize unicode identifiers
         run_sunny_day_test(
             "таблица Столбец",
-            vec![TokenType::Id("таблица"), TokenType::Id("Столбец")],
+            vec![
+                TokenType::Id("таблица"),
+                TokenType::Id("Столбец"),
+                TokenType::Semi,
+            ],
         );
 
         // tokenize identifiers between grave accents
@@ -1048,6 +1074,7 @@ mod tests {
             vec![
                 TokenType::Id("`table_name`"),
                 TokenType::Id("`id``entifier`"),
+                TokenType::Semi,
             ],
         );
 
@@ -1062,6 +1089,7 @@ mod tests {
                 TokenType::Id("[id``entifier]"),
                 TokenType::Id("[123123]"),
                 TokenType::Id("[^!@%#!@*$!@]"),
+                TokenType::Semi,
             ],
         );
 
@@ -1075,12 +1103,13 @@ mod tests {
 
     #[test]
     fn test_integer_literals() {
-        let sql = "0 42 123 999999999999999999999999999999999 ";
+        let sql = "0 42 123 999999999999999999999999999999999 ;";
         let expected_tokens = vec![
             TokenType::Integer("0"),
             TokenType::Integer("42"),
             TokenType::Integer("123"),
             TokenType::Integer("999999999999999999999999999999999"),
+            TokenType::Semi,
         ];
         run_sunny_day_test(sql, expected_tokens);
 
@@ -1093,6 +1122,7 @@ mod tests {
             TokenType::Integer("123"),
             TokenType::Minus,
             TokenType::Integer("999999999999999999999999999999999"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
 
@@ -1101,6 +1131,7 @@ mod tests {
             TokenType::Integer("0x1"),
             TokenType::Integer("0x1234567890ABCDF"),
             TokenType::Integer("0xFFFF"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
 
@@ -1117,6 +1148,7 @@ mod tests {
             TokenType::Float("0.0"),
             TokenType::Float("123.456"),
             TokenType::Float("3.14"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
 
@@ -1125,6 +1157,7 @@ mod tests {
             TokenType::Float("1e10"),
             TokenType::Float("3.14E-2"),
             TokenType::Float("2.5e+3"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
 
@@ -1133,6 +1166,7 @@ mod tests {
             TokenType::Float("42.0"),
             TokenType::Float("3.1415"),
             TokenType::Float("1e-4"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
 
@@ -1144,6 +1178,7 @@ mod tests {
             TokenType::Float("0.1"),
             TokenType::Minus,
             TokenType::Float("1e-4"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
 
@@ -1157,27 +1192,57 @@ mod tests {
 
     #[test]
     fn test_string_literal_single_quotes() {
-        run_sunny_day_test("'hello' ", vec![TokenType::String("'hello'")]);
-        run_sunny_day_test("''", vec![TokenType::String("''")]);
-        run_sunny_day_test("'1'", vec![TokenType::String("'1'")]);
+        run_sunny_day_test(
+            "'hello' ;",
+            vec![TokenType::String("'hello'"), TokenType::Semi],
+        );
+        run_sunny_day_test("'';", vec![TokenType::String("''"), TokenType::Semi]);
+        run_sunny_day_test("'1';", vec![TokenType::String("'1'"), TokenType::Semi]);
         run_sunny_day_test(
             "'He said ''Hey, Marta!'''",
-            vec![TokenType::String("'He said ''Hey, Marta!'''")],
+            vec![
+                TokenType::String("'He said ''Hey, Marta!'''"),
+                TokenType::Semi,
+            ],
         );
     }
 
     #[test]
     fn test_string_literal_double_quotes() {
-        run_sunny_day_test("\"hello world\"", vec![TokenType::Id("\"hello world\"")]);
-
-        run_sunny_day_test("\"\"", vec![TokenType::Id("\"\"")]);
-        run_sunny_day_test("\"1\"", vec![TokenType::Id("\"1\"")]);
         run_sunny_day_test(
-            "\"He said \"\"Hey, Marta!\"\"\"",
-            vec![TokenType::Id(r#""He said ""Hey, Marta!""""#)],
+            "\"hello world\";",
+            vec![TokenType::Id("\"hello world\""), TokenType::Semi],
         );
 
-        run_sunny_day_test("'Line\\nBreak'", vec![TokenType::String("'Line\\nBreak'")]);
+        run_sunny_day_test(
+            "\"\";",
+            vec![
+                TokenType::Id("\"\""),
+                TokenType::Semi, // Implicitly ; added
+            ],
+        );
+        run_sunny_day_test(
+            "\"1\";",
+            vec![
+                TokenType::Id("\"1\""),
+                TokenType::Semi, // Implicitly ; added
+            ],
+        );
+        run_sunny_day_test(
+            "\"He said \"\"Hey, Marta!\"\"\"",
+            vec![
+                TokenType::Id(r#""He said ""Hey, Marta!""""#),
+                TokenType::Semi, // Implicitly ; added
+            ],
+        );
+
+        run_sunny_day_test(
+            "'Line\\nBreak'",
+            vec![
+                TokenType::String("'Line\\nBreak'"),
+                TokenType::Semi, // Implicitly ; added
+            ],
+        );
     }
 
     #[test]
@@ -1204,6 +1269,7 @@ mod tests {
             TokenType::Equals,
             TokenType::LessThan,
             TokenType::GreaterThan,
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(operators, expected_tokens);
     }
@@ -1220,6 +1286,7 @@ mod tests {
             TokenType::LeftShift,
             TokenType::RightShift,
             TokenType::Concat,
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(operators, expected_tokens);
     }
@@ -1232,6 +1299,7 @@ mod tests {
             TokenType::Semi,
             TokenType::LeftParen,
             TokenType::RightParen,
+            TokenType::Semi, // Implicitly ; added
         ];
 
         run_sunny_day_test(punctuations, expected_tokens);
@@ -1245,6 +1313,7 @@ mod tests {
             TokenType::Star,
             TokenType::Keyword(Keyword::From),
             TokenType::Id("users"),
+            TokenType::Semi, // Implicitly ; added
         ];
 
         run_sunny_day_test(sql, expected_tokens);
@@ -1269,7 +1338,10 @@ mod tests {
 
         run_sunny_day_test(
             "/* SELECT * FROM table */",
-            vec![TokenType::MultiLineComment(" SELECT * FROM table ")],
+            vec![
+                TokenType::MultiLineComment(" SELECT * FROM table "),
+                TokenType::Semi, // Implicitly ; added
+            ],
         );
     }
 
@@ -1316,6 +1388,7 @@ mod tests {
             TokenType::Variable("@var"),
             TokenType::Variable("$value"),
             TokenType::Variable("#param"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
 
@@ -1340,7 +1413,10 @@ mod tests {
 
     #[test]
     fn test_blob_literals() {
-        run_sunny_day_test("x'1A2B'", vec![TokenType::Blob("x'1A2B'")]);
+        run_sunny_day_test(
+            "x'1A2B';",
+            vec![TokenType::Blob("x'1A2B'"), TokenType::Semi],
+        );
         run_rainy_day_test(
             "x'1A2B' x'ZZ'",
             vec![TokenType::Blob("x'1A2B'")],
@@ -1367,6 +1443,7 @@ mod tests {
             TokenType::Integer("1"),
             TokenType::String("'='"),
             TokenType::Integer("1"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
     }
@@ -1381,7 +1458,67 @@ mod tests {
             TokenType::Id("\"name\""),
             TokenType::Keyword(As),
             TokenType::Id("name"),
+            TokenType::Semi, // Implicitly ; added
         ];
         run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_explicit_semi_at_the_end() {
+        let sql = "SELECT 1;";
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Integer("1"),
+            TokenType::Semi,
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_implicit_semi_at_the_end() {
+        let sql = "SELECT 1";
+        let expected_tokens = vec![
+            TokenType::Keyword(Keyword::Select),
+            TokenType::Integer("1"),
+            TokenType::Semi, // Implicit semicolon added
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+    }
+
+    #[test]
+    fn test_semi_and_new_line() {
+        run_sunny_day_test(
+            "SELECT ; FROM users --Comment without newline ",
+            vec![
+                TokenType::Keyword(Keyword::Select),
+                TokenType::Semi,
+                TokenType::Keyword(Keyword::From),
+                TokenType::Id("users"),
+                TokenType::SingleLineComment("Comment without newline "),
+                TokenType::Semi,
+            ],
+        )
+    }
+
+    #[test]
+    fn test_semi_and_new_line1() {
+        use Keyword::*;
+
+        run_sunny_day_test(
+            "SELECT * FROM users; -- This is a comment\nSELECT * FROM orders;",
+            vec![
+                TokenType::Keyword(Select),
+                TokenType::Star,
+                TokenType::Keyword(From),
+                TokenType::Id("users"),
+                TokenType::Semi,
+                TokenType::SingleLineComment(" This is a comment\n"),
+                TokenType::Keyword(Select),
+                TokenType::Star,
+                TokenType::Keyword(From),
+                TokenType::Id("orders"),
+                TokenType::Semi,
+            ],
+        )
     }
 }

@@ -18,94 +18,102 @@ use sql_parser::{Keyword, TokenType};
 /// combination of upper and lower case letters as the keyword token ABORT.
 #[test]
 fn test_H41503() {
-    run_sunny_day_test(
-        "abort ABORT aBoRt AbOrT",
-        vec![TokenType::Keyword(Keyword::Abort); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Abort); 4];
+    expected_tokens.push(TokenType::Semi);
+
+    run_sunny_day_test("abort ABORT aBoRt AbOrT", expected_tokens);
 }
 
 /// H41506  SQLite shall recognize the 3-character sequenence "ADD" in any
 /// combination of upper and lower case letters as the keyword token ADD.
 #[test]
 fn test_H41506() {
-    run_sunny_day_test("add ADD aDd AdD", vec![TokenType::Keyword(Keyword::Add); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Add); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("add ADD aDd AdD", expected_tokens);
 }
 
 /// H41509  SQLite shall recognize the 5-character sequenence "AFTER" in any
 /// combination of upper and lower case letters as the keyword token AFTER.
 #[test]
 fn test_H41509() {
-    run_sunny_day_test(
-        "after AFTER aFtEr AfTeR",
-        vec![TokenType::Keyword(Keyword::After); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::After); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("after AFTER aFtEr AfTeR", expected_tokens);
 }
 
 /// H41512  SQLite shall recognize the 3-character sequenence "ALL" in any
 /// combination of upper and lower case letters as the keyword token ALL.
 #[test]
 fn test_H41512() {
-    run_sunny_day_test("all ALL AlL aLL", vec![TokenType::Keyword(Keyword::All); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::All); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("all ALL AlL aLL", expected_tokens);
 }
 
 /// H41515  SQLite shall recognize the 5-character sequenence "ALTER" in any
 /// combination of upper and lower case letters as the keyword token ALTER.
 #[test]
 fn test_H41515() {
-    run_sunny_day_test(
-        "alter ALTER aLtEr AlTeR",
-        vec![TokenType::Keyword(Keyword::Alter); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Alter); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("alter ALTER aLtEr AlTeR", expected_tokens);
 }
 
 /// H41518  SQLite shall recognize the 7-character sequenence "ANALYZE" in any
 /// combination of upper and lower case letters as the keyword token ANALYZE.
 #[test]
 fn test_H41518() {
-    run_sunny_day_test(
-        "analyze ANALYZE aNaLyZe AnAlYzE",
-        vec![TokenType::Keyword(Keyword::Analyze); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Analyze); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("analyze ANALYZE aNaLyZe AnAlYzE", expected_tokens);
 }
 
 /// H41521  SQLite shall recognize the 3-character sequenence "AND" in any
 /// combination of upper and lower case letters as the keyword token AND.
 #[test]
 fn test_H41521() {
-    run_sunny_day_test("and AND AnD aNd", vec![TokenType::Keyword(Keyword::And); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::And); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("and AND AnD aNd", expected_tokens);
 }
 
 /// H41524  SQLite shall recognize the 2-character sequenence "AS" in any
 /// combination of upper and lower case letters as the keyword token AS.
 #[test]
 fn test_H41524() {
-    run_sunny_day_test("as AS aS As", vec![TokenType::Keyword(Keyword::As); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::As); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("as AS aS As", expected_tokens);
 }
 
 /// H41527  SQLite shall recognize the 3-character sequenence "ASC" in any
 /// combination of upper and lower case letters as the keyword token ASC.
 #[test]
 fn test_H41527() {
-    run_sunny_day_test("asc ASC aSc AsC", vec![TokenType::Keyword(Keyword::Asc); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Asc); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("asc ASC aSc AsC", expected_tokens);
 }
 
 /// H41530  SQLite shall recognize the 6-character sequenence "ATTACH" in any
 /// combination of upper and lower case letters as the keyword token ATTACH.
 #[test]
 fn test_H41530() {
-    run_sunny_day_test(
-        "attach ATTACH aTtAcH AtTaCh",
-        vec![TokenType::Keyword(Keyword::Attach); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Attach); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("attach ATTACH aTtAcH AtTaCh", expected_tokens);
 }
 
 /// H41533  SQLite shall recognize the 13-character sequenence "AUTOINCREMENT"
 /// in any combination of upper and lower case letters as the keyword token
 #[test]
 fn test_H41533() {
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Autoincrement); 4];
+    expected_tokens.push(TokenType::Semi);
     run_sunny_day_test(
         "autoincrement AUTOINCREMENT aUtOiNcReMeNt AuToInCrEmEnT",
-        vec![TokenType::Keyword(Keyword::Autoincrement); 4],
+        expected_tokens,
     );
 }
 
@@ -113,117 +121,108 @@ fn test_H41533() {
 /// combination of upper and lower case letters as the keyword token BEFORE.
 #[test]
 fn test_H41536() {
-    run_sunny_day_test(
-        "before BEFORE bEfOrE BeFoRe",
-        vec![TokenType::Keyword(Keyword::Before); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Before); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("before BEFORE bEfOrE BeFoRe", expected_tokens);
 }
 
 /// H41539  SQLite shall recognize the 5-character sequenence "BEGIN" in any
 /// combination of upper and lower case letters as the keyword token BEGIN.
 #[test]
 fn test_H41539() {
-    run_sunny_day_test(
-        "begin BEGIN BeGiN bEgIn",
-        vec![TokenType::Keyword(Keyword::Begin); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Begin); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("begin BEGIN BeGiN bEgIn", expected_tokens);
 }
 
 /// H41542  SQLite shall recognize the 7-character sequenence "BETWEEN" in any
 /// combination of upper and lower case letters as the keyword token BETWEEN.
 #[test]
 fn test_H41542() {
-    run_sunny_day_test(
-        "between BETWEEN BeTwEeN bEtWeEn",
-        vec![TokenType::Keyword(Keyword::Between); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Between); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("between BETWEEN BeTwEeN bEtWeEn", expected_tokens);
 }
 
 /// H41545  SQLite shall recognize the 2-character sequenence "BY" in any
 /// combination of upper and lower case letters as the keyword token BY.
 #[test]
 fn test_H41545() {
-    run_sunny_day_test("by BY bY By", vec![TokenType::Keyword(Keyword::By); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::By); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("by BY bY By", expected_tokens);
 }
 
 /// H41548  SQLite shall recognize the 7-character sequenence "CASCADE" in any
 /// combination of upper and lower case letters as the keyword token CASCADE.
 #[test]
 fn test_H41548() {
-    run_sunny_day_test(
-        "cascade CASCADE CaScAdE CaScAdE",
-        vec![TokenType::Keyword(Keyword::Cascade); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Cascade); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("cascade CASCADE CaScAdE CaScAdE", expected_tokens);
 }
 
 /// H41551  SQLite shall recognize the 4-character sequenence "CASE" in any
 /// combination of upper and lower case letters as the keyword token CASE.
 #[test]
 fn test_H41551() {
-    run_sunny_day_test(
-        "case CASE CaSe CaSe",
-        vec![TokenType::Keyword(Keyword::Case); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Case); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("case CASE CaSe CaSe", expected_tokens);
 }
 
 /// H41554  SQLite shall recognize the 4-character sequenence "CAST" in any
 /// combination of upper and lower case letters as the keyword token CAST.
 #[test]
 fn test_H41554() {
-    run_sunny_day_test(
-        "cast CAST CaSt CaSt",
-        vec![TokenType::Keyword(Keyword::Cast); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Cast); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("cast CAST CaSt CaSt", expected_tokens);
 }
 
 /// H41557  SQLite shall recognize the 5-character sequenence "CHECK" in any
 /// combination of upper and lower case letters as the keyword token CHECK.
 #[test]
 fn test_H41557() {
-    run_sunny_day_test(
-        "check CHECK ChEcK ChEcK",
-        vec![TokenType::Keyword(Keyword::Check); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Check); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("check CHECK ChEcK ChEcK", expected_tokens);
 }
 
 /// H41560  SQLite shall recognize the 7-character sequenence "COLLATE" in any
 /// combination of upper and lower case letters as the keyword token COLLATE.
 #[test]
 fn test_H41560() {
-    run_sunny_day_test(
-        "collate COLLATE CoLlAtE CoLlAtE",
-        vec![TokenType::Keyword(Keyword::Collate); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Collate); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("collate COLLATE CoLlAtE CoLlAtE", expected_tokens);
 }
 
 /// H41563  SQLite shall recognize the 6-character sequenence "COLUMN" in any
 /// combination of upper and lower case letters as the keyword token COLUMNKW.
 #[test]
 fn test_H41563() {
-    run_sunny_day_test(
-        "column COLUMN CoLuMn CoLuMn",
-        vec![TokenType::Keyword(Keyword::Column); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Column); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("column COLUMN CoLuMn CoLuMn", expected_tokens);
 }
 
 /// H41566  SQLite shall recognize the 6-character sequenence "COMMIT" in any
 /// combination of upper and lower case letters as the keyword token COMMIT.
 #[test]
 fn test_H41566() {
-    run_sunny_day_test(
-        "commit COMMIT CoMmIt CoMmIt",
-        vec![TokenType::Keyword(Keyword::Commit); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Commit); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("commit COMMIT CoMmIt CoMmIt", expected_tokens);
 }
 
 /// H41569  SQLite shall recognize the 8-character sequenence "CONFLICT" in any
 /// combination of upper and lower case letters as the keyword token CONFLICT.
 #[test]
 fn test_H41569() {
-    run_sunny_day_test(
-        "conflict CONFLICT CoNfLiCt CoNfLiCt",
-        vec![TokenType::Keyword(Keyword::Conflict); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Conflict); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("conflict CONFLICT CoNfLiCt CoNfLiCt", expected_tokens);
 }
 
 /// H41572  SQLite shall recognize the 10-character sequenence "CONSTRAINT" in
@@ -231,9 +230,11 @@ fn test_H41569() {
 /// CONSTRAINT.
 #[test]
 fn test_H41572() {
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Constraint); 4];
+    expected_tokens.push(TokenType::Semi);
     run_sunny_day_test(
         "constraint CONSTRAINT CoNsTrAiNt CoNsTrAiNt",
-        vec![TokenType::Keyword(Keyword::Constraint); 4],
+        expected_tokens,
     );
 }
 
@@ -241,20 +242,18 @@ fn test_H41572() {
 /// combination of upper and lower case letters as the keyword token CREATE.
 #[test]
 fn test_H41575() {
-    run_sunny_day_test(
-        "create CREATE CrEaTe CrEaTe",
-        vec![TokenType::Keyword(Keyword::Create); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Create); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("create CREATE CrEaTe CrEaTe", expected_tokens);
 }
 
 /// H41578  SQLite shall recognize the 5-character sequenence "CROSS" in any
 /// combination of upper and lower case letters as the keyword token JOIN_KW.
 #[test]
 fn test_H41578() {
-    run_sunny_day_test(
-        "cross CROSS CrOsS CrOsS",
-        vec![TokenType::Keyword(Keyword::Cross); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Cross); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("cross CROSS CrOsS CrOsS", expected_tokens);
 }
 
 /// H41581  SQLite shall recognize the 12-character sequenence "CURRENT_DATE"
@@ -262,9 +261,11 @@ fn test_H41578() {
 /// CTIME_KW.
 #[test]
 fn test_H41581() {
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::CurrentDate); 4];
+    expected_tokens.push(TokenType::Semi);
     run_sunny_day_test(
         "current_date CURRENT_DATE CuRrEnT_DaTe CuRrEnT_DaTe",
-        vec![TokenType::Keyword(Keyword::CurrentDate); 4],
+        expected_tokens,
     );
 }
 
@@ -273,9 +274,11 @@ fn test_H41581() {
 /// CTIME_KW.
 #[test]
 fn test_H41584() {
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::CurrentTime); 4];
+    expected_tokens.push(TokenType::Semi);
     run_sunny_day_test(
         "current_time CURRENT_TIME CuRrEnT_TiMe CuRrEnT_TiMe",
-        vec![TokenType::Keyword(Keyword::CurrentTime); 4],
+        expected_tokens,
     );
 }
 
@@ -284,9 +287,11 @@ fn test_H41584() {
 /// the keyword token CTIME_KW.
 #[test]
 fn test_H41587() {
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::CurrentTimestamp); 4];
+    expected_tokens.push(TokenType::Semi);
     run_sunny_day_test(
         "current_timestamp CURRENT_TIMESTAMP CuRrEnT_TiMeStAmP CuRrEnT_TiMeStAmP",
-        vec![TokenType::Keyword(Keyword::CurrentTimestamp); 4],
+        expected_tokens,
     );
 }
 
@@ -294,30 +299,27 @@ fn test_H41587() {
 /// combination of upper and lower case letters as the keyword token DATABASE.
 #[test]
 fn test_H41590() {
-    run_sunny_day_test(
-        "database DATABASE DaTaBaSe DaTaBaSe",
-        vec![TokenType::Keyword(Keyword::Database); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Database); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("database DATABASE DaTaBaSe DaTaBaSe", expected_tokens);
 }
 
 /// H41593  SQLite shall recognize the 7-character sequenence "DEFAULT" in any
 /// combination of upper and lower case letters as the keyword token DEFAULT.
 #[test]
 fn test_H41593() {
-    run_sunny_day_test(
-        "default DEFAULT DeFaUlT DeFaUlT",
-        vec![TokenType::Keyword(Keyword::Default); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Default); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("default DEFAULT DeFaUlT DeFaUlT", expected_tokens);
 }
 
 /// H41596  SQLite shall recognize the 8-character sequenence "DEFERRED" in any
 /// combination of upper and lower case letters as the keyword token DEFERRED.
 #[test]
 fn test_H41596() {
-    run_sunny_day_test(
-        "deferred DEFERRED DeFeRrEd DeFeRrEd",
-        vec![TokenType::Keyword(Keyword::Deferred); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Deferred); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("deferred DEFERRED DeFeRrEd DeFeRrEd", expected_tokens);
 }
 
 /// H41599  SQLite shall recognize the 10-character sequenence "DEFERRABLE"
@@ -325,9 +327,11 @@ fn test_H41596() {
 /// DEFERRABLE.
 #[test]
 fn test_H41599() {
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Deferrable); 4];
+    expected_tokens.push(TokenType::Semi);
     run_sunny_day_test(
         "deferrable DEFERRABLE DeFeRrAbLe DeFeRrAbLe",
-        vec![TokenType::Keyword(Keyword::Deferrable); 4],
+        expected_tokens,
     );
 }
 
@@ -335,97 +339,90 @@ fn test_H41599() {
 /// combination of upper and lower case letters as the keyword token DELETE.
 #[test]
 fn test_H41602() {
-    run_sunny_day_test(
-        "delete DELETE DeLeTe DeLeTe",
-        vec![TokenType::Keyword(Keyword::Delete); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Delete); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("delete DELETE DeLeTe DeLeTe", expected_tokens);
 }
 
 /// H41605  SQLite shall recognize the 4-character sequenence "DESC" in any
 /// combination of upper and lower case letters as the keyword token DESC.
 #[test]
 fn test_H41605() {
-    run_sunny_day_test(
-        "desc DESC DeSc DeSc",
-        vec![TokenType::Keyword(Keyword::Desc); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Desc); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("desc DESC DeSc DeSc", expected_tokens);
 }
 
 /// H41608  SQLite shall recognize the 6-character sequenence "DETACH" in any
 /// combination of upper and lower case letters as the keyword token DETACH.
 #[test]
 fn test_H41608() {
-    run_sunny_day_test(
-        "detach DETACH DeTaCh DeTaCh",
-        vec![TokenType::Keyword(Keyword::Detach); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Detach); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("detach DETACH DeTaCh DeTaCh", expected_tokens);
 }
 
 /// H41611  SQLite shall recognize the 8-character sequenence "DISTINCT" in any
 /// combination of upper and lower case letters as the keyword token DISTINCT.
 #[test]
 fn test_H41611() {
-    run_sunny_day_test(
-        "distinct DISTINCT DiStInCt DiStInCt",
-        vec![TokenType::Keyword(Keyword::Distinct); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Distinct); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("distinct DISTINCT DiStInCt DiStInCt", expected_tokens);
 }
 
 /// H41614  SQLite shall recognize the 4-character sequenence "DROP" in any
 /// combination of upper and lower case letters as the keyword token DROP.
 #[test]
 fn test_H41614() {
-    run_sunny_day_test(
-        "drop DROP DrOp DrOp",
-        vec![TokenType::Keyword(Keyword::Drop); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Drop); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("drop DROP DrOp DrOp", expected_tokens);
 }
 
 /// H41617  SQLite shall recognize the 3-character sequenence "END" in any
 /// combination of upper and lower case letters as the keyword token END.
 #[test]
 fn test_H41617() {
-    run_sunny_day_test("end END EnD EnD", vec![TokenType::Keyword(Keyword::End); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::End); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("end END EnD EnD", expected_tokens);
 }
 
 /// H41620  SQLite shall recognize the 4-character sequenence "EACH" in any
 /// combination of upper and lower case letters as the keyword token EACH.
 #[test]
 fn test_H41620() {
-    run_sunny_day_test(
-        "each EACH EaCh EaCh",
-        vec![TokenType::Keyword(Keyword::Each); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Each); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("each EACH EaCh EaCh", expected_tokens);
 }
 
 /// H41623  SQLite shall recognize the 4-character sequenence "ELSE" in any
 /// combination of upper and lower case letters as the keyword token ELSE.
 #[test]
 fn test_H41623() {
-    run_sunny_day_test(
-        "else ELSE ElSe ElSe",
-        vec![TokenType::Keyword(Keyword::Else); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Else); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("else ELSE ElSe ElSe", expected_tokens);
 }
 
 /// H41626  SQLite shall recognize the 6-character sequenence "ESCAPE" in any
 /// combination of upper and lower case letters as the keyword token ESCAPE.
 #[test]
 fn test_H41626() {
-    run_sunny_day_test(
-        "escape ESCAPE EsCaPe EsCaPe",
-        vec![TokenType::Keyword(Keyword::Escape); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Escape); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("escape ESCAPE EsCaPe EsCaPe", expected_tokens);
 }
 
 /// H41629  SQLite shall recognize the 6-character sequenence "EXCEPT" in any
 /// combination of upper and lower case letters as the keyword token EXCEPT.
 #[test]
 fn test_H41629() {
-    run_sunny_day_test(
-        "except EXCEPT ExCePt ExCePt",
-        vec![TokenType::Keyword(Keyword::Except); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Except); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("except EXCEPT ExCePt ExCePt", expected_tokens);
 }
 
 /// H41632  SQLite shall recognize the 9-character sequenence "EXCLUSIVE" in
@@ -433,124 +430,117 @@ fn test_H41629() {
 /// EXCLUSIVE.
 #[test]
 fn test_H41632() {
-    run_sunny_day_test(
-        "exclusive EXCLUSIVE ExClUsIvE ExClUsIvE",
-        vec![TokenType::Keyword(Keyword::Exclusive); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Exclusive); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("exclusive EXCLUSIVE ExClUsIvE ExClUsIvE", expected_tokens);
 }
 
 /// H41635  SQLite shall recognize the 6-character sequenence "EXISTS" in any
 /// combination of upper and lower case letters as the keyword token EXISTS.
 #[test]
 fn test_H41635() {
-    run_sunny_day_test(
-        "exists EXISTS ExIsTs ExIsTs",
-        vec![TokenType::Keyword(Keyword::Exists); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Exists); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("exists EXISTS ExIsTs ExIsTs", expected_tokens);
 }
 
 /// H41638  SQLite shall recognize the 7-character sequenence "EXPLAIN" in any
 /// combination of upper and lower case letters as the keyword token EXPLAIN.
 #[test]
 fn test_H41638() {
-    run_sunny_day_test(
-        "explain EXPLAIN ExPlAiN ExPlAiN",
-        vec![TokenType::Keyword(Keyword::Explain); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Explain); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("explain EXPLAIN ExPlAiN ExPlAiN", expected_tokens);
 }
 
 /// H41641  SQLite shall recognize the 4-character sequenence "FAIL" in any
 /// combination of upper and lower case letters as the keyword token FAIL.
 #[test]
 fn test_H41641() {
-    run_sunny_day_test(
-        "fail FAIL FaIl FaIl",
-        vec![TokenType::Keyword(Keyword::Fail); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Fail); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("fail FAIL FaIl FaIl", expected_tokens);
 }
 
 /// H41644  SQLite shall recognize the 3-character sequenence "FOR" in any
 /// combination of upper and lower case letters as the keyword token FOR.
 #[test]
 fn test_H41644() {
-    run_sunny_day_test("for FOR FoR FoR", vec![TokenType::Keyword(Keyword::For); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::For); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("for FOR FoR FoR", expected_tokens);
 }
 
 /// H41647  SQLite shall recognize the 7-character sequenence "FOREIGN" in any
 /// combination of upper and lower case letters as the keyword token FOREIGN.
 #[test]
 fn test_H41647() {
-    run_sunny_day_test(
-        "foreign FOREIGN FoReIgN FoReIgN",
-        vec![TokenType::Keyword(Keyword::Foreign); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Foreign); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("foreign FOREIGN FoReIgN FoReIgN", expected_tokens);
 }
 
 /// H41650  SQLite shall recognize the 4-character sequenence "FROM" in any
 /// combination of upper and lower case letters as the keyword token FROM.
 #[test]
 fn test_H41650() {
-    run_sunny_day_test(
-        "from FROM FrOm FrOm",
-        vec![TokenType::Keyword(Keyword::From); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::From); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("from FROM FrOm FrOm", expected_tokens);
 }
 
 /// H41653  SQLite shall recognize the 4-character sequenence "FULL" in any
 /// combination of upper and lower case letters as the keyword token JOIN_KW.
 #[test]
 fn test_H41653() {
-    run_sunny_day_test(
-        "full FULL FuLl FuLl",
-        vec![TokenType::Keyword(Keyword::Full); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Full); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("full FULL FuLl FuLl", expected_tokens);
 }
 
 /// H41656  SQLite shall recognize the 4-character sequenence "GLOB" in any
 /// combination of upper and lower case letters as the keyword token LIKE_KW.
 #[test]
 fn test_H41656() {
-    run_sunny_day_test(
-        "glob GLOB GlOb GlOb",
-        vec![TokenType::Keyword(Keyword::Glob); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Glob); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("glob GLOB GlOb GlOb", expected_tokens);
 }
 
 /// H41659  SQLite shall recognize the 5-character sequenence "GROUP" in any
 /// combination of upper and lower case letters as the keyword token GROUP.
 #[test]
 fn test_H41659() {
-    run_sunny_day_test(
-        "group GROUP GrOuP GrOuP",
-        vec![TokenType::Keyword(Keyword::Group); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Group); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("group GROUP GrOuP GrOuP", expected_tokens);
 }
 
 /// H41662  SQLite shall recognize the 6-character sequenence "HAVING" in any
 /// combination of upper and lower case letters as the keyword token HAVING.
 #[test]
 fn test_H41662() {
-    run_sunny_day_test(
-        "having HAVING HaViNg HaViNg",
-        vec![TokenType::Keyword(Keyword::Having); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Having); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("having HAVING HaViNg HaViNg", expected_tokens);
 }
 
 /// H41665  SQLite shall recognize the 2-character sequenence "IF" in any
 /// combination of upper and lower case letters as the keyword token IF.
 #[test]
 fn test_H41665() {
-    run_sunny_day_test("if IF If If", vec![TokenType::Keyword(Keyword::If); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::If); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("if IF If If", expected_tokens);
 }
 
 /// H41668  SQLite shall recognize the 6-character sequenence "IGNORE" in any
 /// combination of upper and lower case letters as the keyword token IGNORE.
 #[test]
 fn test_H41668() {
-    run_sunny_day_test(
-        "ignore IGNORE IgNoRe IgNoRe",
-        vec![TokenType::Keyword(Keyword::Ignore); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Ignore); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("ignore IGNORE IgNoRe IgNoRe", expected_tokens);
 }
 
 /// H41671  SQLite shall recognize the 9-character sequenence "IMMEDIATE" in
@@ -558,27 +548,27 @@ fn test_H41668() {
 /// IMMEDIATE.
 #[test]
 fn test_H41671() {
-    run_sunny_day_test(
-        "immediate IMMEDIATE ImMeDiAtE ImMeDiAtE",
-        vec![TokenType::Keyword(Keyword::Immediate); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Immediate); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("immediate IMMEDIATE ImMeDiAtE ImMeDiAtE", expected_tokens);
 }
 
 /// H41674  SQLite shall recognize the 2-character sequenence "IN" in any
 /// combination of upper and lower case letters as the keyword token IN.
 #[test]
 fn test_H41674() {
-    run_sunny_day_test("in IN In In", vec![TokenType::Keyword(Keyword::In); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::In); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("in IN In In", expected_tokens);
 }
 
 /// H41677  SQLite shall recognize the 5-character sequenence "INDEX" in any
 /// combination of upper and lower case letters as the keyword token INDEX.
 #[test]
 fn test_H41677() {
-    run_sunny_day_test(
-        "index INDEX InDeX InDeX",
-        vec![TokenType::Keyword(Keyword::Index); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Index); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("index INDEX InDeX InDeX", expected_tokens);
 }
 
 /// H41680  SQLite shall recognize the 9-character sequenence "INITIALLY" in
@@ -586,40 +576,36 @@ fn test_H41677() {
 /// INITIALLY.
 #[test]
 fn test_H41680() {
-    run_sunny_day_test(
-        "initially INITIALLY InItIaLlY InItIaLlY",
-        vec![TokenType::Keyword(Keyword::Initially); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Initially); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("initially INITIALLY InItIaLlY InItIaLlY", expected_tokens);
 }
 
 /// H41683  SQLite shall recognize the 5-character sequenence "INNER" in any
 /// combination of upper and lower case letters as the keyword token JOIN_KW.
 #[test]
 fn test_H41683() {
-    run_sunny_day_test(
-        "inner INNER InNeR InNeR",
-        vec![TokenType::Keyword(Keyword::Inner); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Inner); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("inner INNER InNeR InNeR", expected_tokens);
 }
 
 /// H41686  SQLite shall recognize the 6-character sequenence "INSERT" in any
 /// combination of upper and lower case letters as the keyword token INSERT.
 #[test]
 fn test_H41686() {
-    run_sunny_day_test(
-        "insert INSERT InSeRt InSeRt",
-        vec![TokenType::Keyword(Keyword::Insert); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Insert); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("insert INSERT InSeRt InSeRt", expected_tokens);
 }
 
 /// H41689  SQLite shall recognize the 7-character sequenence "INSTEAD" in any
 /// combination of upper and lower case letters as the keyword token INSTEAD.
 #[test]
 fn test_H41689() {
-    run_sunny_day_test(
-        "instead INSTEAD InStEaD InStEaD",
-        vec![TokenType::Keyword(Keyword::Instead); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Instead); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("instead INSTEAD InStEaD InStEaD", expected_tokens);
 }
 
 /// H41692  SQLite shall recognize the 9-character sequenence "INTERSECT" in
@@ -627,232 +613,225 @@ fn test_H41689() {
 /// INTERSECT.
 #[test]
 fn test_H41692() {
-    run_sunny_day_test(
-        "intersect INTERSECT InTeRsEcT InTeRsEcT",
-        vec![TokenType::Keyword(Keyword::Intersect); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Intersect); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("intersect INTERSECT InTeRsEcT InTeRsEcT", expected_tokens);
 }
 
 /// H41695  SQLite shall recognize the 4-character sequenence "INTO" in any
 /// combination of upper and lower case letters as the keyword token INTO.
 #[test]
 fn test_H41695() {
-    run_sunny_day_test(
-        "into INTO InTo InTo",
-        vec![TokenType::Keyword(Keyword::Into); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Into); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("into INTO InTo InTo", expected_tokens);
 }
 
 /// H41698  SQLite shall recognize the 2-character sequenence "IS" in any
 /// combination of upper and lower case letters as the keyword token IS.
 #[test]
 fn test_H41698() {
-    run_sunny_day_test("is IS Is Is", vec![TokenType::Keyword(Keyword::Is); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Is); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("is IS Is Is", expected_tokens);
 }
 
 /// H41701  SQLite shall recognize the 6-character sequenence "ISNULL" in any
 /// combination of upper and lower case letters as the keyword token ISNULL.
 #[test]
 fn test_H41701() {
-    run_sunny_day_test(
-        "isnull ISNULL IsNuLl IsNuLl",
-        vec![TokenType::Keyword(Keyword::Isnull); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Isnull); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("isnull ISNULL IsNuLl IsNuLl", expected_tokens);
 }
 
 /// H41704  SQLite shall recognize the 4-character sequenence "JOIN" in any
 /// combination of upper and lower case letters as the keyword token JOIN.
 #[test]
 fn test_H41704() {
-    run_sunny_day_test(
-        "join JOIN JoIn JoIn",
-        vec![TokenType::Keyword(Keyword::Join); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Join); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("join JOIN JoIn JoIn", expected_tokens);
 }
 
 /// H41707  SQLite shall recognize the 3-character sequenence "KEY" in any
 /// combination of upper and lower case letters as the keyword token KEY.
 #[test]
 fn test_H41707() {
-    run_sunny_day_test("key KEY KeY KeY", vec![TokenType::Keyword(Keyword::Key); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Key); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("key KEY KeY KeY", expected_tokens);
 }
 
 /// H41710  SQLite shall recognize the 4-character sequenence "LEFT" in any
 /// combination of upper and lower case letters as the keyword token JOIN_KW.
 #[test]
 fn test_H41710() {
-    run_sunny_day_test(
-        "left LEFT LeFt LeFt",
-        vec![TokenType::Keyword(Keyword::Left); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Left); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("left LEFT LeFt LeFt", expected_tokens);
 }
 
 /// H41713  SQLite shall recognize the 4-character sequenence "LIKE" in any
 /// combination of upper and lower case letters as the keyword token LIKE_KW.
 #[test]
 fn test_H41713() {
-    run_sunny_day_test(
-        "like LIKE LiKe LiKe",
-        vec![TokenType::Keyword(Keyword::Like); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Like); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("like LIKE LiKe LiKe", expected_tokens);
 }
 
 /// H41716  SQLite shall recognize the 5-character sequenence "LIMIT" in any
 /// combination of upper and lower case letters as the keyword token LIMIT.
 #[test]
 fn test_H41716() {
-    run_sunny_day_test(
-        "limit LIMIT LiMiT LiMiT",
-        vec![TokenType::Keyword(Keyword::Limit); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Limit); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("limit LIMIT LiMiT LiMiT", expected_tokens);
 }
 
 /// H41719  SQLite shall recognize the 5-character sequenence "MATCH" in any
 /// combination of upper and lower case letters as the keyword token MATCH.
 #[test]
 fn test_H41719() {
-    run_sunny_day_test(
-        "match MATCH MaTcH MaTcH",
-        vec![TokenType::Keyword(Keyword::Match); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Match); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("match MATCH MaTcH MaTcH", expected_tokens);
 }
 
 /// H41722  SQLite shall recognize the 7-character sequenence "NATURAL" in any
 /// combination of upper and lower case letters as the keyword token JOIN_KW.
 #[test]
 fn test_H41722() {
-    run_sunny_day_test(
-        "natural NATURAL NaTuRaL NaTuRaL",
-        vec![TokenType::Keyword(Keyword::Natural); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Natural); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("natural NATURAL NaTuRaL NaTuRaL", expected_tokens);
 }
 
 /// H41725  SQLite shall recognize the 3-character sequenence "NOT" in any
 /// combination of upper and lower case letters as the keyword token NOT.
 #[test]
 fn test_H41725() {
-    run_sunny_day_test("not NOT NoT NoT", vec![TokenType::Keyword(Keyword::Not); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Not); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("not NOT NoT NoT", expected_tokens);
 }
 
 /// H41728  SQLite shall recognize the 7-character sequenence "NOTNULL" in any
 /// combination of upper and lower case letters as the keyword token NOTNULL.
 #[test]
 fn test_H41728() {
-    run_sunny_day_test(
-        "notnull NOTNULL NoTnUlL NoTnUlL",
-        vec![TokenType::Keyword(Keyword::Notnull); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Notnull); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("notnull NOTNULL NoTnUlL NoTnUlL", expected_tokens);
 }
 
 /// H41731  SQLite shall recognize the 4-character sequenence "NULL" in any
 /// combination of upper and lower case letters as the keyword token NULL.
 #[test]
 fn test_H41731() {
-    run_sunny_day_test(
-        "null NULL NuLl NuLl",
-        vec![TokenType::Keyword(Keyword::Null); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Null); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("null NULL NuLl NuLl", expected_tokens);
 }
 
 /// H41734  SQLite shall recognize the 2-character sequenence "OF" in any
 /// combination of upper and lower case letters as the keyword token OF.
 #[test]
 fn test_H41734() {
-    run_sunny_day_test("of OF Of Of", vec![TokenType::Keyword(Keyword::Of); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Of); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("of OF Of Of", expected_tokens);
 }
 
 /// H41737  SQLite shall recognize the 6-character sequenence "OFFSET" in any
 /// combination of upper and lower case letters as the keyword token OFFSET.
 #[test]
 fn test_H41737() {
-    run_sunny_day_test(
-        "offset OFFSET OfFsEt OfFsEt",
-        vec![TokenType::Keyword(Keyword::Offset); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Offset); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("offset OFFSET OfFsEt OfFsEt", expected_tokens);
 }
 
 /// H41740  SQLite shall recognize the 2-character sequenence "ON" in any
 /// combination of upper and lower case letters as the keyword token ON.
 #[test]
 fn test_H41740() {
-    run_sunny_day_test("on ON On On", vec![TokenType::Keyword(Keyword::On); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::On); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("on ON On On", expected_tokens);
 }
 
 /// H41743  SQLite shall recognize the 2-character sequenence "OR" in any
 /// combination of upper and lower case letters as the keyword token OR.
 #[test]
 fn test_H41743() {
-    run_sunny_day_test("or OR Or Or", vec![TokenType::Keyword(Keyword::Or); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Or); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("or OR Or Or", expected_tokens);
 }
 
 /// H41746  SQLite shall recognize the 5-character sequenence "ORDER" in any
 /// combination of upper and lower case letters as the keyword token ORDER.
 #[test]
 fn test_H41746() {
-    run_sunny_day_test(
-        "order ORDER OrDeR OrDeR",
-        vec![TokenType::Keyword(Keyword::Order); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Order); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("order ORDER OrDeR OrDeR", expected_tokens);
 }
 
 /// H41749  SQLite shall recognize the 5-character sequenence "OUTER" in any
 /// combination of upper and lower case letters as the keyword token JOIN_KW.
 #[test]
 fn test_H41749() {
-    run_sunny_day_test(
-        "outer OUTER OuTeR OuTeR",
-        vec![TokenType::Keyword(Keyword::Outer); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Outer); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("outer OUTER OuTeR OuTeR", expected_tokens);
 }
 
 /// H41752  SQLite shall recognize the 4-character sequenence "PLAN" in any
 /// combination of upper and lower case letters as the keyword token PLAN.
 #[test]
 fn test_H41752() {
-    run_sunny_day_test(
-        "plan PLAN PlAn PlAn",
-        vec![TokenType::Keyword(Keyword::Plan); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Plan); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("plan PLAN PlAn PlAn", expected_tokens);
 }
 
 /// H41755  SQLite shall recognize the 6-character sequenence "PRAGMA" in any
 /// combination of upper and lower case letters as the keyword token PRAGMA.
 #[test]
 fn test_H41755() {
-    run_sunny_day_test(
-        "pragma PRAGMA PrAgMa PrAgMa",
-        vec![TokenType::Keyword(Keyword::Pragma); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Pragma); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("pragma PRAGMA PrAgMa PrAgMa", expected_tokens);
 }
 
 /// H41758  SQLite shall recognize the 7-character sequenence "PRIMARY" in any
 /// combination of upper and lower case letters as the keyword token PRIMARY.
 #[test]
 fn test_H41758() {
-    run_sunny_day_test(
-        "primary PRIMARY PrImArY PrImArY",
-        vec![TokenType::Keyword(Keyword::Primary); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Primary); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("primary PRIMARY PrImArY PrImArY", expected_tokens);
 }
 
 /// H41761  SQLite shall recognize the 5-character sequenence "QUERY" in any
 /// combination of upper and lower case letters as the keyword token QUERY.
 #[test]
 fn test_H41761() {
-    run_sunny_day_test(
-        "query QUERY QuErY QuErY",
-        vec![TokenType::Keyword(Keyword::Query); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Query); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("query QUERY QuErY QuErY", expected_tokens);
 }
 
 /// H41764  SQLite shall recognize the 5-character sequenence "RAISE" in any
 /// combination of upper and lower case letters as the keyword token RAISE.
 #[test]
 fn test_H41764() {
-    run_sunny_day_test(
-        "raise RAISE RaIsE RaIsE",
-        vec![TokenType::Keyword(Keyword::Raise); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Raise); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("raise RAISE RaIsE RaIsE", expected_tokens);
 }
 
 /// H41767  SQLite shall recognize the 10-character sequenence "REFERENCES" in
@@ -860,9 +839,11 @@ fn test_H41764() {
 /// REFERENCES.
 #[test]
 fn test_H41767() {
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::References); 4];
+    expected_tokens.push(TokenType::Semi);
     run_sunny_day_test(
         "references REFERENCES ReFeReNcEs ReFeReNcEs",
-        vec![TokenType::Keyword(Keyword::References); 4],
+        expected_tokens,
     );
 }
 
@@ -870,141 +851,135 @@ fn test_H41767() {
 /// combination of upper and lower case letters as the keyword token LIKE_KW.
 #[test]
 fn test_H41770() {
-    run_sunny_day_test(
-        "regexp REGEXP ReGeXp ReGeXp",
-        vec![TokenType::Keyword(Keyword::Regexp); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Regexp); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("regexp REGEXP ReGeXp ReGeXp", expected_tokens);
 }
 
 /// H41773  SQLite shall recognize the 7-character sequenence "REINDEX" in any
 /// combination of upper and lower case letters as the keyword token REINDEX.
 #[test]
 fn test_H41773() {
-    run_sunny_day_test(
-        "reindex REINDEX ReInDeX ReInDeX",
-        vec![TokenType::Keyword(Keyword::Reindex); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Reindex); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("reindex REINDEX ReInDeX ReInDeX", expected_tokens);
 }
 
 /// H41776  SQLite shall recognize the 6-character sequenence "RENAME" in any
 /// combination of upper and lower case letters as the keyword token RENAME.
 #[test]
 fn test_H41776() {
-    run_sunny_day_test(
-        "rename RENAME ReNaMe ReNaMe",
-        vec![TokenType::Keyword(Keyword::Rename); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Rename); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("rename RENAME ReNaMe ReNaMe", expected_tokens);
 }
 
 /// H41779  SQLite shall recognize the 7-character sequenence "REPLACE" in any
 /// combination of upper and lower case letters as the keyword token REPLACE.
 #[test]
 fn test_H41779() {
-    run_sunny_day_test(
-        "replace REPLACE RePlAcE RePlAcE",
-        vec![TokenType::Keyword(Keyword::Replace); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Replace); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("replace REPLACE RePlAcE RePlAcE", expected_tokens);
 }
 
 /// H41782  SQLite shall recognize the 8-character sequenence "RESTRICT" in any
 /// combination of upper and lower case letters as the keyword token RESTRICT.
 #[test]
 fn test_H41782() {
-    run_sunny_day_test(
-        "restrict RESTRICT ReStRiCt ReStRiCt",
-        vec![TokenType::Keyword(Keyword::Restrict); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Restrict); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("restrict RESTRICT ReStRiCt ReStRiCt", expected_tokens);
 }
 
 /// H41785  SQLite shall recognize the 5-character sequenence "RIGHT" in any
 /// combination of upper and lower case letters as the keyword token JOIN_KW.
 #[test]
 fn test_H41785() {
-    run_sunny_day_test(
-        "right RIGHT RiGhT RiGhT",
-        vec![TokenType::Keyword(Keyword::Right); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Right); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("right RIGHT RiGhT RiGhT", expected_tokens);
 }
 
 /// H41788  SQLite shall recognize the 8-character sequenence "ROLLBACK" in any
 /// combination of upper and lower case letters as the keyword token ROLLBACK.
 #[test]
 fn test_H41788() {
-    run_sunny_day_test(
-        "rollback ROLLBACK RoLlBaCk RoLlBaCk",
-        vec![TokenType::Keyword(Keyword::Rollback); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Rollback); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("rollback ROLLBACK RoLlBaCk RoLlBaCk", expected_tokens);
 }
 
 /// H41791  SQLite shall recognize the 3-character sequenence "ROW" in any
 /// combination of upper and lower case letters as the keyword token ROW.
 #[test]
 fn test_H41791() {
-    run_sunny_day_test("row ROW RoW RoW", vec![TokenType::Keyword(Keyword::Row); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Row); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("row ROW RoW RoW", expected_tokens);
 }
 
 /// H41794  SQLite shall recognize the 6-character sequenence "SELECT" in any
 /// combination of upper and lower case letters as the keyword token SELECT.
 #[test]
 fn test_H41794() {
-    run_sunny_day_test(
-        "select SELECT SeLeCt SeLeCt",
-        vec![TokenType::Keyword(Keyword::Select); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Select); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("select SELECT SeLeCt SeLeCt", expected_tokens);
 }
 
 /// H41797  SQLite shall recognize the 3-character sequenence "SET" in any
 /// combination of upper and lower case letters as the keyword token SET.
 #[test]
 fn test_H41797() {
-    run_sunny_day_test("set SET SeT SeT", vec![TokenType::Keyword(Keyword::Set); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Set); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("set SET SeT SeT", expected_tokens);
 }
 
 /// H41800  SQLite shall recognize the 5-character sequenence "TABLE" in any
 /// combination of upper and lower case letters as the keyword token TABLE.
 #[test]
 fn test_H41800() {
-    run_sunny_day_test(
-        "table TABLE TaBlE TaBlE",
-        vec![TokenType::Keyword(Keyword::Table); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Table); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("table TABLE TaBlE TaBlE", expected_tokens);
 }
 
 /// H41803  SQLite shall recognize the 4-character sequenence "TEMP" in any
 /// combination of upper and lower case letters as the keyword token TEMP.
 #[test]
 fn test_H41803() {
-    run_sunny_day_test(
-        "temp TEMP TeMp TeMp",
-        vec![TokenType::Keyword(Keyword::Temp); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Temp); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("temp TEMP TeMp TeMp", expected_tokens);
 }
 
 /// H41806  SQLite shall recognize the 9-character sequenence "TEMPORARY" in any
 /// combination of upper and lower case letters as the keyword token TEMP.
 #[test]
 fn test_H41806() {
-    run_sunny_day_test(
-        "temporary TEMPORARY TeMpOrArY TeMpOrArY",
-        vec![TokenType::Keyword(Keyword::Temporary); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Temporary); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("temporary TEMPORARY TeMpOrArY TeMpOrArY", expected_tokens);
 }
 
 /// H41809  SQLite shall recognize the 4-character sequenence "THEN" in any
 /// combination of upper and lower case letters as the keyword token THEN.
 #[test]
 fn test_H41809() {
-    run_sunny_day_test(
-        "then THEN ThEn ThEn",
-        vec![TokenType::Keyword(Keyword::Then); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Then); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("then THEN ThEn ThEn", expected_tokens);
 }
 
 /// H41812  SQLite shall recognize the 2-character sequenence "TO" in any
 /// combination of upper and lower case letters as the keyword token TO.
 #[test]
 fn test_H41812() {
-    run_sunny_day_test("to TO To To", vec![TokenType::Keyword(Keyword::To); 4]);
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::To); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("to TO To To", expected_tokens);
 }
 
 /// H41815  SQLite shall recognize the 11-character sequenence "TRANSACTION"
@@ -1012,9 +987,11 @@ fn test_H41812() {
 /// TRANSACTION.
 #[test]
 fn test_H41815() {
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Transaction); 4];
+    expected_tokens.push(TokenType::Semi);
     run_sunny_day_test(
         "transaction TRANSACTION TrAnSaCtIoN TrAnSaCtIoN",
-        vec![TokenType::Keyword(Keyword::Transaction); 4],
+        expected_tokens,
     );
 }
 
@@ -1022,108 +999,97 @@ fn test_H41815() {
 /// combination of upper and lower case letters as the keyword token TRIGGER.
 #[test]
 fn test_H41818() {
-    run_sunny_day_test(
-        "trigger TRIGGER TrIgGeR TrIgGeR",
-        vec![TokenType::Keyword(Keyword::Trigger); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Trigger); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("trigger TRIGGER TrIgGeR TrIgGeR", expected_tokens);
 }
 
 /// H41821  SQLite shall recognize the 5-character sequenence "UNION" in any
 /// combination of upper and lower case letters as the keyword token UNION.
 #[test]
 fn test_H41821() {
-    run_sunny_day_test(
-        "union UNION UnIoN UnIoN",
-        vec![TokenType::Keyword(Keyword::Union); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Union); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("union UNION UnIoN UnIoN", expected_tokens);
 }
 
 /// H41824  SQLite shall recognize the 6-character sequenence "UNIQUE" in any
 /// combination of upper and lower case letters as the keyword token UNIQUE.
 #[test]
 fn test_H41824() {
-    run_sunny_day_test(
-        "unique UNIQUE UnIqUe UnIqUe",
-        vec![TokenType::Keyword(Keyword::Unique); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Unique); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("unique UNIQUE UnIqUe UnIqUe", expected_tokens);
 }
 
 /// H41827  SQLite shall recognize the 6-character sequenence "UPDATE" in any
 /// combination of upper and lower case letters as the keyword token UPDATE.
 #[test]
 fn test_H41827() {
-    run_sunny_day_test(
-        "update UPDATE UpDaTe UpDaTe",
-        vec![TokenType::Keyword(Keyword::Update); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Update); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("update UPDATE UpDaTe UpDaTe", expected_tokens);
 }
 
 /// H41830  SQLite shall recognize the 5-character sequenence "USING" in any
 /// combination of upper and lower case letters as the keyword token USING.
 #[test]
 fn test_H41830() {
-    run_sunny_day_test(
-        "using USING UsInG UsInG",
-        vec![TokenType::Keyword(Keyword::Using); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Using); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("using USING UsInG UsInG", expected_tokens);
 }
 
 /// H41833  SQLite shall recognize the 6-character sequenence "VACUUM" in any
 /// combination of upper and lower case letters as the keyword token VACUUM.
 #[test]
 fn test_H41833() {
-    run_sunny_day_test(
-        "vacuum VACUUM VaCuUm VaCuUm",
-        vec![TokenType::Keyword(Keyword::Vacuum); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Vacuum); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("vacuum VACUUM VaCuUm VaCuUm", expected_tokens);
 }
 
 /// H41836  SQLite shall recognize the 6-character sequenence "VALUES" in any
 /// combination of upper and lower case letters as the keyword token VALUES.
 #[test]
 fn test_H41836() {
-    run_sunny_day_test(
-        "values VALUES VaLuEs VaLuEs",
-        vec![TokenType::Keyword(Keyword::Values); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Values); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("values VALUES VaLuEs VaLuEs", expected_tokens);
 }
 
 /// H41839  SQLite shall recognize the 4-character sequenence "VIEW" in any
 /// combination of upper and lower case letters as the keyword token VIEW.
 #[test]
 fn test_H41839() {
-    run_sunny_day_test(
-        "view VIEW ViEw ViEw",
-        vec![TokenType::Keyword(Keyword::View); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::View); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("view VIEW ViEw ViEw", expected_tokens);
 }
 
 /// H41842  SQLite shall recognize the 7-character sequenence "VIRTUAL" in any
 /// combination of upper and lower case letters as the keyword token VIRTUAL.
 #[test]
 fn test_H41842() {
-    run_sunny_day_test(
-        "virtual VIRTUAL ViRtUaL ViRtUaL",
-        vec![TokenType::Keyword(Keyword::Virtual); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Virtual); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("virtual VIRTUAL ViRtUaL ViRtUaL", expected_tokens);
 }
 
 /// H41845  SQLite shall recognize the 4-character sequenence "WHEN" in any
 /// combination of upper and lower case letters as the keyword token WHEN.
 #[test]
 fn test_H41845() {
-    run_sunny_day_test(
-        "when WHEN WhEn WhEn",
-        vec![TokenType::Keyword(Keyword::When); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::When); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("when WHEN WhEn WhEn", expected_tokens);
 }
 
 /// H41848  SQLite shall recognize the 5-character sequenence "WHERE" in any
 /// combination of upper and lower case letters as the keyword token WHERE.
 #[test]
 fn test_H41848() {
-    run_sunny_day_test(
-        "where WHERE WhErE WhErE",
-        vec![TokenType::Keyword(Keyword::Where); 4],
-    );
+    let mut expected_tokens = vec![TokenType::Keyword(Keyword::Where); 4];
+    expected_tokens.push(TokenType::Semi);
+    run_sunny_day_test("where WHERE WhErE WhErE", expected_tokens);
 }

@@ -22,48 +22,13 @@ use sql_parser::TokenizerError;
 #[test]
 fn test_H40310() {
     let valid_test_cases = vec![
+        ("?", vec![TokenType::Variable("?"), TokenType::Semi]),
+        ("?1;", vec![TokenType::Variable("?1"), TokenType::Semi]),
         (
-            "SELECT * FROM users WHERE id = ?;",
+            "(?0, ?2)",
             vec![
-                TokenType::Keyword(Select),
-                TokenType::Star,
-                TokenType::Keyword(From),
-                TokenType::Id("users"),
-                TokenType::Keyword(Where),
-                TokenType::Id("id"),
-                TokenType::Equals,
-                TokenType::Variable("?"),
-                TokenType::Semi,
-            ],
-        ),
-        (
-            "SELECT * FROM users WHERE name = ?1;",
-            vec![
-                TokenType::Keyword(Select),
-                TokenType::Star,
-                TokenType::Keyword(From),
-                TokenType::Id("users"),
-                TokenType::Keyword(Where),
-                TokenType::Id("name"),
-                TokenType::Equals,
-                TokenType::Variable("?1"),
-                TokenType::Semi,
-            ],
-        ),
-        (
-            "INSERT INTO users (id, name) VALUES (?, ?2);",
-            vec![
-                TokenType::Keyword(Insert),
-                TokenType::Keyword(Into),
-                TokenType::Id("users"),
                 TokenType::LeftParen,
-                TokenType::Id("id"),
-                TokenType::Comma,
-                TokenType::Id("name"),
-                TokenType::RightParen,
-                TokenType::Keyword(Values),
-                TokenType::LeftParen,
-                TokenType::Variable("?"),
+                TokenType::Variable("?0"),
                 TokenType::Comma,
                 TokenType::Variable("?2"),
                 TokenType::RightParen,
@@ -83,19 +48,6 @@ fn test_H40310() {
                 TokenType::Id("id"),
                 TokenType::Equals,
                 TokenType::Variable("?"),
-                TokenType::Semi,
-            ],
-        ),
-        (
-            "DELETE FROM users WHERE id = ?0;",
-            vec![
-                TokenType::Keyword(Delete),
-                TokenType::Keyword(From),
-                TokenType::Id("users"),
-                TokenType::Keyword(Where),
-                TokenType::Id("id"),
-                TokenType::Equals,
-                TokenType::Variable("?0"),
                 TokenType::Semi,
             ],
         ),
@@ -128,31 +80,12 @@ fn test_H40310_rainy_day_cases() {
 fn test_H40320() {
     let valid_test_cases = vec![
         (
-            "SELECT * FROM users WHERE name = @name;",
-            vec![
-                TokenType::Keyword(Select),
-                TokenType::Star,
-                TokenType::Keyword(From),
-                TokenType::Id("users"),
-                TokenType::Keyword(Where),
-                TokenType::Id("name"),
-                TokenType::Equals,
-                TokenType::Variable("@name"),
-                TokenType::Semi,
-            ],
+            "@name;",
+            vec![TokenType::Variable("@name"), TokenType::Semi],
         ),
         (
-            "INSERT INTO users (id, name) VALUES ($id, :name);",
+            "($id, :name);",
             vec![
-                TokenType::Keyword(Insert),
-                TokenType::Keyword(Into),
-                TokenType::Id("users"),
-                TokenType::LeftParen,
-                TokenType::Id("id"),
-                TokenType::Comma,
-                TokenType::Id("name"),
-                TokenType::RightParen,
-                TokenType::Keyword(Values),
                 TokenType::LeftParen,
                 TokenType::Variable("$id"),
                 TokenType::Comma,
@@ -162,7 +95,7 @@ fn test_H40320() {
             ],
         ),
         (
-            "UPDATE users SET age = @age WHERE id = $id;",
+            "UPDATE users SET age = @age WHERE id = $id and email = :email;",
             vec![
                 TokenType::Keyword(Update),
                 TokenType::Id("users"),
@@ -174,19 +107,10 @@ fn test_H40320() {
                 TokenType::Id("id"),
                 TokenType::Equals,
                 TokenType::Variable("$id"),
-                TokenType::Semi,
-            ],
-        ),
-        (
-            "DELETE FROM users WHERE id = :id;",
-            vec![
-                TokenType::Keyword(Delete),
-                TokenType::Keyword(From),
-                TokenType::Id("users"),
-                TokenType::Keyword(Where),
-                TokenType::Id("id"),
+                TokenType::Keyword(And),
+                TokenType::Id("email"),
                 TokenType::Equals,
-                TokenType::Variable(":id"),
+                TokenType::Variable(":email"),
                 TokenType::Semi,
             ],
         ),
@@ -200,30 +124,8 @@ fn test_H40320() {
 #[test]
 fn test_H40320_rainy_day() {
     let invalid_test_cases = vec![
-        (
-            "SELECT * FROM users WHERE name = @;",
-            vec![
-                TokenType::Keyword(Select),
-                TokenType::Star,
-                TokenType::Keyword(From),
-                TokenType::Id("users"),
-                TokenType::Keyword(Where),
-                TokenType::Id("name"),
-                TokenType::Equals,
-            ],
-        ),
-        (
-            "SELECT * FROM users WHERE name = $;",
-            vec![
-                TokenType::Keyword(Select),
-                TokenType::Star,
-                TokenType::Keyword(From),
-                TokenType::Id("users"),
-                TokenType::Keyword(Where),
-                TokenType::Id("name"),
-                TokenType::Equals,
-            ],
-        ),
+        ("@;", vec![]),
+        ("$;", vec![]),
         (
             "SELECT * FROM users WHERE name = : ;",
             vec![
