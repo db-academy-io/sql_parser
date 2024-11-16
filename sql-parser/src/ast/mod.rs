@@ -9,25 +9,25 @@ mod sqlite;
 mod trx;
 mod update;
 
-use alter::AlterTableStatement;
-use create::{
+pub use alter::AlterTableStatement;
+pub use create::{
     CreateIndexStatement, CreateTableStatement, CreateTriggerStatement, CreateViewStatement,
     CreateVirtualTableStatement,
 };
-use delete::DeleteStatement;
+pub use delete::DeleteStatement;
 pub use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
-use explain::ExplainStatement;
-use insert::InsertStatement;
-use select::SelectStatement;
-use sqlite::{
+pub use explain::ExplainStatement;
+pub use insert::InsertStatement;
+pub use select::SelectStatement;
+pub use sqlite::{
     AnalyzeStatement, AttachStatement, DetachStatement, PragmaStatement, ReindexStatement,
     VacuumStatement,
 };
-use trx::{
+pub use trx::{
     BeginTransactionStatement, CommitTransactionStatement, RollbackTransactionStatement,
     SavepointReleaseStatement, SavepointStatement,
 };
-use update::UpdateStatement;
+pub use update::UpdateStatement;
 
 /// Top-level AST node representing any SQLite statement
 #[derive(Debug, PartialEq)]

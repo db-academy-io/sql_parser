@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{Keyword, Token};
 
-/// The [ParsingError] enum represents the various types of errors that can
+/// The [TokenizerError] enum represents the various types of errors that can
 /// occur during the parsing of SQL input. Each variant corresponds to a
 /// specific parsing error that the parser might encounter.
 

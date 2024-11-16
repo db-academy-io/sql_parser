@@ -6,10 +6,12 @@ use std::str::Chars;
 
 use crate::{Keyword, Token, TokenType};
 
+/// SQL statements are split into tokens by the
+/// [`Tokenizer`] component of SQLite.
+///
 /// When processing SQL statements, SQLite (as does every other SQL database
 /// engine) breaks the SQL statement up into [`token`](crate::Token) which are then forwarded
-/// to the parser component. SQL statements are split into tokens by the
-/// [`Tokenizer`] component of SQLite.
+/// to the parser component.
 ///
 /// This document specifies requirements that precisely define the operation
 /// of the SQLite tokenizer.

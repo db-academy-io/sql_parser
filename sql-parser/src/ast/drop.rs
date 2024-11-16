@@ -1,4 +1,4 @@
-/// A DROP TABLE statement
+/// An AST for DROP TABLE SQL statement.
 /// See details [sqlite-drop-table-statement]
 ///
 /// [sqlite-drop-table-statement]:https://www.sqlite.org/lang_droptable.html
@@ -19,7 +19,7 @@ impl DropTableStatement {
     }
 }
 
-/// A DROP index statement
+/// An AST for DROP INDEX SQL statement.
 /// See details [sqlite-drop-index-statement]
 ///
 /// [sqlite-drop-index-statement]:https://www.sqlite.org/lang_dropindex.html
@@ -40,7 +40,7 @@ impl DropIndexStatement {
     }
 }
 
-/// A DROP TRIGGER statement
+/// An AST for DROP TRIGGER SQL statement.
 /// See details [sqlite-drop-trigger-statement]
 ///
 /// [sqlite-drop-trigger-statement]:https://www.sqlite.org/lang_droptrigger.html
@@ -61,10 +61,10 @@ impl DropTriggerStatement {
     }
 }
 
-/// A DROP TRIGGER statement
-/// See details [sqlite-drop-trigger-statement]
+/// An AST for DROP VIEW SQL statement.
+/// See details [sqlite-drop-view-statement]
 ///
-/// [sqlite-drop-trigger-statement]:https://www.sqlite.org/lang_droptrigger.html
+/// [sqlite-drop-view-statement]:https://www.sqlite.org/lang_dropview.html
 #[derive(Debug, PartialEq)]
 pub struct DropViewStatement {
     pub if_exists: bool,

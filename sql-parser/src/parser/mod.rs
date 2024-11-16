@@ -2,11 +2,13 @@ mod drop;
 mod errors;
 
 pub use errors::*;
+mod sqlite;
+
 use std::iter::Peekable;
 
 use crate::{Keyword, Statement, Token, TokenType, Tokenizer};
-// use crate::parser::errors::ParsingError;
 use drop::DropStatementParser;
+use sqlite::SQLite3StatementParser;
 
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,
@@ -29,6 +31,26 @@ impl<'a> Parser<'a> {
                 Err(error) => Err(ParsingError::TokenizerError(error.to_string())),
             },
             None => Err(ParsingError::UnexpectedEOF),
+        }
+    }
+
+    /// Peeks the current token and checks if it matches the specified `token_type`.
+    /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
+    /// If there is no any token in the stream, a [ParsingError::UnexpectedEOF] is thrown.
+    fn peek_as(&mut self, token_type: TokenType) -> Result<&Token, ParsingError> {
+        if let Some(token_result) = self.tokenizer.peek() {
+            match token_result {
+                Ok(token) => {
+                    if token.token_type == token_type {
+                        Ok(token)
+                    } else {
+                        Err(ParsingError::UnexpectedToken(token.to_string()))
+                    }
+                }
+                Err(error) => Err(ParsingError::TokenizerError(error.to_string())),
+            }
+        } else {
+            Err(ParsingError::UnexpectedEOF)
         }
     }
 
@@ -65,10 +87,27 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Peek the current token as a [TokenType::String] without advancing the underlaying
+    /// iterator. If there is a token which is not a [Keyword], it will throw an [ParsingError]
+    fn peek_as_string(&mut self) -> Result<String, ParsingError> {
+        if let Some(token_result) = self.tokenizer.peek() {
+            match token_result {
+                Ok(token) => match token.token_type {
+                    TokenType::String(token_value) => Ok(token_value.to_string()),
+                    _ => Err(ParsingError::UnexpectedToken(token.to_string())),
+                },
+                Err(error) => Err(ParsingError::TokenizerError(error.to_string())),
+            }
+        } else {
+            Err(ParsingError::UnexpectedEOF)
+        }
+    }
+
     /// Parse a single statement from the tokenizer [Tokenizer]
     pub fn parse_statement(&mut self) -> Result<Statement, ParsingError> {
         match self.peek_as_keyword()? {
             Keyword::Drop => self.parse_drop_statement(),
+            Keyword::Vacuum => self.parse_vacuum_statement(),
             _ => todo!(),
         }
     }

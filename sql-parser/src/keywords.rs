@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt::Display;
 
-/// Keyword token
+/// An enum of SQLite Keyword tokens
 ///
-/// The following keywords are recognized as distinct tokens:
+/// The following keywords are recognized as distinct tokens
 ///
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Keyword {
