@@ -12,6 +12,8 @@ pub trait SQLite3StatementParser {
     fn parse_analyze_statement(&mut self) -> Result<Statement, ParsingError>;
 
     fn parse_reindex_statement(&mut self) -> Result<Statement, ParsingError>;
+
+    fn parse_name(&mut self) -> Result<String, ParsingError>;
 }
 
 impl<'a> SQLite3StatementParser for Parser<'a> {
@@ -19,25 +21,20 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
         // Consume the VACUUM keyword
         self.consume_token()?;
 
-        // Check if we've got only VACUUM; command
-        if self.peek_as(TokenType::Semi).is_ok() {
-            // Consume ';' token
-            self.consume_token()?;
+        // Check if we've got only 'VACUUM;' command
+        if self.finalize_statement_parsing().is_ok() {
             return Ok(Statement::Vacuum(VacuumStatement::default()));
         }
 
         let mut schema: Option<String> = None;
-
-        if let Ok(token) = self.peek_as_id() {
-            schema = Some(token.to_string());
+        if let Ok(value) = self.peek_as_string() {
+            schema = Some(value);
             // Consume the schema token
             self.consume_token()?;
         }
 
         // Check if we've got only VACUUM $SCHEMA; command
-        if self.peek_as(TokenType::Semi).is_ok() {
-            // Consume ';' token
-            self.consume_token()?;
+        if self.finalize_statement_parsing().is_ok() {
             return Ok(Statement::Vacuum(VacuumStatement {
                 schema_name: schema,
                 file_name: None,
@@ -55,10 +52,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
         // Consume the INTO keyword
         self.consume_token()?;
 
-        let filename = self.peek_as_string()?;
-        // Consume 'file_name' token
-        self.consume_token()?;
-
+        let filename = self.parse_name()?;
         self.finalize_statement_parsing()?;
 
         Ok(Statement::Vacuum(VacuumStatement {
@@ -79,21 +73,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
             }
         }
 
-        let token = self.peek_token()?;
-        let schema_name = match token.token_type {
-            TokenType::Keyword(keyword_as_schema_name) => keyword_as_schema_name.to_string(),
-            TokenType::String(schema_name)
-            | TokenType::Id(schema_name)
-            | TokenType::Variable(schema_name)
-            | TokenType::Blob(schema_name)
-            | TokenType::Integer(schema_name)
-            | TokenType::Float(schema_name) => schema_name.to_string(),
-            _ => return Err(ParsingError::UnexpectedEOF),
-        };
-
-        // Consume the `schema_name` token
-        self.consume_token()?;
-
+        let schema_name = self.parse_name()?;
         self.finalize_statement_parsing()?;
         Ok(Statement::Detach(crate::DetachStatement { schema_name }))
     }
@@ -106,21 +86,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
         if self.finalize_statement_parsing().is_ok() {
             return Ok(Statement::Analyze(AnalyzeStatement::default()));
         }
-
-        let token = self.peek_token()?;
-
-        let schema_name = match token.token_type {
-            TokenType::Keyword(keyword_as_schema_name) => keyword_as_schema_name.to_string(),
-            TokenType::String(schema_name)
-            | TokenType::Id(schema_name)
-            | TokenType::Variable(schema_name)
-            | TokenType::Blob(schema_name)
-            | TokenType::Integer(schema_name)
-            | TokenType::Float(schema_name) => schema_name.to_string(),
-            _ => return Err(ParsingError::UnexpectedEOF),
-        };
-        // Consume the `schema_name` token
-        self.consume_token()?;
+        let schema_name = self.parse_name()?;
 
         // Check if we've got only 'ANALYZE $SCHEMA;' command
         if self.finalize_statement_parsing().is_ok() {
@@ -135,19 +101,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
             // Consume the '.' token
             self.consume_token()?;
 
-            let token = self.peek_token()?;
-            table_or_index_name = Some(match token.token_type {
-                TokenType::Keyword(keyword_as_schema_name) => keyword_as_schema_name.to_string(),
-                TokenType::String(schema_name)
-                | TokenType::Id(schema_name)
-                | TokenType::Variable(schema_name)
-                | TokenType::Blob(schema_name)
-                | TokenType::Integer(schema_name)
-                | TokenType::Float(schema_name) => schema_name.to_string(),
-                _ => return Err(ParsingError::UnexpectedEOF),
-            });
-            // Consume the `table_name` token
-            self.consume_token()?;
+            table_or_index_name = Some(self.parse_name()?);
         }
 
         self.finalize_statement_parsing()?;
@@ -167,20 +121,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
             return Ok(Statement::Reindex(crate::ReindexStatement::default()));
         }
 
-        let token = self.peek_token()?;
-
-        let schema_name = Some(match token.token_type {
-            TokenType::Keyword(keyword_as_schema_name) => keyword_as_schema_name.to_string(),
-            TokenType::String(schema_name)
-            | TokenType::Id(schema_name)
-            | TokenType::Variable(schema_name)
-            | TokenType::Blob(schema_name)
-            | TokenType::Integer(schema_name)
-            | TokenType::Float(schema_name) => schema_name.to_string(),
-            _ => return Err(ParsingError::UnexpectedEOF),
-        });
-        // Consume the `schema_name` token
-        self.consume_token()?;
+        let schema_name = Some(self.parse_name()?);
 
         // Check if we've got only 'REINDEX $collation_name;' command
         if self.finalize_statement_parsing().is_ok() {
@@ -197,19 +138,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
             // Consume the '.' token
             self.consume_token()?;
 
-            let token = self.peek_token()?;
-            target_name = Some(match token.token_type {
-                TokenType::Keyword(keyword_as_schema_name) => keyword_as_schema_name.to_string(),
-                TokenType::String(schema_name)
-                | TokenType::Id(schema_name)
-                | TokenType::Variable(schema_name)
-                | TokenType::Blob(schema_name)
-                | TokenType::Integer(schema_name)
-                | TokenType::Float(schema_name) => schema_name.to_string(),
-                _ => return Err(ParsingError::UnexpectedEOF),
-            });
-            // Consume the `table_name` token
-            self.consume_token()?;
+            target_name = Some(self.parse_name()?);
         }
 
         self.finalize_statement_parsing()?;
@@ -218,6 +147,29 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
             schema_name,
             target_name,
         }))
+    }
+
+    fn parse_name(&mut self) -> Result<String, ParsingError> {
+        if let Ok(keyword) = self.peek_as_keyword() {
+            // consume keyword token
+            self.consume_token()?;
+
+            // return keyword as string
+            return Ok(keyword.to_string());
+        }
+
+        if let Ok(value) = self.peek_as_number() {
+            // consume keyword token
+            self.consume_token()?;
+
+            // return keyword as string
+            return Ok(value.to_string());
+        }
+
+        let value = self.peek_as_string()?;
+        // Consume the `name` token
+        self.consume_token()?;
+        Ok(value)
     }
 }
 
@@ -302,7 +254,7 @@ mod vacuum_statements_tests {
     #[test]
     fn test_vacuum_invalid_filename() {
         let sql = "VACUUM INTO backup.db;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("backup".to_string()));
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(".".to_string()));
     }
 
     #[test]
@@ -418,13 +370,13 @@ mod detach_statements_tests {
     #[test]
     fn test_detach_missing_schema_name() {
         let sql = "DETACH DATABASE;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
     fn test_detach_missing_schema_name_no_database() {
         let sql = "DETACH;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]

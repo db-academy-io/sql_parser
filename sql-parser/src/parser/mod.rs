@@ -87,12 +87,25 @@ impl<'a> Parser<'a> {
     /// iterator. If there is a token which is not a [Keyword], it will throw an [ParsingError]
     fn peek_as_string(&mut self) -> Result<String, ParsingError> {
         let token = self.peek_token()?;
+        let value = match token.token_type {
+            TokenType::String(value) | TokenType::Id(value) | TokenType::Variable(value) => {
+                value.to_string()
+            }
+            _ => return Err(ParsingError::UnexpectedToken(token.to_string())), // TODO: Improve the error code
+        };
+        Ok(value)
+    }
 
-        if let TokenType::String(string) = token.token_type {
-            Ok(string.to_string())
-        } else {
-            Err(ParsingError::UnexpectedToken(token.to_string()))
-        }
+    /// Peek the current token as a [TokenType::String] without advancing the underlaying
+    /// iterator. If there is a token which is not a [Keyword], it will throw an [ParsingError]
+    fn peek_as_number(&mut self) -> Result<String, ParsingError> {
+        let token = self.peek_token()?;
+        let value = match token.token_type {
+            // TokenType::Keyword(keyword_as_schema_name) => keyword_as_schema_name.to_string(),
+            TokenType::Integer(value) | TokenType::Float(value) => value.to_string(),
+            _ => return Err(ParsingError::UnexpectedToken(token.to_string())), // TODO: Improve the error code
+        };
+        Ok(value)
     }
 
     /// Check if the current token is end of the statement. Consume ';' token
