@@ -92,8 +92,9 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Check if the current token is end of the statement. If it is not throw a [ParsingError]
-    fn is_end_of_statement(&mut self) -> Result<(), ParsingError> {
+    /// Check if the current token is end of the statement. Consume ';' token
+    /// If it is not - throw a [ParsingError]
+    fn finalize_statement_parsing(&mut self) -> Result<(), ParsingError> {
         let token = self.peek_token()?;
         match token.token_type {
             TokenType::Semi => {
@@ -111,6 +112,7 @@ impl<'a> Parser<'a> {
             Keyword::Drop => self.parse_drop_statement(),
             Keyword::Vacuum => self.parse_vacuum_statement(),
             Keyword::Detach => self.parse_detach_statement(),
+            Keyword::Analyze => self.parse_analyze_statement(),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),
         }
     }

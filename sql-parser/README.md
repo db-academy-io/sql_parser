@@ -7,7 +7,7 @@ exception is made for grouping purposes only, i.e., grouping related statements
 together.
 The items were taken from the official SQLite documentation from [here](https://www.sqlite.org/lang.html)
 
-## Easy level ![progress](https://progress-bar.xyz/6/?scale=14&suffix=%%%20(6%20of%2014))
+## Easy level ![progress](https://progress-bar.xyz/7/?scale=14&suffix=%%%20(7%20of%2014))
 
 1. [drop-table-stmt](https://www.sqlite.org/lang_droptable.html) &#9989;
 1. [drop-index-stmt](https://www.sqlite.org/lang_dropindex.html) &#9989;
@@ -15,7 +15,7 @@ The items were taken from the official SQLite documentation from [here](https://
 1. [drop-view-stmt](https://www.sqlite.org/lang_dropview.html) &#9989;
 1. [vacuum-stmt](https://www.sqlite.org/lang_vacuum.html) &#9989;
 1. [detach-stmt](https://www.sqlite.org/lang_detach.html) &#9989;
-1. analyze-stmt
+1. [analyze-stmt](https://www.sqlite.org/lang_analyze.html) &#9989; 
 1. reindex-stmt
 
 1. begin-stmt

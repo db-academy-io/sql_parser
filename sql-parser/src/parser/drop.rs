@@ -79,7 +79,7 @@ impl<'a> DropStatementParser for Parser<'a> {
         }
 
         // check if it is end-of-statement
-        self.is_end_of_statement()?;
+        self.finalize_statement_parsing()?;
 
         Ok((if_exists, schema_name, name))
     }

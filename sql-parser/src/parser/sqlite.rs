@@ -1,10 +1,12 @@
 use super::Parser;
-use crate::{Keyword, ParsingError, Statement, TokenType, VacuumStatement};
+use crate::{AnalyzeStatement, Keyword, ParsingError, Statement, TokenType, VacuumStatement};
 
 pub trait SQLite3StatementParser {
     fn parse_vacuum_statement(&mut self) -> Result<Statement, ParsingError>;
 
     fn parse_detach_statement(&mut self) -> Result<Statement, ParsingError>;
+
+    fn parse_analyze_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
 impl<'a> SQLite3StatementParser for Parser<'a> {
@@ -52,7 +54,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
         // Consume 'file_name' token
         self.consume_token()?;
 
-        self.is_end_of_statement()?;
+        self.finalize_statement_parsing()?;
 
         Ok(Statement::Vacuum(VacuumStatement {
             schema_name: schema,
@@ -87,13 +89,73 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
         // Consume the `schema_name` token
         self.consume_token()?;
 
-        self.is_end_of_statement()?;
+        self.finalize_statement_parsing()?;
         Ok(Statement::Detach(crate::DetachStatement { schema_name }))
+    }
+
+    fn parse_analyze_statement(&mut self) -> Result<Statement, ParsingError> {
+        // Consume the ANALYZE keyword
+        self.consume_token()?;
+
+        // Check if we've got only 'ANALYZE;' command
+        if self.finalize_statement_parsing().is_ok() {
+            return Ok(Statement::Analyze(AnalyzeStatement::default()));
+        }
+
+        let token = self.peek_token()?;
+
+        let schema_name = match token.token_type {
+            TokenType::Keyword(keyword_as_schema_name) => keyword_as_schema_name.to_string(),
+            TokenType::String(schema_name)
+            | TokenType::Id(schema_name)
+            | TokenType::Variable(schema_name)
+            | TokenType::Blob(schema_name)
+            | TokenType::Integer(schema_name)
+            | TokenType::Float(schema_name) => schema_name.to_string(),
+            _ => return Err(ParsingError::UnexpectedEOF),
+        };
+        // Consume the `schema_name` token
+        self.consume_token()?;
+
+        // Check if we've got only 'ANALYZE $SCHEMA;' command
+        if self.finalize_statement_parsing().is_ok() {
+            return Ok(Statement::Analyze(AnalyzeStatement {
+                schema_name: Some(schema_name),
+                table_or_index_name: None,
+            }));
+        }
+
+        let mut table_or_index_name: Option<String> = None;
+        if self.peek_as(TokenType::Dot).is_ok() {
+            // Consume the '.' token
+            self.consume_token()?;
+
+            let token = self.peek_token()?;
+            table_or_index_name = Some(match token.token_type {
+                TokenType::Keyword(keyword_as_schema_name) => keyword_as_schema_name.to_string(),
+                TokenType::String(schema_name)
+                | TokenType::Id(schema_name)
+                | TokenType::Variable(schema_name)
+                | TokenType::Blob(schema_name)
+                | TokenType::Integer(schema_name)
+                | TokenType::Float(schema_name) => schema_name.to_string(),
+                _ => return Err(ParsingError::UnexpectedEOF),
+            });
+            // Consume the `table_name` token
+            self.consume_token()?;
+        }
+
+        self.finalize_statement_parsing()?;
+
+        Ok(Statement::Analyze(AnalyzeStatement {
+            schema_name: Some(schema_name),
+            table_or_index_name,
+        }))
     }
 }
 
 #[cfg(test)]
-mod vacuum_statement_tests {
+mod vacuum_statements_tests {
     use crate::ast::VacuumStatement;
     use crate::{Parser, ParsingError, Statement};
 
@@ -494,5 +556,280 @@ mod detach_statements_tests {
                 schema_name: "`schema_name`".to_string(),
             }),
         )
+    }
+}
+
+#[cfg(test)]
+mod analyze_statements_tests {
+    use crate::ast::AnalyzeStatement;
+    use crate::{Parser, ParsingError, Statement};
+
+    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
+        let mut parser = Parser::from(sql);
+        let actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+
+        // Verify that the statements match
+        assert_eq!(
+            actual_statement, expected_statement,
+            "Expected statement {:?}, got {:?}",
+            expected_statement, actual_statement
+        );
+    }
+
+    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
+        let mut parser = Parser::from(sql);
+        let actual_error = parser
+            .parse_statement()
+            .expect_err("Expected Parsing Error, got parsed Statement");
+
+        assert_eq!(
+            expected_error, actual_error,
+            "Expected error {:?}, got {:?}",
+            expected_error, actual_error,
+        );
+    }
+
+    #[test]
+    fn test_analyze_basic() {
+        let sql = "ANALYZE;";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: None,
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_schema_name() {
+        let sql = "ANALYZE main;";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("main".to_string()),
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_schema_and_table() {
+        let sql = "ANALYZE main.my_table;";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("main".to_string()),
+                table_or_index_name: Some("my_table".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_single_quoted_schema() {
+        let sql = "ANALYZE 'main';";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("'main'".to_string()),
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_double_quoted_schema() {
+        let sql = "ANALYZE \"main\";";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("\"main\"".to_string()),
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_single_quoted_schema_and_table() {
+        let sql = "ANALYZE 'main'.'my_table';";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("'main'".to_string()),
+                table_or_index_name: Some("'my_table'".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_double_quoted_schema_and_table() {
+        let sql = "ANALYZE \"main\".\"my_table\";";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("\"main\"".to_string()),
+                table_or_index_name: Some("\"my_table\"".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_missing_semicolon() {
+        let sql = "ANALYZE";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: None,
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_invalid_schema_name() {
+        let sql = "ANALYZE 'unclosed_schema;";
+        run_rainy_day_test(
+            sql,
+            ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_schema;".into()),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_invalid_table_name() {
+        let sql = "ANALYZE main.'unclosed_table;";
+        run_rainy_day_test(
+            sql,
+            ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_table;".into()),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_reserved_keyword_as_schema() {
+        let sql = "ANALYZE SELECT;";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("Select".to_string()),
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_reserved_keyword_as_table() {
+        let sql = "ANALYZE main.select;";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("main".to_string()),
+                table_or_index_name: Some("Select".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_numeric_schema_name() {
+        let sql = "ANALYZE '123';";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("'123'".to_string()),
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_numeric_table_name() {
+        let sql = "ANALYZE main.'123';";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("main".to_string()),
+                table_or_index_name: Some("'123'".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_escaped_quotes_in_schema_name() {
+        let sql = "ANALYZE 'main''db';";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("'main''db'".to_string()),
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_escaped_quotes_in_table_name() {
+        let sql = "ANALYZE main.'table''name';";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("main".to_string()),
+                table_or_index_name: Some("'table''name'".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_backticks_schema_name() {
+        let sql = "ANALYZE `main`;";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("`main`".to_string()),
+                table_or_index_name: None,
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_with_special_chars_in_table_name() {
+        let sql = "ANALYZE main.'[email protected]!';";
+        run_sunny_day_test(
+            sql,
+            Statement::Analyze(AnalyzeStatement {
+                schema_name: Some("main".to_string()),
+                table_or_index_name: Some("'[email protected]!'".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_analyze_multiple_statements() {
+        let sql = "ANALYZE; ANALYZE main.my_table;";
+        let mut parser = Parser::from(sql);
+
+        let first_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+        let first_expected_statement = Statement::Analyze(AnalyzeStatement {
+            schema_name: None,
+            table_or_index_name: None,
+        });
+        assert_eq!(
+            first_actual_statement, first_expected_statement,
+            "Expected statement {:?}, got {:?}",
+            first_expected_statement, first_actual_statement
+        );
+
+        let second_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+        let second_expected_statement = Statement::Analyze(AnalyzeStatement {
+            schema_name: Some("main".to_string()),
+            table_or_index_name: Some("my_table".to_string()),
+        });
+        assert_eq!(
+            second_actual_statement, second_expected_statement,
+            "Expected statement {:?}, got {:?}",
+            second_expected_statement, second_actual_statement
+        );
     }
 }
