@@ -113,6 +113,7 @@ impl<'a> Parser<'a> {
             Keyword::Vacuum => self.parse_vacuum_statement(),
             Keyword::Detach => self.parse_detach_statement(),
             Keyword::Analyze => self.parse_analyze_statement(),
+            Keyword::Reindex => self.parse_reindex_statement(),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),
         }
     }
