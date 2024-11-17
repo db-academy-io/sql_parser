@@ -58,9 +58,9 @@ pub struct CommitTransactionStatement;
 /// See details [sqlite-rollback-statement]
 ///
 /// [sqlite-rollback-statement]:https://www.sqlite.org/lang_transaction.html
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct RollbackTransactionStatement {
-    pub savepoint_name: String,
+    pub savepoint_name: Option<String>,
 }
 
 /// An AST for SAVEPOINT SQL statement.
