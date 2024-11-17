@@ -66,11 +66,17 @@ pub struct RollbackTransactionStatement {
 /// An AST for SAVEPOINT SQL statement.
 /// See details [sqlite-savepoint-statement]
 ///
-/// [sqlite-savepoint-statement]:https://www.sqlite.org/lang_transaction.html
+/// [sqlite-savepoint-statement]:https://www.sqlite.org/lang_savepoint.html
 #[derive(Debug, PartialEq)]
 pub struct SavepointStatement {
     pub savepoint_name: String,
 }
 
+/// An AST for RELEASE SQL statement.
+/// See details [sqlite-release-statement]
+///
+/// [sqlite-release-statement]:https://www.sqlite.org/lang_savepoint.html
 #[derive(Debug, PartialEq)]
-pub struct ReleaseStatement {}
+pub struct ReleaseStatement {
+    pub savepoint_name: String,
+}
