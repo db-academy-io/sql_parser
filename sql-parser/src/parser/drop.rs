@@ -78,15 +78,8 @@ impl<'a> DropStatementParser for Parser<'a> {
             }
         }
 
-        if let Ok(token) = self.peek_token() {
-            match token.token_type {
-                TokenType::Semi => {
-                    // consume the ';' token
-                    self.consume_token()?;
-                }
-                _ => return Err(ParsingError::UnexpectedToken(token.to_string())),
-            }
-        }
+        // check if it is end-of-statement
+        self.is_end_of_statement()?;
 
         Ok((if_exists, schema_name, name))
     }
@@ -214,7 +207,7 @@ mod drop_table_tests {
     #[test]
     fn test_drop_table_missing_table_name() {
         let sql = "DROP TABLE ;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
@@ -244,7 +237,7 @@ mod drop_table_tests {
     #[test]
     fn test_drop_table_if_exists_missing_name() {
         let sql = "DROP TABLE IF EXISTS;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
@@ -372,7 +365,10 @@ mod drop_index_tests {
     #[test]
     fn test_drop_index_missing_index_name() {
         let sql = "DROP INDEX ;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+
+        let sql = "DROP INDEX"; // TODO: Improve the error reporting
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
@@ -402,7 +398,7 @@ mod drop_index_tests {
     #[test]
     fn test_drop_index_if_exists_missing_name() {
         let sql = "DROP INDEX IF EXISTS;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
@@ -531,13 +527,16 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_missing_index_name() {
+    fn test_drop_view_missing_view_name() {
         let sql = "DROP VIEW ;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+
+        let sql = "DROP VIEW"; // TODO: Improve the error reporting
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_drop_view_missing_index_keyword() {
+    fn test_drop_view_missing_view_keyword() {
         let sql = "DROP my_view;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_view".into()));
     }
@@ -563,7 +562,7 @@ mod drop_view_tests {
     #[test]
     fn test_drop_view_if_exists_missing_name() {
         let sql = "DROP VIEW IF EXISTS;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
@@ -580,7 +579,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_multiple_drop_index_commands() {
+    fn test_multiple_drop_view_commands() {
         let sql = "DROP VIEW my_view; DROP VIEW IF EXISTS schema.my_second_view;";
 
         let mut parser = Parser::from(sql);
@@ -653,7 +652,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_view_valid() {
+    fn test_drop_trigger_valid() {
         let sql = "DROP TRIGGER my_trigger;";
         run_sunny_day_test(
             sql,
@@ -666,7 +665,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_view_if_exists() {
+    fn test_drop_trigger_if_exists() {
         let sql = "DROP TRIGGER IF EXISTS my_trigger;";
         run_sunny_day_test(
             sql,
@@ -679,7 +678,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_view_with_schema() {
+    fn test_drop_trigger_with_schema() {
         let sql = "DROP TRIGGER main.my_trigger;";
         run_sunny_day_test(
             sql,
@@ -692,43 +691,43 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_view_missing_index_name() {
+    fn test_drop_trigger_missing_trigger_name() {
         let sql = "DROP TRIGGER ;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_drop_view_missing_index_keyword() {
+    fn test_drop_trigger_missing_trigger_keyword() {
         let sql = "DROP my_trigger;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_trigger".into()));
     }
 
     #[test]
-    fn test_drop_view_invalid_syntax() {
+    fn test_drop_trigger_invalid_syntax() {
         let sql = "DROP TRIGGER IF my_trigger;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_trigger".into()))
     }
 
     #[test]
-    fn test_drop_view_extra_tokens() {
+    fn test_drop_trigger_extra_tokens() {
         let sql = "DROP TRIGGER my_trigger extra;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
     }
 
     #[test]
-    fn test_drop_view_invalid_name() {
+    fn test_drop_trigger_invalid_name() {
         let sql = "DROP TRIGGER 123invalid;";
         run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
     }
 
     #[test]
-    fn test_drop_view_if_exists_missing_name() {
+    fn test_drop_trigger_if_exists_missing_name() {
         let sql = "DROP TRIGGER IF EXISTS;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedEOF);
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_drop_view_missing_semicolon() {
+    fn test_drop_trigger_missing_semicolon() {
         let sql = "DROP TRIGGER my_trigger";
         run_sunny_day_test(
             sql,
@@ -741,7 +740,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_multiple_drop_index_commands() {
+    fn test_multiple_drop_trigger_commands() {
         let sql = "DROP TRIGGER my_trigger; DROP TRIGGER IF EXISTS schema.my_second_trigger;";
 
         let mut parser = Parser::from(sql);

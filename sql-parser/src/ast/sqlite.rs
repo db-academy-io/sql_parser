@@ -10,7 +10,9 @@ pub struct VacuumStatement {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct DetachStatement {}
+pub struct DetachStatement {
+    pub schema_name: String,
+}
 
 #[derive(Debug, PartialEq)]
 pub struct AnalyzeStatement {}

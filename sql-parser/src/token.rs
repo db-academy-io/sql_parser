@@ -22,7 +22,7 @@ impl<'a> Display for Token<'a> {
     }
 }
 
-impl<'a> TryInto<Keyword> for &Token<'a> {
+impl<'a> TryInto<Keyword> for Token<'a> {
     type Error = ParsingError;
 
     fn try_into(self) -> Result<Keyword, Self::Error> {
