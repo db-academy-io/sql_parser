@@ -2,10 +2,12 @@
 mod test_utils;
 
 mod drop;
-mod errors;
-
-pub use errors::*;
 mod sqlite;
+mod trx;
+
+mod errors;
+pub use errors::*;
+use trx::TransactionStatementParser;
 
 use std::iter::Peekable;
 
@@ -130,6 +132,11 @@ impl<'a> Parser<'a> {
             Keyword::Detach => self.parse_detach_statement(),
             Keyword::Analyze => self.parse_analyze_statement(),
             Keyword::Reindex => self.parse_reindex_statement(),
+            Keyword::Begin => self.parse_begin_statement(),
+            Keyword::Commit | Keyword::End => self.parse_commit_statement(),
+            Keyword::Rollback => self.parse_rollback_statement(),
+            Keyword::Release => self.parse_release_statement(),
+            Keyword::Savepoint => self.parse_savepoint_statement(),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),
         }
     }

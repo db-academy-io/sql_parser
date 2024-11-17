@@ -24,8 +24,8 @@ pub use sqlite::{
     VacuumStatement,
 };
 pub use trx::{
-    BeginTransactionStatement, CommitTransactionStatement, RollbackTransactionStatement,
-    SavepointReleaseStatement, SavepointStatement,
+    BeginTransactionStatement, CommitTransactionStatement, ReleaseStatement,
+    RollbackTransactionStatement, SavepointStatement, TransactionType,
 };
 pub use update::UpdateStatement;
 
@@ -71,8 +71,8 @@ pub enum Statement {
     RollbackTransaction(RollbackTransactionStatement),
     /// Transaction Control Language (TCL), see [SavepointStatement]
     Savepoint(SavepointStatement),
-    /// Transaction Control Language (TCL), see [SavepointReleaseStatement]
-    Release(SavepointReleaseStatement),
+    /// Transaction Control Language (TCL), see [ReleaseStatement]
+    Release(ReleaseStatement),
 
     /// SQLite Administrative statements, see [PragmaStatement]
     Pragma(PragmaStatement),
