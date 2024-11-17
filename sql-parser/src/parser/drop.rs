@@ -140,34 +140,8 @@ impl<'a> DropStatementParser for Parser<'a> {
 #[cfg(test)]
 mod drop_table_tests {
     use crate::ast::DropTableStatement;
+    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Parser, ParsingError, Statement};
-
-    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
-        let mut parser = Parser::from(sql);
-        let actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
-
-        // Verify that the statements are matches
-        assert_eq!(
-            expected_statement, actual_statement,
-            "Expected statement {:?}, got {:?}",
-            expected_statement, actual_statement
-        );
-    }
-
-    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
-        let mut parser = Parser::from(sql);
-        let actual_error = parser
-            .parse_statement()
-            .expect_err("Expected Parsing Error, got parsed Statement");
-
-        assert_eq!(
-            expected_error, actual_error,
-            "Expected error {:?}, got {:?}",
-            expected_error, actual_error,
-        );
-    }
 
     #[test]
     fn test_drop_table_valid() {
@@ -294,34 +268,8 @@ mod drop_table_tests {
 #[cfg(test)]
 mod drop_index_tests {
     use crate::ast::DropIndexStatement;
+    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Parser, ParsingError, Statement};
-
-    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
-        let mut parser = Parser::from(sql);
-        let actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
-
-        // Verify that the statements match
-        assert_eq!(
-            actual_statement, expected_statement,
-            "Expected statement {:?}, got {:?}",
-            expected_statement, actual_statement
-        );
-    }
-
-    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
-        let mut parser = Parser::from(sql);
-        let actual_error = parser
-            .parse_statement()
-            .expect_err("Expected Parsing Error, got parsed Statement");
-
-        assert_eq!(
-            expected_error, actual_error,
-            "Expected error {:?}, got {:?}",
-            expected_error, actual_error,
-        );
-    }
 
     #[test]
     fn test_drop_index_valid() {
@@ -458,34 +406,8 @@ mod drop_index_tests {
 #[cfg(test)]
 mod drop_view_tests {
     use crate::ast::DropViewStatement;
+    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Parser, ParsingError, Statement};
-
-    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
-        let mut parser = Parser::from(sql);
-        let actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
-
-        // Verify that the statements match
-        assert_eq!(
-            actual_statement, expected_statement,
-            "Expected statement {:?}, got {:?}",
-            expected_statement, actual_statement
-        );
-    }
-
-    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
-        let mut parser = Parser::from(sql);
-        let actual_error = parser
-            .parse_statement()
-            .expect_err("Expected Parsing Error, got parsed Statement");
-
-        assert_eq!(
-            expected_error, actual_error,
-            "Expected error {:?}, got {:?}",
-            expected_error, actual_error,
-        );
-    }
 
     #[test]
     fn test_drop_view_valid() {
@@ -622,34 +544,8 @@ mod drop_view_tests {
 #[cfg(test)]
 mod drop_trigger_tests {
     use crate::ast::DropTriggerStatement;
+    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Parser, ParsingError, Statement};
-
-    fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
-        let mut parser = Parser::from(sql);
-        let actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
-
-        // Verify that the statements match
-        assert_eq!(
-            actual_statement, expected_statement,
-            "Expected statement {:?}, got {:?}",
-            expected_statement, actual_statement
-        );
-    }
-
-    fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
-        let mut parser = Parser::from(sql);
-        let actual_error = parser
-            .parse_statement()
-            .expect_err("Expected Parsing Error, got parsed Statement");
-
-        assert_eq!(
-            expected_error, actual_error,
-            "Expected error {:?}, got {:?}",
-            expected_error, actual_error,
-        );
-    }
 
     #[test]
     fn test_drop_trigger_valid() {
