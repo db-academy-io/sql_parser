@@ -20,4 +20,7 @@ pub enum ParsingError {
 
     /// Tokenizer error
     TokenizerError(String),
+
+    /// Unexpected parsing state
+    UnexpectedParsingState,
 }

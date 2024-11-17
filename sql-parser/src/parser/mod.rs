@@ -137,6 +137,7 @@ impl<'a> Parser<'a> {
             Keyword::Rollback => self.parse_rollback_statement(),
             Keyword::Release => self.parse_release_statement(),
             Keyword::Savepoint => self.parse_savepoint_statement(),
+            Keyword::Pragma => self.parse_pragma_statement(),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),
         }
     }

@@ -4,10 +4,12 @@ The following list of statements is ordered from easy to hard from an
 implementation standpoint. There are some exception statement items in the list
 where the implementation is easier than the previous statement, but the 
 exception is made for grouping purposes only, i.e., grouping related statements
-together.
-The items were taken from the official SQLite documentation from [here](https://www.sqlite.org/lang.html)
+together. 
 
-## Easy level ![progress](https://progress-bar.xyz/13/?scale=14&suffix=%%%20(13%20of%2014))
+The items were taken from the official SQLite documentation from 
+[here](https://www.sqlite.org/lang.html)
+
+## Easy level ![progress](https://progress-bar.xyz/14/?scale=14)
 
 1. [drop-table-stmt](https://www.sqlite.org/lang_droptable.html) &#9989;
 1. [drop-index-stmt](https://www.sqlite.org/lang_dropindex.html) &#9989;
@@ -22,7 +24,7 @@ The items were taken from the official SQLite documentation from [here](https://
 1. [savepoint-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
 1. [release-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
 1. [rollback-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
-1. pragma-stmt
+1. [pragma-stmt](https://www.sqlite.org/pragma.html) &#9989;
 
 ## Intermediate level ![progress](https://progress-bar.xyz/0/?scale=8&suffix=%%%20(0%20of%208))
 

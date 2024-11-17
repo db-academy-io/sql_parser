@@ -39,8 +39,19 @@ pub struct ReindexStatement {
     pub target_name: Option<String>,
 }
 
+/// An AST for PRAGMA SQL statement.
+/// See details [sqlite-pragma-statement]
+///
+/// [sqlite-pragma-statement]:https://www.sqlite.org/pragma.html
 #[derive(Debug, PartialEq)]
-pub struct PragmaStatement {}
+pub struct PragmaStatement {
+    /// schema name
+    pub schema_name: Option<String>,
+    /// pragma name
+    pub pragma_name: String,
+    /// pragma value
+    pub pragma_value: Option<String>,
+}
 
 #[derive(Debug, PartialEq)]
 pub struct AttachStatement {}
