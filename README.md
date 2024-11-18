@@ -30,14 +30,14 @@ The items were taken from the official SQLite documentation from
 
 ## Intermediate level ![progress](https://progress-bar.xyz/0/?scale=8&suffix=%%%20(0%20of%208))
 
-1. math-functions
-1. date-and-time-functions
-1. json-functions
-1. expression
-1. core-functions
-1. aggregate-functions
-1. attach-stmt
-1. alter-table-stmt
+1. [expression](https://www.sqlite.org/lang_expr.html)
+1. [attach-stmt](https://www.sqlite.org/lang_attach.html)
+1. [math-functions](https://www.sqlite.org/lang_mathfunc.html)
+1. [date-and-time-functions](https://www.sqlite.org/lang_datefunc.html)
+1. [json-functions](https://www.sqlite.org/json1.html)
+1. [core-functions](https://www.sqlite.org/lang_corefunc.html)
+1. [aggregate-functions](https://www.sqlite.org/lang_aggfunc.html)
+1. [alter-table-stmt](https://www.sqlite.org/lang_altertable.html)
 
 ## Hard level ![progress](https://progress-bar.xyz/0/?scale=19&suffix=%%%20(0%20of%2019))
 
