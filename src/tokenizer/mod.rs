@@ -445,6 +445,8 @@ impl<'input> Tokenizer<'input> {
         let mut has_dot = false;
         let mut has_exponent = false;
         let mut is_valid = true;
+        // To track the number of consecutive '_' symbols  
+        let mut last_underscore_symbol_position: Option<usize> = None;
 
         // check for the hex literal 0x[value]
         if current_char == '0' {
@@ -496,6 +498,18 @@ impl<'input> Tokenizer<'input> {
                     is_valid = false;
                     break;
                 }
+            } else if next_ch == '_' {
+                // check if there are couple of '_' symbols in a row
+                if let Some(position) = last_underscore_symbol_position {
+                    if self.current_pos - position == 1 {
+                        // there are two _ symbols in a row
+                        return Some(Err(TokenizerError::BadNumber));
+                    }
+                }
+                // consume and ignore '_' character as it's only for number formatting
+                last_underscore_symbol_position = Some(self.current_pos);
+                self.next_char();
+                continue;
             } else {
                 break;
             }
@@ -514,6 +528,13 @@ impl<'input> Tokenizer<'input> {
 
         if !is_valid {
             return Some(Err(TokenizerError::BadNumber));
+        }
+
+        // check if number ends with '_' symbol 
+        if let Some(position) = last_underscore_symbol_position {
+            if self.current_pos - position == 1 {
+                return Some(Err(TokenizerError::BadNumber));
+            }
         }
 
         let text = &self.raw_content[start_pos..self.current_pos];
@@ -1069,6 +1090,21 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
 
+        let sql = "0_0 1_000 1_000_000 -42_000 -123_00 -999999999999999999999999999999999_0 ";
+        let expected_tokens = vec![
+            TokenType::Integer("0_0"),
+            TokenType::Integer("1_000"),
+            TokenType::Integer("1_000_000"),
+            TokenType::Minus,
+            TokenType::Integer("42_000"),
+            TokenType::Minus,
+            TokenType::Integer("123_00"),
+            TokenType::Minus,
+            TokenType::Integer("999999999999999999999999999999999_0"),
+            TokenType::Semi,
+        ];
+        run_sunny_day_test(sql, expected_tokens);
+
         let sql = "0x1 0x1234567890ABCDF 0xFFFF";
         let expected_tokens = vec![
             TokenType::Integer("0x1"),
@@ -1078,6 +1114,9 @@ mod tests {
         ];
         run_sunny_day_test(sql, expected_tokens);
 
+        run_rainy_day_test("100_", vec![], TokenizerError::BadNumber);
+        run_rainy_day_test("100__", vec![], TokenizerError::BadNumber);
+        run_rainy_day_test("1__00", vec![], TokenizerError::BadNumber);
         run_rainy_day_test("0abc", vec![], TokenizerError::BadNumber);
         run_rainy_day_test("0xABCDFG", vec![], TokenizerError::BadNumber);
         run_rainy_day_test("0xEEEXZY", vec![], TokenizerError::BadNumber);
