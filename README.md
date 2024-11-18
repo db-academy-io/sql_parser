@@ -1,6 +1,6 @@
 # An SQL parser
 
-## A reference implementation in Rust for the [db-academy.io/sql_parser](https://db-academy.io/sql_parser) course
+## [db-academy.io/sql_parser](https://db-academy.io/sql_parser) course reference implementation in Rust
 
 The following list of statements is ordered from easy to hard from an 
 implementation standpoint. There are some exception statement items in the list
