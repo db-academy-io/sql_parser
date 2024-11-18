@@ -1,23 +1,14 @@
-[workspace.package]
+[package]
+name = "sql_parser"
 authors = ["db-academy.io <admin@db-academy.io>"]
 edition = "2021"
 homepage = "https://db-academy.io"
+repository = "https://github.com/db-academy-io/sql_parser"
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/db-academy-io/bulldb"
 version = "0.0.1-alpha"
 
-[workspace]
-exclude = []
-members = [ 
-    "engines/processing",
-    "engines/storage",
-    "sql-parser",
-]
-resolver = "2"
-
-
-[workspace.dependencies]
+[dependencies]
 bigdecimal = "=0.4.1"
 bytes = "1.4"
 chrono = { version = "0.4.38", default-features = false }
@@ -33,6 +24,9 @@ thiserror = "1.0.44"
 url = "2.2"
 once_cell = "1.20.2"
 
+[dev-dependencies]
+pre-commit-hooks = "0.3.0"
+
 [profile.release]
 lto = true
 codegen-units = 16
@@ -44,13 +38,10 @@ overflow-checks = false
 panic = 'unwind'
 rpath = false
 
-[workspace.lints.clippy]
+[lints.clippy]
 # Detects large stack-allocated futures that may cause stack overflow crashes (see threshold in clippy.toml)
 large_futures = "warn"
 
-[workspace.dev-dependencies]
-pre-commit-hooks = "0.3.0"
-
-[workspace.metadata.precommit]
+[package.metadata.precommit]
 fmt = "cargo fmt --check"
 clippy = "cargo clippy"
