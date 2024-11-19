@@ -6,6 +6,9 @@ use super::SelectStatement;
 /// [sqlite-expression]: https://www.sqlite.org/lang_expr.html
 #[derive(Debug, PartialEq)]
 pub enum Expression {
+    /// A literal value
+    LiteralValue(LiteralValue),
+
     /// A single identifier
     Identifier(String),
 
@@ -44,6 +47,43 @@ pub enum Expression {
 
     /// A raise function
     RaiseFunction(RaiseFunction),
+}
+
+/// A literal value
+/// See details [sqlite-literal]
+///
+/// [sqlite-literal]: https://www.sqlite.org/syntax/literal-value.html
+#[derive(Debug, PartialEq)]
+pub enum LiteralValue {
+    /// A number
+    Number(String),
+
+    /// A string
+    String(String),
+
+    /// A blob
+    Blob(String),
+
+    /// A boolean
+    Boolean(bool),
+
+    /// A null value
+    Null,
+
+    /// True
+    True,
+
+    /// False
+    False,
+
+    /// Current time
+    CurrentTime,
+
+    /// Current date
+    CurrentDate,
+
+    /// Current timestamp
+    CurrentTimestamp,
 }
 
 /// A binary operation

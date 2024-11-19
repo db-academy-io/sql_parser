@@ -20,7 +20,7 @@ pub use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, Dro
 pub use explain::ExplainStatement;
 pub use expression::*;
 pub use insert::InsertStatement;
-pub use select::SelectStatement;
+pub use select::*;
 pub use sqlite::{
     AnalyzeStatement, AttachStatement, DetachStatement, PragmaStatement, ReindexStatement,
     VacuumStatement,

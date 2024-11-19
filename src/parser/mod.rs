@@ -2,6 +2,8 @@
 mod test_utils;
 
 mod drop;
+mod expression;
+mod select;
 mod sqlite;
 mod trx;
 
@@ -9,11 +11,11 @@ mod errors;
 pub use errors::*;
 use trx::TransactionStatementParser;
 
-use std::iter::Peekable;
-
 use crate::{Keyword, Statement, Token, TokenType, Tokenizer};
 use drop::DropStatementParser;
+use select::SelectStatementParser;
 use sqlite::SQLite3StatementParser;
+use std::iter::Peekable;
 
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,
@@ -138,6 +140,7 @@ impl<'a> Parser<'a> {
             Keyword::Release => self.parse_release_statement(),
             Keyword::Savepoint => self.parse_savepoint_statement(),
             Keyword::Pragma => self.parse_pragma_statement(),
+            Keyword::Select => self.parse_select_statement(),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),
         }
     }

@@ -334,6 +334,16 @@ impl<'input> Tokenizer<'input> {
                 token_type: TokenType::Keyword(keyword),
                 position: start_pos,
             }));
+        } else if text.to_lowercase() == "true" {
+            return Some(Ok(Token {
+                token_type: TokenType::True,
+                position: start_pos,
+            }));
+        } else if text.to_lowercase() == "false" {
+            return Some(Ok(Token {
+                token_type: TokenType::False,
+                position: start_pos,
+            }));
         } else {
             // It's an identifier
             return Some(Ok(Token {
@@ -1063,6 +1073,14 @@ mod tests {
             vec![TokenType::Id("[abc]")],
             TokenizerError::UnrecognizedToken,
         );
+    }
+
+    #[test]
+    fn test_boolean_literals() {
+        run_sunny_day_test("true", vec![TokenType::True, TokenType::Semi]);
+        run_sunny_day_test("false", vec![TokenType::False, TokenType::Semi]);
+        run_sunny_day_test("true1", vec![TokenType::Id("true1"), TokenType::Semi]);
+        run_sunny_day_test("fal_se", vec![TokenType::Id("fal_se"), TokenType::Semi]);
     }
 
     #[test]

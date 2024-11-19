@@ -116,6 +116,11 @@ pub enum TokenType<'a> {
     RightShift,
     /// - H41469: SQLite shall recognize the 2-character sequenence "||" (u007c u007c) as token CONCAT
     Concat,
+
+    /// Represents the true literal value
+    True,
+    /// Represents the false literal value
+    False,
 }
 
 impl<'a> Display for TokenType<'a> {
@@ -152,6 +157,8 @@ impl<'a> Display for TokenType<'a> {
             TokenType::GreaterEquals => write!(f, ">="),
             TokenType::RightShift => write!(f, ">>"),
             TokenType::Concat => write!(f, "||"),
+            TokenType::True => write!(f, "true"),
+            TokenType::False => write!(f, "false"),
         }
     }
 }

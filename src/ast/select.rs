@@ -4,7 +4,7 @@ use super::Expression;
 /// See details [sqlite-select-statement]
 ///
 /// [sqlite-select-statement]:https://www.sqlite.org/lang_select.html
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct SelectStatement {
     /// The list of columns to select
     pub columns: Vec<SelectItem>,
@@ -18,6 +18,9 @@ pub struct SelectStatement {
 /// An enum representing the possible items in a SELECT statement
 #[derive(Debug, PartialEq)]
 pub enum SelectItem {
+    /// An identifier
+    Identifier(String),
+
     /// A single expression
     Expression(Expression),
 
