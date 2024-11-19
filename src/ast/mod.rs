@@ -3,6 +3,7 @@ mod create;
 mod delete;
 mod drop;
 mod explain;
+mod expression;
 mod insert;
 mod select;
 mod sqlite;
@@ -17,6 +18,7 @@ pub use create::{
 pub use delete::DeleteStatement;
 pub use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
 pub use explain::ExplainStatement;
+pub use expression::*;
 pub use insert::InsertStatement;
 pub use select::SelectStatement;
 pub use sqlite::{

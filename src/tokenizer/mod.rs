@@ -445,7 +445,7 @@ impl<'input> Tokenizer<'input> {
         let mut has_dot = false;
         let mut has_exponent = false;
         let mut is_valid = true;
-        // To track the number of consecutive '_' symbols  
+        // To track the number of consecutive '_' symbols
         let mut last_underscore_symbol_position: Option<usize> = None;
 
         // check for the hex literal 0x[value]
@@ -530,7 +530,7 @@ impl<'input> Tokenizer<'input> {
             return Some(Err(TokenizerError::BadNumber));
         }
 
-        // check if number ends with '_' symbol 
+        // check if number ends with '_' symbol
         if let Some(position) = last_underscore_symbol_position {
             if self.current_pos - position == 1 {
                 return Some(Err(TokenizerError::BadNumber));
