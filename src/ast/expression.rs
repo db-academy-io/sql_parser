@@ -31,7 +31,7 @@ pub enum Expression {
     CollateExpression(Box<Expression>, String),
 
     /// A unary matching expression (e.g. expression IS NOT NULL)
-    UnaryMatchingExpression(UnaryMatchingExpressionType, Box<Expression>),
+    UnaryMatchingExpression(Box<Expression>, UnaryMatchingExpression),
 
     /// A binary matching expression (e.g. expression LIKE pattern)
     BinaryMatchingExpression(Box<Expression>, BinaryMatchingExpression),
@@ -223,7 +223,7 @@ pub enum TypeName {
 
 /// A unary matching expression type
 #[derive(Debug, PartialEq)]
-pub enum UnaryMatchingExpressionType {
+pub enum UnaryMatchingExpression {
     /// Is Null
     IsNull,
     /// Is Not Null
