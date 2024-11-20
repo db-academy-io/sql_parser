@@ -1,4 +1,5 @@
-use crate::Expression;
+use crate::parser::expression;
+use crate::{Expression, UnaryOp};
 
 use super::{Parser, ParsingError, TokenType};
 use crate::ast::LiteralValue;
@@ -19,6 +20,8 @@ pub trait ExpressionParser {
     fn parse_identifier(&mut self) -> Result<String, ParsingError>;
 
     fn parse_compound_identifier(&mut self) -> Result<Vec<String>, ParsingError>;
+
+    fn parse_unary_op(&mut self) -> Result<Expression, ParsingError>;
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
@@ -46,6 +49,11 @@ impl<'a> ExpressionParser for Parser<'a> {
             } else {
                 return Ok(Expression::CompoundIdentifier(compound_identifier));
             }
+        }
+
+        // Check if it's an unary operation
+        if let Ok(expression) = self.parse_unary_op() {
+            return Ok(expression);
         }
 
         todo!()
@@ -159,12 +167,36 @@ impl<'a> ExpressionParser for Parser<'a> {
             _ => Err(ParsingError::UnexpectedToken(token.to_string())),
         }
     }
+
+    /// Parse a unary operation
+    fn parse_unary_op(&mut self) -> Result<Expression, ParsingError> {
+        // Check if it's a plus operation
+        if self.peek_as(TokenType::Plus).is_ok() {
+            self.consume_token()?;
+            return Ok(Expression::UnaryOp(
+                UnaryOp::Plus,
+                Box::new(self.parse_expression()?),
+            ));
+        }
+
+        // Check if it's a minus operation
+        if self.peek_as(TokenType::Minus).is_ok() {
+            self.consume_token()?;
+            return Ok(Expression::UnaryOp(
+                UnaryOp::Minus,
+                Box::new(self.parse_expression()?),
+            ));
+        }
+
+        let token = self.peek_token()?;
+        Err(ParsingError::UnexpectedToken(token.to_string()))
+    }
 }
 
 #[cfg(test)]
 mod test_utils {
     use crate::ast::{Expression, SelectItem};
-    use crate::{LiteralValue, Parser, Statement};
+    use crate::{LiteralValue, Parser, Statement, UnaryOp};
 
     // TODO: Make this generic, and move to test_utils module
     pub fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
@@ -228,6 +260,10 @@ mod test_utils {
 
     pub fn compound_identifier_expression(values: &[&str]) -> Expression {
         Expression::CompoundIdentifier(values.iter().map(|s| s.to_string()).collect())
+    }
+
+    pub fn unary_op_expression(op: UnaryOp, value: Expression) -> Expression {
+        Expression::UnaryOp(op, Box::new(value))
     }
 }
 
@@ -311,6 +347,33 @@ mod identifier_expression_tests {
         run_sunny_day_test(
             "SELECT schema1.table1.column1;",
             &compound_identifier_expression(&["schema1", "table1", "column1"]),
+        );
+    }
+}
+
+#[cfg(test)]
+mod unary_op_expression_tests {
+    use crate::UnaryOp;
+
+    use super::test_utils::*;
+
+    #[test]
+    fn test_expression_unary_op_valid() {
+        run_sunny_day_test(
+            "SELECT +1;",
+            &unary_op_expression(UnaryOp::Plus, numeric_literal_expression("1")),
+        );
+        run_sunny_day_test(
+            "SELECT -1;",
+            &unary_op_expression(UnaryOp::Minus, numeric_literal_expression("1")),
+        );
+        run_sunny_day_test(
+            "SELECT -abc;",
+            &unary_op_expression(UnaryOp::Minus, identifier_expression("abc")),
+        );
+        run_sunny_day_test(
+            "SELECT +abc;",
+            &unary_op_expression(UnaryOp::Plus, identifier_expression("abc")),
         );
     }
 }

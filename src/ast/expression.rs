@@ -105,8 +105,11 @@ pub enum BinaryOp {
 /// A unary operation
 #[derive(Debug, PartialEq)]
 pub enum UnaryOp {
-    /// Negation (-)
-    Neg,
+    /// Plus (+)
+    Plus,
+
+    /// Minus (-)
+    Minus,
 }
 
 /// An SQL function
