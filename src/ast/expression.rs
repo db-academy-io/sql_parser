@@ -9,6 +9,9 @@ pub enum Expression {
     /// A literal value
     LiteralValue(LiteralValue),
 
+    /// A bind parameter
+    BindParameter(String),
+
     /// A single identifier
     Identifier(String),
 

@@ -19,7 +19,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
         let mut select_statement = SelectStatement::default();
 
         let maybe_expression = self.parse_expression();
-
+        dbg!(&maybe_expression);
         if let Ok(expression) = maybe_expression {
             select_statement
                 .columns

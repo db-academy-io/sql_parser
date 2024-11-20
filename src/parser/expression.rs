@@ -8,24 +8,31 @@ use crate::Keyword;
 /// The expression documentation can be found here:
 /// https://www.sqlite.org/lang_expr.html
 pub trait ExpressionParser {
+    fn is_end_of_expression(&mut self) -> bool;
+
     fn parse_expression(&mut self) -> Result<Expression, ParsingError>;
 
     fn parse_literal_value(&mut self) -> Result<LiteralValue, ParsingError>;
+
+    fn parse_bind_parameter(&mut self) -> Result<String, ParsingError>;
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
+    fn is_end_of_expression(&mut self) -> bool {
+        self.peek_as(TokenType::Semi).is_ok()
+    }
+
+    /// Parse an expression
     /// Parse an expression
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
-        let is_literal_value = self.parse_literal_value();
-        if let Ok(literal_value) = is_literal_value {
+        // Check if it's a literal value
+        if let Ok(literal_value) = self.parse_literal_value() {
             return Ok(Expression::LiteralValue(literal_value));
-            // match self.finalize_statement_parsing() {
-            //     Ok(()) => return Ok(Expression::LiteralValue(literal_value)),
-            //     Err(_) => {
-            //         let token = self.peek_token()?;
-            //         return Err(ParsingError::UnexpectedToken(token.to_string()));
-            //     }
-            // }
+        }
+
+        // Check if it's a bind parameter
+        if let Ok(is_bind_parameter) = self.parse_bind_parameter() {
+            return Ok(Expression::BindParameter(is_bind_parameter));
         }
         todo!()
     }
@@ -89,16 +96,27 @@ impl<'a> ExpressionParser for Parser<'a> {
             _ => Err(ParsingError::UnexpectedToken(token.to_string())),
         }
     }
+
+    /// Parse a bind parameter
+    fn parse_bind_parameter(&mut self) -> Result<String, ParsingError> {
+        let token = self.peek_token()?;
+        match token.token_type {
+            TokenType::Variable(value) => {
+                self.consume_token()?;
+                Ok(value.to_string())
+            }
+            _ => Err(ParsingError::UnexpectedToken(token.to_string())),
+        }
+    }
 }
 
 #[cfg(test)]
-mod literal_value_expression_tests {
-    use crate::ast::Expression;
-    use crate::ast::SelectItem;
-    use crate::{Parser, Statement};
+mod test_utils {
+    use crate::ast::{Expression, SelectItem};
+    use crate::{LiteralValue, Parser, Statement};
 
     // TODO: Make this generic, and move to test_utils module
-    fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
+    pub fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
         let mut parser = Parser::from(sql);
         let actual_expression = parser
             .parse_statement()
@@ -129,25 +147,35 @@ mod literal_value_expression_tests {
         }
     }
 
-    fn numeric_literal_expression(value: &str) -> Expression {
+    pub fn numeric_literal_expression(value: &str) -> Expression {
         Expression::LiteralValue(LiteralValue::Number(value.to_string()))
     }
 
-    fn string_literal_expression(value: &str) -> Expression {
+    pub fn string_literal_expression(value: &str) -> Expression {
         Expression::LiteralValue(LiteralValue::String(value.to_string()))
     }
 
-    fn blob_literal_expression(value: &str) -> Expression {
+    pub fn blob_literal_expression(value: &str) -> Expression {
         Expression::LiteralValue(LiteralValue::Blob(value.to_string()))
     }
 
-    fn boolean_literal_expression(value: bool) -> Expression {
+    pub fn boolean_literal_expression(value: bool) -> Expression {
         Expression::LiteralValue(LiteralValue::Boolean(value))
     }
 
-    fn null_literal_expression() -> Expression {
+    pub fn null_literal_expression() -> Expression {
         Expression::LiteralValue(LiteralValue::Null)
     }
+
+    pub fn bind_parameter_expression(value: &str) -> Expression {
+        Expression::BindParameter(value.to_string())
+    }
+}
+
+#[cfg(test)]
+mod literal_value_expression_tests {
+    use super::test_utils::*;
+    use crate::ast::{Expression, LiteralValue};
 
     #[test]
     fn test_expression_literal_value_valid() {
@@ -191,6 +219,21 @@ mod literal_value_expression_tests {
             &Expression::LiteralValue(LiteralValue::CurrentTimestamp),
         );
     }
+}
 
-    use super::*;
+#[cfg(test)]
+mod bind_parameter_expression_tests {
+    use super::test_utils::*;
+
+    #[test]
+    fn test_expression_bind_parameter_valid() {
+        run_sunny_day_test("SELECT ?;", &bind_parameter_expression("?"));
+        run_sunny_day_test("SELECT ?1;", &bind_parameter_expression("?1"));
+        run_sunny_day_test("SELECT :name;", &bind_parameter_expression(":name"));
+        run_sunny_day_test("SELECT @var;", &bind_parameter_expression("@var"));
+        run_sunny_day_test("SELECT $value;", &bind_parameter_expression("$value"));
+        run_sunny_day_test("SELECT #param;", &bind_parameter_expression("#param"));
+
+        // TODO: Add tests for invalid bind parameters
+    }
 }

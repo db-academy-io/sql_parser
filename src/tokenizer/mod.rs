@@ -1380,6 +1380,9 @@ mod tests {
 
     #[test]
     fn test_variable_placeholders() {
+        // TODO: Support ?-1 ?-1.2 ?123abc in the tokenizer
+        // (double check with the spec, as sqlite supports it. Dunno if it's a bug or a feature)
+        // let sql = "? ?1 ?abc ?1abc ?-1 ?-1.2 ?123abc :name :123 @var $value #param";
         let sql = "? ?1 :name @var $value #param";
         let expected_tokens = vec![
             TokenType::Variable("?"),
