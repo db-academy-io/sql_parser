@@ -15,6 +15,10 @@ pub trait ExpressionParser {
     fn parse_literal_value(&mut self) -> Result<LiteralValue, ParsingError>;
 
     fn parse_bind_parameter(&mut self) -> Result<String, ParsingError>;
+
+    fn parse_identifier(&mut self) -> Result<String, ParsingError>;
+
+    fn parse_compound_identifier(&mut self) -> Result<Vec<String>, ParsingError>;
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
@@ -34,7 +38,54 @@ impl<'a> ExpressionParser for Parser<'a> {
         if let Ok(is_bind_parameter) = self.parse_bind_parameter() {
             return Ok(Expression::BindParameter(is_bind_parameter));
         }
+
+        // Check if it's a compound identifier
+        if let Ok(compound_identifier) = self.parse_compound_identifier() {
+            if compound_identifier.len() == 1 {
+                return Ok(Expression::Identifier(compound_identifier[0].clone()));
+            } else {
+                return Ok(Expression::CompoundIdentifier(compound_identifier));
+            }
+        }
+
         todo!()
+    }
+
+    /// Parse an identifier
+    fn parse_identifier(&mut self) -> Result<String, ParsingError> {
+        let token = self.peek_token()?;
+        match token.token_type {
+            TokenType::Id(value) => {
+                // Consume the identifier token
+                self.consume_token()?;
+                Ok(value.to_string())
+            }
+            _ => Err(ParsingError::UnexpectedToken(token.to_string())),
+        }
+    }
+
+    /// Parse a compound identifier
+    fn parse_compound_identifier(&mut self) -> Result<Vec<String>, ParsingError> {
+        let mut identifiers = Vec::new();
+
+        while let Ok(identifier) = self.parse_identifier() {
+            identifiers.push(identifier);
+
+            if self.peek_as(TokenType::Dot).is_ok() {
+                // Consume the dot token
+                self.consume_token()?;
+            } else {
+                break;
+            }
+        }
+
+        if identifiers.is_empty() {
+            return Err(ParsingError::UnexpectedToken(
+                "Expected identifier".to_string(),
+            ));
+        }
+
+        Ok(identifiers)
     }
 
     /// Parse a literal value
@@ -170,6 +221,14 @@ mod test_utils {
     pub fn bind_parameter_expression(value: &str) -> Expression {
         Expression::BindParameter(value.to_string())
     }
+
+    pub fn identifier_expression(value: &str) -> Expression {
+        Expression::Identifier(value.to_string())
+    }
+
+    pub fn compound_identifier_expression(values: &[&str]) -> Expression {
+        Expression::CompoundIdentifier(values.iter().map(|s| s.to_string()).collect())
+    }
 }
 
 #[cfg(test)]
@@ -235,5 +294,23 @@ mod bind_parameter_expression_tests {
         run_sunny_day_test("SELECT #param;", &bind_parameter_expression("#param"));
 
         // TODO: Add tests for invalid bind parameters
+    }
+}
+
+#[cfg(test)]
+mod identifier_expression_tests {
+    use super::test_utils::*;
+
+    #[test]
+    fn test_expression_identifier_valid() {
+        run_sunny_day_test("SELECT id;", &identifier_expression("id"));
+        run_sunny_day_test(
+            "SELECT table1.column1;",
+            &compound_identifier_expression(&["table1", "column1"]),
+        );
+        run_sunny_day_test(
+            "SELECT schema1.table1.column1;",
+            &compound_identifier_expression(&["schema1", "table1", "column1"]),
+        );
     }
 }
