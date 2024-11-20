@@ -1,5 +1,15 @@
 #![allow(unused)]
 
+mod tokenizer_blobs;
+mod tokenizer_general;
+mod tokenizer_identifiers;
+mod tokenizer_keywords;
+mod tokenizer_numbers;
+mod tokenizer_operators;
+mod tokenizer_strings;
+mod tokenizer_variables;
+mod tokenizer_whitespaces;
+
 use sql_parser::{Token, TokenType, Tokenizer, TokenizerError};
 
 pub fn run_sunny_day_test<'a>(sql: &'a str, expected_tokens: Vec<TokenType<'a>>) {
