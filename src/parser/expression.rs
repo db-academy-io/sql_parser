@@ -2,15 +2,11 @@ use super::pratt_parser::PrattParser;
 use crate::Expression;
 
 use super::{Parser, ParsingError, TokenType};
-use crate::ast::LiteralValue;
-use crate::Keyword;
 
 /// Trait for parsing expressions
 /// The expression documentation can be found here:
 /// https://www.sqlite.org/lang_expr.html
 pub trait ExpressionParser {
-    fn is_end_of_expression(&mut self) -> bool;
-
     fn parse_expression(&mut self) -> Result<Expression, ParsingError>;
 
     fn parse_identifier(&mut self) -> Result<String, ParsingError>;
@@ -19,10 +15,6 @@ pub trait ExpressionParser {
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
-    fn is_end_of_expression(&mut self) -> bool {
-        self.peek_as(TokenType::Semi).is_ok()
-    }
-
     /// Parse an expression
     /// See details [sqlite-expression]
     ///

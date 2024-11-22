@@ -48,7 +48,7 @@ pub trait PrattParser {
         -> Result<Expression, ParsingError>;
 
     /// Get the precedence of an operator
-    fn get_precedence<'a>(&mut self, operator: &TokenType<'a>) -> u8;
+    fn get_precedence(&mut self, operator: &TokenType<'_>) -> u8;
 
     /// Get the precedence of the current operator
     fn current_precedence(&mut self) -> u8;
@@ -196,15 +196,15 @@ impl<'a> PrattParser for Parser<'a> {
         }
     }
 
-    fn get_precedence<'b>(&mut self, operator: &TokenType<'b>) -> u8 {
-        *PRECEDENCE.get(&operator).unwrap_or(&0)
+    fn get_precedence(&mut self, operator: &TokenType<'_>) -> u8 {
+        *PRECEDENCE.get(operator).unwrap_or(&0)
     }
 
     fn current_precedence(&mut self) -> u8 {
         if let Ok(token) = self.peek_token() {
             return self.get_precedence(&token.token_type);
         }
-        return 0;
+        0
     }
 }
 
