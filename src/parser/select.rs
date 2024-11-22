@@ -19,6 +19,10 @@ impl<'a> SelectStatementParser for Parser<'a> {
         let mut select_statement = SelectStatement::default();
 
         let maybe_expression = self.parse_expression();
+        dbg!(
+            "parse_select_statement: maybe_expression: {:?}",
+            &maybe_expression
+        );
 
         if let Ok(expression) = maybe_expression {
             select_statement

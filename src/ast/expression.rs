@@ -1,3 +1,5 @@
+use crate::{ParsingError, TokenType};
+
 use super::SelectStatement;
 
 /// An SQL expression
@@ -100,6 +102,23 @@ pub enum BinaryOp {
     Mul,
     /// Division (/)
     Div,
+}
+
+impl<'a> TryFrom<&'a TokenType<'a>> for BinaryOp {
+    type Error = ParsingError;
+
+    fn try_from(token_type: &'a TokenType<'a>) -> Result<Self, Self::Error> {
+        match token_type {
+            TokenType::Plus => Ok(BinaryOp::Add),
+            TokenType::Minus => Ok(BinaryOp::Sub),
+            TokenType::Star => Ok(BinaryOp::Mul),
+            TokenType::Slash => Ok(BinaryOp::Div),
+            _ => Err(ParsingError::UnexpectedToken(format!(
+                "Unexpected token: {}",
+                token_type
+            ))),
+        }
+    }
 }
 
 /// A unary operation

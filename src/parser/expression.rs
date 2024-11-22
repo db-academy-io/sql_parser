@@ -1,5 +1,5 @@
-use crate::parser::expression;
-use crate::{Expression, UnaryOp};
+use super::pratt_parser::PrattParser;
+use crate::Expression;
 
 use super::{Parser, ParsingError, TokenType};
 use crate::ast::LiteralValue;
@@ -13,15 +13,9 @@ pub trait ExpressionParser {
 
     fn parse_expression(&mut self) -> Result<Expression, ParsingError>;
 
-    fn parse_literal_value(&mut self) -> Result<LiteralValue, ParsingError>;
-
-    fn parse_bind_parameter(&mut self) -> Result<String, ParsingError>;
-
     fn parse_identifier(&mut self) -> Result<String, ParsingError>;
 
     fn parse_compound_identifier(&mut self) -> Result<Vec<String>, ParsingError>;
-
-    fn parse_unary_op(&mut self) -> Result<Expression, ParsingError>;
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
@@ -30,18 +24,13 @@ impl<'a> ExpressionParser for Parser<'a> {
     }
 
     /// Parse an expression
-    /// Parse an expression
+    /// See details [sqlite-expression]
+    ///
+    /// [sqlite-expression]: https://www.sqlite.org/lang_expr.html#the_expr_list
+    /// The expression precedence is defined https://www.sqlite.org/lang_expr.html
+    ///
+    /// [sqlite-expression-precedence]: https://www.sqlite.org/lang_expr.html#:~:text=show-,2.%20Operators%2C%20and%20Parse%2DAffecting%20Attributes,-SQLite%20understands%20these
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
-        // Check if it's a literal value
-        if let Ok(literal_value) = self.parse_literal_value() {
-            return Ok(Expression::LiteralValue(literal_value));
-        }
-
-        // Check if it's a bind parameter
-        if let Ok(is_bind_parameter) = self.parse_bind_parameter() {
-            return Ok(Expression::BindParameter(is_bind_parameter));
-        }
-
         // Check if it's a compound identifier
         if let Ok(compound_identifier) = self.parse_compound_identifier() {
             if compound_identifier.len() == 1 {
@@ -51,8 +40,9 @@ impl<'a> ExpressionParser for Parser<'a> {
             }
         }
 
-        // Check if it's an unary operation
-        if let Ok(expression) = self.parse_unary_op() {
+        let expression = self.parse_expression_pratt(0);
+        dbg!("parse_expression: {:?}", &expression);
+        if let Ok(expression) = expression {
             return Ok(expression);
         }
 
@@ -95,108 +85,12 @@ impl<'a> ExpressionParser for Parser<'a> {
 
         Ok(identifiers)
     }
-
-    /// Parse a literal value
-    /// See details [sqlite-literal]
-    ///
-    /// [sqlite-literal]: https://www.sqlite.org/lang_expr.html#literal_values
-    fn parse_literal_value(&mut self) -> Result<LiteralValue, ParsingError> {
-        // Check if it's a keyword literal (NULL, CURRENT_TIME, CURRENT_DATE, CURRENT_TIMESTAMP)
-        if let Ok(keyword) = self.peek_as_keyword() {
-            if keyword == Keyword::Null
-                || keyword == Keyword::CurrentTime
-                || keyword == Keyword::CurrentDate
-                || keyword == Keyword::CurrentTimestamp
-            {
-                self.consume_token()?;
-            }
-
-            match keyword {
-                Keyword::Null => return Ok(LiteralValue::Null),
-                Keyword::CurrentTime => return Ok(LiteralValue::CurrentTime),
-                Keyword::CurrentDate => return Ok(LiteralValue::CurrentDate),
-                Keyword::CurrentTimestamp => return Ok(LiteralValue::CurrentTimestamp),
-                _ => {}
-            }
-        }
-
-        // Check if it's a TRUE literal
-        if self.peek_as(TokenType::True).is_ok() {
-            // Consume the TRUE token
-            self.consume_token()?;
-            return Ok(LiteralValue::Boolean(true));
-        }
-        // Check if it's a FALSE literal
-        if self.peek_as(TokenType::False).is_ok() {
-            // Consume the FALSE token
-            self.consume_token()?;
-            return Ok(LiteralValue::Boolean(false));
-        }
-
-        let token = self.peek_token()?;
-
-        match token.token_type {
-            TokenType::String(value) => {
-                self.consume_token()?;
-                Ok(LiteralValue::String(value.to_string()))
-            }
-            TokenType::Blob(value) => {
-                self.consume_token()?;
-                Ok(LiteralValue::Blob(value.to_string()))
-            }
-            TokenType::Integer(value) => {
-                self.consume_token()?;
-                Ok(LiteralValue::Number(value.to_string()))
-            }
-            TokenType::Float(value) => {
-                self.consume_token()?;
-                Ok(LiteralValue::Number(value.to_string()))
-            }
-            _ => Err(ParsingError::UnexpectedToken(token.to_string())),
-        }
-    }
-
-    /// Parse a bind parameter
-    fn parse_bind_parameter(&mut self) -> Result<String, ParsingError> {
-        let token = self.peek_token()?;
-        match token.token_type {
-            TokenType::Variable(value) => {
-                self.consume_token()?;
-                Ok(value.to_string())
-            }
-            _ => Err(ParsingError::UnexpectedToken(token.to_string())),
-        }
-    }
-
-    /// Parse a unary operation
-    fn parse_unary_op(&mut self) -> Result<Expression, ParsingError> {
-        // Check if it's a plus operation
-        if self.peek_as(TokenType::Plus).is_ok() {
-            self.consume_token()?;
-            return Ok(Expression::UnaryOp(
-                UnaryOp::Plus,
-                Box::new(self.parse_expression()?),
-            ));
-        }
-
-        // Check if it's a minus operation
-        if self.peek_as(TokenType::Minus).is_ok() {
-            self.consume_token()?;
-            return Ok(Expression::UnaryOp(
-                UnaryOp::Minus,
-                Box::new(self.parse_expression()?),
-            ));
-        }
-
-        let token = self.peek_token()?;
-        Err(ParsingError::UnexpectedToken(token.to_string()))
-    }
 }
 
 #[cfg(test)]
-mod test_utils {
+pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
-    use crate::{LiteralValue, Parser, Statement, UnaryOp};
+    use crate::{BinaryOp, LiteralValue, Parser, Statement, UnaryOp};
 
     // TODO: Make this generic, and move to test_utils module
     pub fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
@@ -264,6 +158,10 @@ mod test_utils {
 
     pub fn unary_op_expression(op: UnaryOp, value: Expression) -> Expression {
         Expression::UnaryOp(op, Box::new(value))
+    }
+
+    pub fn binary_op_expression(op: BinaryOp, left: Expression, right: Expression) -> Expression {
+        Expression::BinaryOp(Box::new(left), op, Box::new(right))
     }
 }
 

@@ -7,7 +7,7 @@ use std::fmt::Display;
 ///
 /// The following keywords are recognized as distinct tokens
 ///
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Keyword {
     /// H41503: SQLite shall recognize the 5-character sequenence "ABORT" in any combination of upper and lower case letters as the keyword token ABORT.
     Abort,

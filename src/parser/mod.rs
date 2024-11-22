@@ -2,20 +2,21 @@
 mod test_utils;
 
 mod drop;
-mod expression;
+pub(crate) mod expression;
 mod select;
 mod sqlite;
 mod trx;
 
-mod errors;
-pub use errors::*;
-use trx::TransactionStatementParser;
+mod pratt_parser;
 
+mod errors;
 use crate::{Keyword, Statement, Token, TokenType, Tokenizer};
 use drop::DropStatementParser;
+pub use errors::*;
 use select::SelectStatementParser;
 use sqlite::SQLite3StatementParser;
 use std::iter::Peekable;
+use trx::TransactionStatementParser;
 
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,

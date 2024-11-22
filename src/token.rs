@@ -34,7 +34,7 @@ impl<'a> TryInto<Keyword> for Token<'a> {
 }
 
 /// Enumeration of all possible token types that the tokenizer can recognize
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum TokenType<'a> {
     /// Represents a SQL keyword, such as SELECT, FROM, WHERE etc.
     /// See [Keyword] for details
