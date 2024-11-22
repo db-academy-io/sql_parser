@@ -61,11 +61,8 @@ pub trait ExpressionParser {
     fn parse_infix(&mut self, left: Expression, precedence: u8)
         -> Result<Expression, ParsingError>;
 
-    /// Get the precedence of an operator
-    fn get_precedence(&mut self, operator: &TokenType<'_>) -> u8;
-
-    /// Get the precedence of the current operator
-    fn current_precedence(&mut self) -> u8;
+    /// Get the precedence of the given operator
+    fn get_precedence(&mut self, operator: &TokenType) -> u8;
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
@@ -132,11 +129,13 @@ impl<'a> ExpressionParser for Parser<'a> {
         Ok(identifiers)
     }
 
+    /// Parse an expression using Pratt's parsing algorithm
     fn parse_expression_pratt(&mut self, precedence: u8) -> Result<Expression, ParsingError> {
         let mut expression = self.parse_prefix()?;
 
         loop {
-            let next_precedence = self.current_precedence();
+            let current_token = self.peek_token()?;
+            let next_precedence = self.get_precedence(&current_token.token_type);
 
             if precedence >= next_precedence {
                 break;
@@ -147,6 +146,7 @@ impl<'a> ExpressionParser for Parser<'a> {
     }
 
     /// Parse an infix expression
+    /// An infix expression is an expression that has a left operand.
     fn parse_infix(
         &mut self,
         left: Expression,
@@ -164,6 +164,8 @@ impl<'a> ExpressionParser for Parser<'a> {
         ))
     }
 
+    /// Parse a prefix expression
+    /// A prefix expression is an expression that does not have a left operand.
     fn parse_prefix(&mut self) -> Result<Expression, ParsingError> {
         if let Ok(keyword) = self.peek_as_keyword() {
             if keyword == Keyword::Null
@@ -273,15 +275,9 @@ impl<'a> ExpressionParser for Parser<'a> {
         }
     }
 
-    fn get_precedence(&mut self, operator: &TokenType<'_>) -> u8 {
+    /// Get the precedence of the given operator
+    fn get_precedence(&mut self, operator: &TokenType) -> u8 {
         *PRECEDENCE.get(operator).unwrap_or(&0)
-    }
-
-    fn current_precedence(&mut self) -> u8 {
-        if let Ok(token) = self.peek_token() {
-            return self.get_precedence(&token.token_type);
-        }
-        0
     }
 }
 
