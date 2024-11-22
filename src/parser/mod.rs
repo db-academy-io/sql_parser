@@ -7,8 +7,6 @@ mod select;
 mod sqlite;
 mod trx;
 
-mod pratt_parser;
-
 mod errors;
 use crate::{Keyword, Statement, Token, TokenType, Tokenizer};
 use drop::DropStatementParser;
