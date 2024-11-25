@@ -7,6 +7,10 @@ pub struct BeginTransactionStatement {
     pub transaction_type: Option<TransactionType>,
 }
 
+/// The type of transaction
+/// See details [sqlite-transaction-type]
+///
+/// [sqlite-transaction-type]: https://www.sqlite.org/lang_transaction.html
 #[derive(Debug, PartialEq)]
 pub enum TransactionType {
     /// DEFERRED means that the transaction does not actually start until the

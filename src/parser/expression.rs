@@ -1,11 +1,13 @@
 use crate::{
-    BinaryOp, Expression, Keyword, LiteralValue, Parser, ParsingError, TokenType, UnaryOp,
+    BinaryOp, Expression, Function, FunctionArg, Identifier, Keyword, LiteralValue, OrderingTerm,
+    OverClause, Parser, ParsingError, TokenType, UnaryOp,
 };
 
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
 /// The precedence of the operators.
+///
 /// The precedence of an operator is the maximum precedence of the expressions
 /// that can be formed with the operator.
 ///
@@ -41,12 +43,26 @@ pub trait ExpressionParser {
     /// Parse an expression
     fn parse_expression(&mut self) -> Result<Expression, ParsingError>;
 
-    /// Parse an identifier
-    fn parse_identifier(&mut self) -> Result<String, ParsingError>;
+    /// Parse a function
+    fn parse_function(&mut self, name: Identifier) -> Result<Expression, ParsingError>;
 
-    /// Parse a compound identifier
-    /// A compound identifier is an identifier that contains multiple parts separated by dots.
-    fn parse_compound_identifier(&mut self) -> Result<Vec<String>, ParsingError>;
+    /// Parse a function arguments
+    fn parse_function_args(&mut self) -> Result<Vec<FunctionArg>, ParsingError>;
+
+    /// Parse a function argument
+    fn parse_function_arg(&mut self) -> Result<FunctionArg, ParsingError>;
+
+    /// Parse a function ordering terms
+    fn parse_function_ordering_terms(&mut self) -> Result<Vec<OrderingTerm>, ParsingError>;
+
+    /// Parse a function filter clause
+    fn parse_function_filter_clause(&mut self) -> Result<Expression, ParsingError>;
+
+    /// Parse a function over clause
+    fn parse_function_over_clause(&mut self) -> Result<OverClause, ParsingError>;
+
+    /// Parse an identifier
+    fn parse_identifier(&mut self) -> Result<Identifier, ParsingError>;
 
     /// Parse an expression using Pratt's parsing algorithm
     /// `rbp` is the right binding power of the current operator
@@ -70,16 +86,20 @@ impl<'a> ExpressionParser for Parser<'a> {
     /// See details [sqlite-expression]
     ///
     /// [sqlite-expression]: https://www.sqlite.org/lang_expr.html#the_expr_list
-    /// The expression precedence is defined https://www.sqlite.org/lang_expr.html
-    ///
-    /// [sqlite-expression-precedence]: https://www.sqlite.org/lang_expr.html#:~:text=show-,2.%20Operators%2C%20and%20Parse%2DAffecting%20Attributes,-SQLite%20understands%20these
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
         // Check if it's a compound identifier
-        if let Ok(compound_identifier) = self.parse_compound_identifier() {
-            if compound_identifier.len() == 1 {
-                return Ok(Expression::Identifier(compound_identifier[0].clone()));
-            } else {
-                return Ok(Expression::CompoundIdentifier(compound_identifier));
+        if let Ok(identifier) = self.parse_identifier() {
+            // Check if it's a function call
+            match self.peek_as(TokenType::LeftParen) {
+                Ok(_) => {
+                    // It's a function call
+                    // consume the left parenthesis
+                    self.consume_token()?;
+
+                    // Parse the function arguments
+                    return self.parse_function(identifier);
+                }
+                _ => return Ok(Expression::Identifier(identifier)),
             }
         }
 
@@ -93,40 +113,27 @@ impl<'a> ExpressionParser for Parser<'a> {
     }
 
     /// Parse an identifier
-    fn parse_identifier(&mut self) -> Result<String, ParsingError> {
-        let token = self.peek_token()?;
-        match token.token_type {
-            TokenType::Id(value) => {
-                // Consume the identifier token
-                self.consume_token()?;
-                Ok(value.to_string())
-            }
-            _ => Err(ParsingError::UnexpectedToken(token.to_string())),
-        }
-    }
+    fn parse_identifier(&mut self) -> Result<Identifier, ParsingError> {
+        let mut components = Vec::new();
 
-    /// Parse a compound identifier
-    fn parse_compound_identifier(&mut self) -> Result<Vec<String>, ParsingError> {
-        let mut identifiers = Vec::new();
-
-        while let Ok(identifier) = self.parse_identifier() {
-            identifiers.push(identifier);
+        while let Ok(identifier) = self.peek_as_id() {
+            components.push(identifier.to_string());
+            // Consume the identifier token
+            self.consume_token()?;
 
             if self.peek_as(TokenType::Dot).is_ok() {
                 // Consume the dot token
                 self.consume_token()?;
-            } else {
-                break;
             }
         }
 
-        if identifiers.is_empty() {
-            return Err(ParsingError::UnexpectedToken(
+        match components.len() {
+            0 => Err(ParsingError::UnexpectedToken(
                 "Expected identifier".to_string(),
-            ));
+            )),
+            1 => Ok(Identifier::Single(components[0].to_string())),
+            _ => Ok(Identifier::Compound(components)),
         }
-
-        Ok(identifiers)
     }
 
     /// Parse an expression using Pratt's parsing algorithm
@@ -196,7 +203,9 @@ impl<'a> ExpressionParser for Parser<'a> {
         match token.token_type {
             TokenType::Id(value) => {
                 self.consume_token()?;
-                Ok(Expression::Identifier(value.to_string()))
+                Ok(Expression::Identifier(Identifier::Single(
+                    value.to_string(),
+                )))
             }
             TokenType::Integer(value) => {
                 self.consume_token()?;
@@ -279,12 +288,117 @@ impl<'a> ExpressionParser for Parser<'a> {
     fn get_precedence(&mut self, operator: &TokenType) -> u8 {
         *PRECEDENCE.get(operator).unwrap_or(&0)
     }
+
+    /// Parse a function
+    fn parse_function(&mut self, name: Identifier) -> Result<Expression, ParsingError> {
+        let mut function = Function {
+            name: name,
+            args: Vec::new(),
+            filter_clause: None,
+            over_clause: None,
+        };
+        function.args = self.parse_function_args()?;
+        dbg!("AAAA");
+        dbg!("parse_function: function.args: {:?}", &function.args);
+        if let Ok(token) = self.peek_as_keyword() {
+            if token == Keyword::Filter {
+                self.consume_token()?;
+                function.filter_clause = Some(Box::new(self.parse_function_filter_clause()?));
+            }
+        }
+
+        if let Ok(token) = self.peek_as_keyword() {
+            if token == Keyword::Over {
+                self.consume_token()?;
+                function.over_clause = Some(self.parse_function_over_clause()?);
+            }
+        }
+
+        Ok(Expression::Function(function))
+    }
+
+    /// Parse a function arguments
+    fn parse_function_args(&mut self) -> Result<Vec<FunctionArg>, ParsingError> {
+        dbg!("parse_function_args");
+        let mut args = Vec::new();
+
+        while let Ok(arg) = self.parse_function_arg() {
+            args.push(arg);
+            dbg!("parse_function_args: args: {:?}", &args);
+        }
+        dbg!("!!!!parse_function_args: args: {:?}", &args);
+        Ok(args)
+    }
+
+    /// Parse a function argument
+    fn parse_function_arg(&mut self) -> Result<FunctionArg, ParsingError> {
+        match self.peek_token()?.token_type {
+            TokenType::Keyword(Keyword::Distinct) => {
+                // Consume the distinct keyword
+                self.consume_token()?;
+                let expression = self.parse_expression()?;
+                return Ok(FunctionArg::Distinct(expression));
+            }
+            TokenType::Star => {
+                // Consume the star token
+                self.consume_token()?;
+                return Ok(FunctionArg::Wildcard);
+            }
+            TokenType::RightParen => {
+                // Consume the right parenthesis
+                self.consume_token()?;
+                return Ok(FunctionArg::None);
+            }
+            _ => {
+                let expression = self.parse_expression()?;
+
+                let token = self.peek_token()?;
+                if token.token_type == TokenType::Keyword(Keyword::Order) {
+                    // Consume the order keyword
+                    self.consume_token()?;
+
+                    let by_token_expected = self.peek_token()?;
+                    if by_token_expected.token_type != TokenType::Keyword(Keyword::By) {
+                        return Err(ParsingError::UnexpectedToken(format!(
+                            "Expected by keyword, got: {}",
+                            by_token_expected.token_type
+                        )));
+                    }
+
+                    // Consume the by keyword
+                    self.consume_token()?;
+
+                    let ordering_terms = self.parse_function_ordering_terms()?;
+                    return Ok(FunctionArg::OrderedByExpression(expression, ordering_terms));
+                }
+                return Ok(FunctionArg::Expression(expression));
+            }
+        }
+    }
+
+    /// Parse a function ordering terms
+    fn parse_function_ordering_terms(&mut self) -> Result<Vec<OrderingTerm>, ParsingError> {
+        todo!()
+    }
+
+    /// Parse a function filter clause
+    fn parse_function_filter_clause(&mut self) -> Result<Expression, ParsingError> {
+        todo!()
+    }
+
+    /// Parse a function over clause
+    fn parse_function_over_clause(&mut self) -> Result<OverClause, ParsingError> {
+        todo!()
+    }
 }
 
 #[cfg(test)]
 pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
-    use crate::{BinaryOp, LiteralValue, Parser, Statement, UnaryOp};
+    use crate::{
+        BinaryOp, Function, FunctionArg, Identifier, LiteralValue, OverClause, Parser, Statement,
+        UnaryOp,
+    };
 
     // TODO: Make this generic, and move to test_utils module
     pub fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
@@ -343,11 +457,13 @@ pub(crate) mod test_utils {
     }
 
     pub fn identifier_expression(value: &str) -> Expression {
-        Expression::Identifier(value.to_string())
+        Expression::Identifier(Identifier::Single(value.to_string()))
     }
 
     pub fn compound_identifier_expression(values: &[&str]) -> Expression {
-        Expression::CompoundIdentifier(values.iter().map(|s| s.to_string()).collect())
+        Expression::Identifier(Identifier::Compound(
+            values.iter().map(|s| s.to_string()).collect(),
+        ))
     }
 
     pub fn unary_op_expression(op: UnaryOp, value: Expression) -> Expression {
@@ -356,6 +472,27 @@ pub(crate) mod test_utils {
 
     pub fn binary_op_expression(op: BinaryOp, left: Expression, right: Expression) -> Expression {
         Expression::BinaryOp(Box::new(left), op, Box::new(right))
+    }
+
+    pub fn function_expression(
+        name: &str,
+        args: &[Expression],
+        filter: Option<Box<Expression>>,
+        over: Option<OverClause>,
+    ) -> Expression {
+        let args = args
+            .iter()
+            .map(|arg| FunctionArg::Expression(arg.clone()))
+            .collect();
+
+        let function = Function {
+            name: Identifier::Single(name.to_string()),
+            args,
+            filter_clause: filter,
+            over_clause: over,
+        };
+
+        Expression::Function(function)
     }
 }
 
@@ -472,7 +609,7 @@ mod unary_op_expression_tests {
 
 #[cfg(test)]
 mod binary_op_expression_tests {
-    use super::super::expression::test_utils::*;
+    use super::test_utils::*;
     use crate::{BinaryOp, UnaryOp};
 
     #[test]
@@ -608,5 +745,62 @@ mod binary_op_expression_tests {
                 numeric_literal_expression("4"),
             ),
         );
+    }
+}
+
+#[cfg(test)]
+mod function_expression_tests {
+    // use super::test_utils::*;
+
+    #[test]
+    fn test_expression_function_valid() {
+        // run_sunny_day_test(
+        //     "SELECT abc();",
+        //     &function_expression("abc", &[], None, None),
+        // );
+
+        // run_sunny_day_test(
+        //     "SELECT abc(*);",
+        //     &function_expression("abc", &[], None, None),
+        // );
+
+        // run_sunny_day_test(
+        //     "SELECT abc(1);",
+        //     &function_expression("abc", &[numeric_literal_expression("1")], None, None),
+        // );
+
+        // run_sunny_day_test(
+        //     "SELECT abc(distinct 1);",
+        //     &function_expression("abc", &[numeric_literal_expression("1")], None, None),
+        // );
+
+        // run_sunny_day_test(
+        //     "SELECT abc(distinct 1 + 2);",
+        //     &function_expression("abc", &[numeric_literal_expression("1")], None, None),
+        // );
+
+        // run_sunny_day_test(
+        //     "SELECT abc(1, 2, 3);",
+        //     &function_expression(
+        //         "abc",
+        //         &[
+        //             numeric_literal_expression("1"),
+        //             numeric_literal_expression("2"),
+        //             numeric_literal_expression("3"),
+        //     ],
+        //     None,
+        //     None,
+        // ),
+        // );
+
+        // run_sunny_day_test(
+        //     "SELECT abc(distinct 1);",
+        //     &function_expression("abc", &[numeric_literal_expression("1")], None, None),
+        // );
+
+        // run_sunny_day_test(
+        //     "SELECT abc(-1);",
+        //     &function_expression("abc", &[numeric_literal_expression("-1")], None, None),
+        // );
     }
 }

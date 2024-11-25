@@ -6,7 +6,7 @@ use super::SelectStatement;
 /// See details [sqlite-expression]
 ///
 /// [sqlite-expression]: https://www.sqlite.org/lang_expr.html
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     /// A literal value
     LiteralValue(LiteralValue),
@@ -15,10 +15,7 @@ pub enum Expression {
     BindParameter(String),
 
     /// A single identifier
-    Identifier(String),
-
-    /// A compound identifier (e.g. "schema_name.table_name.column_name")
-    CompoundIdentifier(Vec<String>),
+    Identifier(Identifier),
 
     /// A function call
     Function(Function),
@@ -58,7 +55,7 @@ pub enum Expression {
 /// See details [sqlite-literal]
 ///
 /// [sqlite-literal]: https://www.sqlite.org/syntax/literal-value.html
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum LiteralValue {
     /// A number
     Number(String),
@@ -91,8 +88,17 @@ pub enum LiteralValue {
     CurrentTimestamp,
 }
 
+/// An identifier
+#[derive(Debug, PartialEq, Clone)]
+pub enum Identifier {
+    /// A single identifier
+    Single(String),
+    /// A compound identifier
+    Compound(Vec<String>),
+}
+
 /// A binary operation
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BinaryOp {
     /// Addition (+)
     Add,
@@ -122,7 +128,7 @@ impl<'a> TryFrom<&'a TokenType<'a>> for BinaryOp {
 }
 
 /// A unary operation
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UnaryOp {
     /// Plus (+)
     Plus,
@@ -132,26 +138,26 @@ pub enum UnaryOp {
 }
 
 /// An SQL function
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Function {
     /// The name of the function
-    name: String,
+    pub name: Identifier,
     /// The arguments of the function
-    args: Vec<FunctionArg>,
+    pub args: Vec<FunctionArg>,
     /// The filter clause of the function
-    filter_clause: Option<Box<Expression>>,
+    pub filter_clause: Option<Box<Expression>>,
     /// The over clause of the function
-    over_clause: Option<OverClause>,
+    pub over_clause: Option<OverClause>,
 }
 
 /// A function argument
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FunctionArg {
     /// A distinct argument
     Distinct(Expression),
 
     /// An expression argument
-    Expression(Vec<Expression>),
+    Expression(Expression),
 
     /// An ordered by expression argument
     OrderedByExpression(Expression, Vec<OrderingTerm>),
@@ -164,33 +170,33 @@ pub enum FunctionArg {
 }
 
 /// An over clause
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct OverClause {
     /// The window name
-    window_name: Option<String>,
+    pub window_name: Option<String>,
     /// The partition by clause
-    partition_by: Option<Vec<Expression>>,
+    pub partition_by: Option<Vec<Expression>>,
     /// The order by clause
-    order_by: Option<Vec<OrderingTerm>>,
+    pub order_by: Option<Vec<OrderingTerm>>,
     /// The frame spec
-    frame_spec: Option<FrameSpec>,
+    pub frame_spec: Option<FrameSpec>,
 }
 
 /// An ordering term
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct OrderingTerm {
     /// The expression to order by
-    expression: Box<Expression>,
+    pub expression: Box<Expression>,
     /// The collation name
-    collation_name: Option<String>,
+    pub collation_name: Option<String>,
     /// The ordering
-    ordering: Option<Ordering>,
+    pub ordering: Option<Ordering>,
     /// The nulls ordering
-    nulls_ordering: Option<NullsOrdering>,
+    pub nulls_ordering: Option<NullsOrdering>,
 }
 
 /// An ordering
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Ordering {
     /// Ascending
     Asc,
@@ -199,7 +205,7 @@ pub enum Ordering {
 }
 
 /// Nulls ordering
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum NullsOrdering {
     /// Nulls first
     First,
@@ -208,18 +214,18 @@ pub enum NullsOrdering {
 }
 
 /// A frame spec
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FrameSpec {
     /// The frame type
-    frame_type: FrameType,
+    pub frame_type: FrameType,
     /// The frame spec type
-    frame_spec_type: FrameSpecType,
+    pub frame_spec_type: FrameSpecType,
     /// The exclude clause
-    exclude: Option<FrameSpecExclude>,
+    pub exclude: Option<FrameSpecExclude>,
 }
 
 /// A frame type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FrameType {
     /// Rows frame type
     Rows,
@@ -230,7 +236,7 @@ pub enum FrameType {
 }
 
 /// A frame spec type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FrameSpecType {
     /// A between frame spec
     Between(BetweenFrameSpec),
@@ -243,16 +249,16 @@ pub enum FrameSpecType {
 }
 
 /// A between frame spec
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BetweenFrameSpec {
     /// The start frame spec type
-    start: BetweenFrameSpecType,
+    pub start: BetweenFrameSpecType,
     /// The end frame spec type
-    end: BetweenFrameSpecType,
+    pub end: BetweenFrameSpecType,
 }
 
 /// A between frame spec type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BetweenFrameSpecType {
     /// Unbounded preceding
     UnboundedPreceding,
@@ -267,7 +273,7 @@ pub enum BetweenFrameSpecType {
 }
 
 /// A frame spec exclude
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FrameSpecExclude {
     /// No others
     NoOthers,
@@ -280,14 +286,14 @@ pub enum FrameSpecExclude {
 }
 
 /// A type name
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TypeName {
     /// A data type name
     DataType(String),
 }
 
 /// A unary matching expression type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UnaryMatchingExpression {
     /// Is Null
     IsNull,
@@ -296,7 +302,7 @@ pub enum UnaryMatchingExpression {
 }
 
 /// A binary matching expression
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BinaryMatchingExpression {
     /// Not BinaryMatchingExpression, i.e. NOT $expression
     Not(Box<BinaryMatchingExpression>),
@@ -324,7 +330,7 @@ pub enum BinaryMatchingExpression {
 }
 
 /// A like expression type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum LikeExpressionType {
     /// An expression
     Expression(Box<Expression>),
@@ -334,16 +340,16 @@ pub enum LikeExpressionType {
 }
 
 /// An escape expression
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct EscapeExpression {
     /// The expression
-    expression: Box<Expression>,
+    pub expression: Box<Expression>,
     /// The escape expression
-    escape_expression: Option<Box<Expression>>,
+    pub escape_expression: Option<Box<Expression>>,
 }
 
 /// An IS expression
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct AnIsExpression {
     /// The expression
     pub expression: Box<Expression>,
@@ -352,7 +358,7 @@ pub struct AnIsExpression {
 }
 
 /// A between expression
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BetweenExpression {
     /// The lower bound
     pub lower_bound: Box<Expression>,
@@ -361,7 +367,7 @@ pub struct BetweenExpression {
 }
 
 /// An in expression
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum InExpressionType {
     /// Empty
     Empty,
@@ -380,7 +386,7 @@ pub enum InExpressionType {
 }
 
 /// An exists statement type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ExistsStatement {
     /// Exists
     Exists(SelectStatement),
@@ -390,7 +396,7 @@ pub enum ExistsStatement {
 }
 
 /// A case expression
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CaseExpression {
     /// The expression
     pub expression: Box<Option<Expression>>,
@@ -403,7 +409,7 @@ pub struct CaseExpression {
 }
 
 /// A when expression
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct WhenExpression {
     /// The condition (next after WHEN keyword)
     pub condition: Box<Expression>,
@@ -412,7 +418,7 @@ pub struct WhenExpression {
 }
 
 /// A raise function
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum RaiseFunction {
     /// Ignore
     Ignore,
