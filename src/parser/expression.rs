@@ -292,7 +292,7 @@ impl<'a> ExpressionParser for Parser<'a> {
     /// Parse a function
     fn parse_function(&mut self, name: Identifier) -> Result<Expression, ParsingError> {
         let mut function = Function {
-            name: name,
+            name,
             args: Vec::new(),
             filter_clause: None,
             over_clause: None,
@@ -337,17 +337,17 @@ impl<'a> ExpressionParser for Parser<'a> {
                 // Consume the distinct keyword
                 self.consume_token()?;
                 let expression = self.parse_expression()?;
-                return Ok(FunctionArg::Distinct(expression));
+                Ok(FunctionArg::Distinct(expression))
             }
             TokenType::Star => {
                 // Consume the star token
                 self.consume_token()?;
-                return Ok(FunctionArg::Wildcard);
+                Ok(FunctionArg::Wildcard)
             }
             TokenType::RightParen => {
                 // Consume the right parenthesis
                 self.consume_token()?;
-                return Ok(FunctionArg::None);
+                Ok(FunctionArg::None)
             }
             _ => {
                 let expression = self.parse_expression()?;
@@ -371,7 +371,7 @@ impl<'a> ExpressionParser for Parser<'a> {
                     let ordering_terms = self.parse_function_ordering_terms()?;
                     return Ok(FunctionArg::OrderedByExpression(expression, ordering_terms));
                 }
-                return Ok(FunctionArg::Expression(expression));
+                Ok(FunctionArg::Expression(expression))
             }
         }
     }
