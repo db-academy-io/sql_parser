@@ -18,9 +18,6 @@ pub struct SelectStatement {
 /// An enum representing the possible items in a SELECT statement
 #[derive(Debug, PartialEq, Clone)]
 pub enum SelectItem {
-    /// An identifier
-    Identifier(String),
-
     /// A single expression
     Expression(Expression),
 
