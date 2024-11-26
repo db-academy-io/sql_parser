@@ -37,3 +37,34 @@ impl<'a> SelectStatementParser for Parser<'a> {
         todo!()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{Expression, LiteralValue, SelectItem, SelectStatement, Statement};
+
+    use super::super::test_utils::*;
+
+    #[test]
+    fn test_select_statement_parser_with_single_literal_value() {
+        run_sunny_day_test(
+            "SELECT 1",
+            Statement::Select(SelectStatement {
+                columns: vec![SelectItem::Expression(Expression::LiteralValue(
+                    LiteralValue::Number("1".to_string()),
+                ))],
+                ..Default::default()
+            }),
+        );
+    }
+
+    // #[test]
+    // fn test_select_statement_parser_with_single_identifier() {
+    //     run_sunny_day_test(
+    //         "SELECT id",
+    //         Statement::Select(SelectStatement {
+    //             columns: vec![SelectItem::Identifier("id".to_string())],
+    //             ..Default::default()
+    //         }),
+    //     );
+    // }
+}
