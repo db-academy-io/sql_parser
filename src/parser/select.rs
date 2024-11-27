@@ -1,4 +1,4 @@
-use crate::{Statement, TokenType};
+use crate::{Keyword, Statement, TokenType};
 
 use super::expression::ExpressionParser;
 use super::{Parser, ParsingError};
@@ -11,6 +11,12 @@ pub trait SelectStatementParser {
     fn parse_select_statement(&mut self) -> Result<Statement, ParsingError>;
 
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError>;
+
+    fn parse_select_distinct(&mut self) -> Result<bool, ParsingError>;
+
+    fn parse_select_all(&mut self) -> Result<bool, ParsingError>;
+
+    fn parser_select_from_part(&mut self) -> Result<(), ParsingError>;
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
@@ -20,16 +26,14 @@ impl<'a> SelectStatementParser for Parser<'a> {
 
         let mut select_statement = SelectStatement::default();
 
-        let columns = self.parse_select_columns()?;
-        select_statement.columns = columns;
+        select_statement.distinct = self.parse_select_distinct()?;
+        select_statement.all = self.parse_select_all()?;
+        select_statement.columns = self.parse_select_columns()?;
+        self.parser_select_from_part()?;
 
-        if let Ok(()) = self.finalize_statement_parsing() {
-            return Ok(Statement::Select(select_statement));
-        }
-
-        todo!()
+        Ok(Statement::Select(select_statement))
     }
-    
+
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError> {
         let mut select_items = Vec::new();
 
@@ -48,6 +52,28 @@ impl<'a> SelectStatementParser for Parser<'a> {
             }
         }
         Ok(select_items)
+    }
+
+    fn parse_select_distinct(&mut self) -> Result<bool, ParsingError> {
+        if let Ok(Keyword::Distinct) = self.peek_as_keyword() {
+            self.consume_token()?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn parse_select_all(&mut self) -> Result<bool, ParsingError> {
+        if let Ok(Keyword::All) = self.peek_as_keyword() {
+            self.consume_token()?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn parser_select_from_part(&mut self) -> Result<(), ParsingError> {
+        todo!()
     }
 }
 
@@ -75,7 +101,9 @@ mod tests {
         run_sunny_day_test(
             "SELECT id",
             Statement::Select(SelectStatement {
-                columns: vec![SelectItem::Expression(Expression::Identifier(Identifier::Single("id".to_string())))],
+                columns: vec![SelectItem::Expression(Expression::Identifier(
+                    Identifier::Single("id".to_string()),
+                ))],
                 ..Default::default()
             }),
         );
