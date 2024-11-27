@@ -17,14 +17,14 @@ pub enum Expression {
     /// A single identifier
     Identifier(Identifier),
 
-    /// A function call
-    Function(Function),
+    /// A unary operation
+    UnaryOp(UnaryOp, Box<Expression>),
 
     /// A binary operation
     BinaryOp(Box<Expression>, BinaryOp, Box<Expression>),
 
-    /// A unary operation
-    UnaryOp(UnaryOp, Box<Expression>),
+    /// A function call
+    Function(Function),
 
     /// An expression list (e.g. (1, 2, 3))
     ExpressionList(Vec<Expression>),
@@ -35,11 +35,11 @@ pub enum Expression {
     /// A collate expression (e.g. expression COLLATE collation_name)
     CollateExpression(Box<Expression>, String),
 
+    /// A binary matching expressions (e.g. $expr1 NOT MATCH $expr2)
+    BinaryMatchingExpression(Box<Expression>, BinaryMatchingExpression),
+
     /// A unary matching expression (e.g. expression IS NOT NULL)
     UnaryMatchingExpression(Box<Expression>, UnaryMatchingExpression),
-
-    /// A binary matching expression (e.g. expression LIKE pattern)
-    BinaryMatchingExpression(Box<Expression>, BinaryMatchingExpression),
 
     /// An exists statement
     ExistsStatement(ExistsStatement),
@@ -86,6 +86,17 @@ pub enum LiteralValue {
 
     /// Current timestamp
     CurrentTimestamp,
+}
+
+/// A column identifier
+#[derive(Debug, PartialEq, Clone)]
+pub struct ColumnIdentifier {
+    /// The schema name
+    pub schema: Option<String>,
+    /// The table name
+    pub table: Option<String>,
+    /// The column name
+    pub column: String,
 }
 
 /// An identifier
