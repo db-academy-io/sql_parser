@@ -29,7 +29,9 @@ impl<'a> SelectStatementParser for Parser<'a> {
         select_statement.distinct = self.parse_select_distinct()?;
         select_statement.all = self.parse_select_all()?;
         select_statement.columns = self.parse_select_columns()?;
-        self.parser_select_from_part()?;
+
+        // TODO:
+        // self.parser_select_from_part()?;
 
         Ok(Statement::Select(select_statement))
     }
