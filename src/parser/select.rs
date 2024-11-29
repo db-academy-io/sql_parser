@@ -44,7 +44,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             if let Ok(expression) = self.parse_expression() {
                 select_items.push(SelectItem::Expression(expression));
 
-                if let Ok(_) = self.peek_as(TokenType::Comma) {
+                if self.peek_as(TokenType::Comma).is_ok() {
                     self.consume_token()?;
                 } else {
                     break;
