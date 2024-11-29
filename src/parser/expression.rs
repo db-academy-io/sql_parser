@@ -474,6 +474,7 @@ pub(crate) mod test_utils {
         Expression::BinaryOp(Box::new(left), op, Box::new(right))
     }
 
+    #[allow(dead_code)]
     pub fn function_expression(
         name: &str,
         args: &[Expression],

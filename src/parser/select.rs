@@ -16,6 +16,7 @@ pub trait SelectStatementParser {
 
     fn parse_select_all(&mut self) -> Result<bool, ParsingError>;
 
+    #[allow(dead_code)]
     fn parser_select_from_part(&mut self) -> Result<(), ParsingError>;
 }
 
@@ -24,11 +25,12 @@ impl<'a> SelectStatementParser for Parser<'a> {
         // Consume the SELECT keyword
         self.consume_token()?;
 
-        let mut select_statement = SelectStatement::default();
-
-        select_statement.distinct = self.parse_select_distinct()?;
-        select_statement.all = self.parse_select_all()?;
-        select_statement.columns = self.parse_select_columns()?;
+        let select_statement = SelectStatement {
+            distinct: self.parse_select_distinct()?,
+            all: self.parse_select_all()?,
+            columns: self.parse_select_columns()?,
+            ..Default::default()
+        };
 
         // TODO:
         // self.parser_select_from_part()?;
@@ -39,16 +41,11 @@ impl<'a> SelectStatementParser for Parser<'a> {
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError> {
         let mut select_items = Vec::new();
 
-        loop {
-            // Parse select columns
-            if let Ok(expression) = self.parse_expression() {
-                select_items.push(SelectItem::Expression(expression));
+        while let Ok(expression) = self.parse_expression() {
+            select_items.push(SelectItem::Expression(expression));
 
-                if self.peek_as(TokenType::Comma).is_ok() {
-                    self.consume_token()?;
-                } else {
-                    break;
-                }
+            if self.peek_as(TokenType::Comma).is_ok() {
+                self.consume_token()?;
             } else {
                 break;
             }
