@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{ParsingError, TokenType};
 
 use super::SelectStatement;
@@ -112,13 +114,60 @@ pub enum Identifier {
 #[derive(Debug, PartialEq, Clone)]
 pub enum BinaryOp {
     /// Addition (+)
-    Add,
+    Plus,
     /// Subtraction (-)
-    Sub,
+    Minus,
     /// Multiplication (*)
     Mul,
     /// Division (/)
     Div,
+    /// Modulo (%)
+    Remainder,
+    /// Greater than (>)
+    GreaterThan,
+    /// Greater than or equal (>=)
+    GreaterThanOrEquals,
+    /// Less than (<)
+    LessThan,
+    /// Less than or equal (<=)
+    LessThanOrEquals,
+    /// Equals (=)
+    Equals,
+    /// Not equals (!=)
+    NotEquals,
+    /// Concatenation (||)
+    Concat,
+    /// Bitwise AND (&)
+    BitAnd,
+    /// Bitwise OR (|)
+    BitOr,
+    /// Left shift (<<)
+    LeftShift,
+    /// Right shift (>>)
+    RightShift,
+}
+
+impl Display for BinaryOp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BinaryOp::Plus => write!(f, "+"),
+            BinaryOp::Minus => write!(f, "-"),
+            BinaryOp::Mul => write!(f, "*"),
+            BinaryOp::Div => write!(f, "/"),
+            BinaryOp::Remainder => write!(f, "%"),
+            BinaryOp::GreaterThan => write!(f, ">"),
+            BinaryOp::GreaterThanOrEquals => write!(f, ">="),
+            BinaryOp::LessThan => write!(f, "<"),
+            BinaryOp::LessThanOrEquals => write!(f, "<="),
+            BinaryOp::Equals => write!(f, "="),
+            BinaryOp::NotEquals => write!(f, "!="),
+            BinaryOp::Concat => write!(f, "||"),
+            BinaryOp::BitAnd => write!(f, "&"),
+            BinaryOp::BitOr => write!(f, "|"),
+            BinaryOp::LeftShift => write!(f, "<<"),
+            BinaryOp::RightShift => write!(f, ">>"),
+        }
+    }
 }
 
 impl<'a> TryFrom<&'a TokenType<'a>> for BinaryOp {
@@ -126,10 +175,22 @@ impl<'a> TryFrom<&'a TokenType<'a>> for BinaryOp {
 
     fn try_from(token_type: &'a TokenType<'a>) -> Result<Self, Self::Error> {
         match token_type {
-            TokenType::Plus => Ok(BinaryOp::Add),
-            TokenType::Minus => Ok(BinaryOp::Sub),
+            TokenType::Plus => Ok(BinaryOp::Plus),
+            TokenType::Minus => Ok(BinaryOp::Minus),
             TokenType::Star => Ok(BinaryOp::Mul),
             TokenType::Slash => Ok(BinaryOp::Div),
+            TokenType::Remainder => Ok(BinaryOp::Remainder),
+            TokenType::GreaterThan => Ok(BinaryOp::GreaterThan),
+            TokenType::GreaterEquals => Ok(BinaryOp::GreaterThanOrEquals),
+            TokenType::LessThan => Ok(BinaryOp::LessThan),
+            TokenType::LessEquals => Ok(BinaryOp::LessThanOrEquals),
+            TokenType::Equals => Ok(BinaryOp::Equals),
+            TokenType::NotEquals => Ok(BinaryOp::NotEquals),
+            TokenType::Concat => Ok(BinaryOp::Concat),
+            TokenType::BitAnd => Ok(BinaryOp::BitAnd),
+            TokenType::BitOr => Ok(BinaryOp::BitOr),
+            TokenType::LeftShift => Ok(BinaryOp::LeftShift),
+            TokenType::RightShift => Ok(BinaryOp::RightShift),
             _ => Err(ParsingError::UnexpectedToken(format!(
                 "Unexpected token: {}",
                 token_type
@@ -181,20 +242,8 @@ pub enum FunctionArgType {
     Wildcard,
 }
 
-// impl Display for FunctionArgType {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             FunctionArgType::Expression(expression) => write!(f, "{}", expression),
-//             FunctionArgType::OrderedBy(expression, ordering_terms) => {
-//                 write!(f, "{} order by {}", expression, ordering_terms.join(", "))
-//             }
-//             _ => write!(f, "{}", self),
-//         }
-//     }
-// }
-
 /// An over clause
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct OverClause {
     /// The window name
     pub window_name: Option<String>,

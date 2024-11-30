@@ -503,47 +503,45 @@ mod binary_op_expression_tests {
     use crate::{BinaryOp, UnaryOp};
 
     #[test]
+    fn test_expression_binary_ops() {
+        use BinaryOp::*;
+        let operators = [
+            Plus,
+            Minus,
+            Mul,
+            Div,
+            Remainder,
+            GreaterThan,
+            GreaterThanOrEquals,
+            LessThan,
+            LessThanOrEquals,
+            Equals,
+            NotEquals,
+            Concat,
+            BitAnd,
+            BitOr,
+            LeftShift,
+            RightShift,
+        ];
+
+        for op in operators {
+            run_sunny_day_test(
+                &format!("SELECT 1 {} 2;", op),
+                &binary_op_expression(
+                    op,
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                ),
+            );
+        }
+    }
+
+    #[test]
     fn test_expression_binary_op_valid() {
-        run_sunny_day_test(
-            "SELECT 1 + 2;",
-            &binary_op_expression(
-                BinaryOp::Add,
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-            ),
-        );
-
-        run_sunny_day_test(
-            "SELECT 1 - 2;",
-            &binary_op_expression(
-                BinaryOp::Sub,
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-            ),
-        );
-
-        run_sunny_day_test(
-            "SELECT 1 * 2;",
-            &binary_op_expression(
-                BinaryOp::Mul,
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-            ),
-        );
-
-        run_sunny_day_test(
-            "SELECT 1 / 2;",
-            &binary_op_expression(
-                BinaryOp::Div,
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-            ),
-        );
-
         run_sunny_day_test(
             "SELECT 1 ++ 2;",
             &binary_op_expression(
-                BinaryOp::Add,
+                BinaryOp::Plus,
                 numeric_literal_expression("1"),
                 unary_op_expression(UnaryOp::Plus, numeric_literal_expression("2")),
             ),
@@ -552,7 +550,7 @@ mod binary_op_expression_tests {
         run_sunny_day_test(
             "SELECT 1 + 2 * 3;",
             &binary_op_expression(
-                BinaryOp::Add,
+                BinaryOp::Plus,
                 numeric_literal_expression("1"),
                 binary_op_expression(
                     BinaryOp::Mul,
@@ -578,9 +576,9 @@ mod binary_op_expression_tests {
         run_sunny_day_test(
             "SELECT 1 + 2 + 3;",
             &binary_op_expression(
-                BinaryOp::Add,
+                BinaryOp::Plus,
                 binary_op_expression(
-                    BinaryOp::Add,
+                    BinaryOp::Plus,
                     numeric_literal_expression("1"),
                     numeric_literal_expression("2"),
                 ),
@@ -604,9 +602,9 @@ mod binary_op_expression_tests {
         run_sunny_day_test(
             "SELECT 1 + 2 * 3 - 4",
             &binary_op_expression(
-                BinaryOp::Sub,
+                BinaryOp::Minus,
                 binary_op_expression(
-                    BinaryOp::Add,
+                    BinaryOp::Plus,
                     numeric_literal_expression("1"),
                     binary_op_expression(
                         BinaryOp::Mul,

@@ -73,6 +73,21 @@ impl<'a> Parser<'a> {
         token.try_into()
     }
 
+    /// Consume the current token if it matches the specified `keyword`.
+    /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
+    fn consume_keyword(&mut self, keyword: Keyword) -> Result<(), ParsingError> {
+        let token = self.peek_token()?;
+        if token.token_type == TokenType::Keyword(keyword) {
+            self.consume_token()?;
+            Ok(())
+        } else {
+            Err(ParsingError::UnexpectedToken(format!(
+                "Expected keyword: {}, got: {}",
+                keyword, token
+            )))
+        }
+    }
+
     /// Peek the current token as a [TokenType::Id] without advancing the underlaying
     /// iterator. If there is a token which is not a [Keyword], it will
     /// throw an [ParsingError]  
