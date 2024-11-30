@@ -154,7 +154,7 @@ pub struct Function {
     /// The name of the function
     pub name: Identifier,
     /// The arguments of the function
-    pub args: Vec<FunctionArg>,
+    pub arg: FunctionArg,
     /// The filter clause of the function
     pub filter_clause: Option<Box<Expression>>,
     /// The over clause of the function
@@ -162,23 +162,36 @@ pub struct Function {
 }
 
 /// A function argument
-#[derive(Debug, PartialEq, Clone)]
-pub enum FunctionArg {
-    /// A distinct argument
-    Distinct(Expression),
-
-    /// An expression argument
-    Expression(Expression),
-
-    /// An ordered by expression argument
-    OrderedByExpression(Expression, Vec<OrderingTerm>),
-
-    /// A wildcard argument
-    Wildcard,
-
-    /// No argument
-    None,
+#[derive(Debug, PartialEq, Clone, Default)]
+pub struct FunctionArg {
+    /// The DISTINCT keyword and expressions
+    pub distinct: bool,
+    /// The arguments
+    pub arguments: Vec<FunctionArgType>,
 }
+
+/// A function argument type
+#[derive(Debug, PartialEq, Clone)]
+pub enum FunctionArgType {
+    /// An expression wrapper
+    Expression(Expression),
+    /// An expression with ordering terms
+    OrderedBy(Expression, Vec<OrderingTerm>),
+    /// A wildcard
+    Wildcard,
+}
+
+// impl Display for FunctionArgType {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             FunctionArgType::Expression(expression) => write!(f, "{}", expression),
+//             FunctionArgType::OrderedBy(expression, ordering_terms) => {
+//                 write!(f, "{} order by {}", expression, ordering_terms.join(", "))
+//             }
+//             _ => write!(f, "{}", self),
+//         }
+//     }
+// }
 
 /// An over clause
 #[derive(Debug, PartialEq, Clone)]
@@ -194,12 +207,12 @@ pub struct OverClause {
 }
 
 /// An ordering term
+/// Possible collation name will be parsed, and will be stored in the
+/// expression field
 #[derive(Debug, PartialEq, Clone)]
 pub struct OrderingTerm {
     /// The expression to order by
     pub expression: Box<Expression>,
-    /// The collation name
-    pub collation_name: Option<String>,
     /// The ordering
     pub ordering: Option<Ordering>,
     /// The nulls ordering

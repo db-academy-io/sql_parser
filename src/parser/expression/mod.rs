@@ -1,8 +1,11 @@
+mod function;
+
 use crate::{
-    BinaryOp, Expression, Function, FunctionArg, Identifier, Keyword, LiteralValue, OrderingTerm,
-    OverClause, Parser, ParsingError, TokenType, UnaryOp,
+    BinaryOp, Expression, Identifier, Keyword, LiteralValue, Parser, ParsingError, TokenType,
+    UnaryOp,
 };
 
+use function::FunctionParser;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
@@ -43,24 +46,6 @@ pub trait ExpressionParser {
     /// Parse an expression
     fn parse_expression(&mut self) -> Result<Expression, ParsingError>;
 
-    /// Parse a function
-    fn parse_function(&mut self, name: Identifier) -> Result<Expression, ParsingError>;
-
-    /// Parse a function arguments
-    fn parse_function_args(&mut self) -> Result<Vec<FunctionArg>, ParsingError>;
-
-    /// Parse a function argument
-    fn parse_function_arg(&mut self) -> Result<FunctionArg, ParsingError>;
-
-    /// Parse a function ordering terms
-    fn parse_function_ordering_terms(&mut self) -> Result<Vec<OrderingTerm>, ParsingError>;
-
-    /// Parse a function filter clause
-    fn parse_function_filter_clause(&mut self) -> Result<Expression, ParsingError>;
-
-    /// Parse a function over clause
-    fn parse_function_over_clause(&mut self) -> Result<OverClause, ParsingError>;
-
     /// Parse an identifier
     fn parse_identifier(&mut self) -> Result<Identifier, ParsingError>;
 
@@ -90,16 +75,11 @@ impl<'a> ExpressionParser for Parser<'a> {
         // Check if it's a compound identifier
         if let Ok(identifier) = self.parse_identifier() {
             // Check if it's a function call
-            match self.peek_as(TokenType::LeftParen) {
-                Ok(_) => {
-                    // It's a function call
-                    // consume the left parenthesis
-                    self.consume_token()?;
-
-                    // Parse the function arguments
-                    return self.parse_function(identifier);
-                }
-                _ => return Ok(Expression::Identifier(identifier)),
+            if self.peek_as(TokenType::LeftParen).is_ok() {
+                // Parse the function call
+                return self.parse_function(identifier);
+            } else {
+                return Ok(Expression::Identifier(identifier));
             }
         }
 
@@ -288,108 +268,6 @@ impl<'a> ExpressionParser for Parser<'a> {
     fn get_precedence(&mut self, operator: &TokenType) -> u8 {
         *PRECEDENCE.get(operator).unwrap_or(&0)
     }
-
-    /// Parse a function
-    fn parse_function(&mut self, name: Identifier) -> Result<Expression, ParsingError> {
-        let mut function = Function {
-            name,
-            args: Vec::new(),
-            filter_clause: None,
-            over_clause: None,
-        };
-        function.args = self.parse_function_args()?;
-        dbg!("AAAA");
-        dbg!("parse_function: function.args: {:?}", &function.args);
-        if let Ok(token) = self.peek_as_keyword() {
-            if token == Keyword::Filter {
-                self.consume_token()?;
-                function.filter_clause = Some(Box::new(self.parse_function_filter_clause()?));
-            }
-        }
-
-        if let Ok(token) = self.peek_as_keyword() {
-            if token == Keyword::Over {
-                self.consume_token()?;
-                function.over_clause = Some(self.parse_function_over_clause()?);
-            }
-        }
-
-        Ok(Expression::Function(function))
-    }
-
-    /// Parse a function arguments
-    fn parse_function_args(&mut self) -> Result<Vec<FunctionArg>, ParsingError> {
-        dbg!("parse_function_args");
-        let mut args = Vec::new();
-
-        while let Ok(arg) = self.parse_function_arg() {
-            args.push(arg);
-            dbg!("parse_function_args: args: {:?}", &args);
-        }
-        dbg!("!!!!parse_function_args: args: {:?}", &args);
-        Ok(args)
-    }
-
-    /// Parse a function argument
-    fn parse_function_arg(&mut self) -> Result<FunctionArg, ParsingError> {
-        match self.peek_token()?.token_type {
-            TokenType::Keyword(Keyword::Distinct) => {
-                // Consume the distinct keyword
-                self.consume_token()?;
-                let expression = self.parse_expression()?;
-                Ok(FunctionArg::Distinct(expression))
-            }
-            TokenType::Star => {
-                // Consume the star token
-                self.consume_token()?;
-                Ok(FunctionArg::Wildcard)
-            }
-            TokenType::RightParen => {
-                // Consume the right parenthesis
-                self.consume_token()?;
-                Ok(FunctionArg::None)
-            }
-            _ => {
-                let expression = self.parse_expression()?;
-
-                let token = self.peek_token()?;
-                if token.token_type == TokenType::Keyword(Keyword::Order) {
-                    // Consume the order keyword
-                    self.consume_token()?;
-
-                    let by_token_expected = self.peek_token()?;
-                    if by_token_expected.token_type != TokenType::Keyword(Keyword::By) {
-                        return Err(ParsingError::UnexpectedToken(format!(
-                            "Expected by keyword, got: {}",
-                            by_token_expected.token_type
-                        )));
-                    }
-
-                    // Consume the by keyword
-                    self.consume_token()?;
-
-                    let ordering_terms = self.parse_function_ordering_terms()?;
-                    return Ok(FunctionArg::OrderedByExpression(expression, ordering_terms));
-                }
-                Ok(FunctionArg::Expression(expression))
-            }
-        }
-    }
-
-    /// Parse a function ordering terms
-    fn parse_function_ordering_terms(&mut self) -> Result<Vec<OrderingTerm>, ParsingError> {
-        todo!()
-    }
-
-    /// Parse a function filter clause
-    fn parse_function_filter_clause(&mut self) -> Result<Expression, ParsingError> {
-        todo!()
-    }
-
-    /// Parse a function over clause
-    fn parse_function_over_clause(&mut self) -> Result<OverClause, ParsingError> {
-        todo!()
-    }
 }
 
 #[cfg(test)]
@@ -406,6 +284,8 @@ pub(crate) mod test_utils {
         let actual_expression = parser
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
+
+        dbg!("actual_expression: {:?}", &actual_expression);
 
         match actual_expression {
             Statement::Select(select_statement) => {
@@ -474,21 +354,15 @@ pub(crate) mod test_utils {
         Expression::BinaryOp(Box::new(left), op, Box::new(right))
     }
 
-    #[allow(dead_code)]
     pub fn function_expression(
         name: &str,
-        args: &[Expression],
+        arg: FunctionArg,
         filter: Option<Box<Expression>>,
         over: Option<OverClause>,
     ) -> Expression {
-        let args = args
-            .iter()
-            .map(|arg| FunctionArg::Expression(arg.clone()))
-            .collect();
-
         let function = Function {
             name: Identifier::Single(name.to_string()),
-            args,
+            arg,
             filter_clause: filter,
             over_clause: over,
         };
@@ -605,20 +479,7 @@ mod unary_op_expression_tests {
             "SELECT +abc;",
             &unary_op_expression(UnaryOp::Plus, identifier_expression("abc")),
         );
-    }
-}
 
-#[cfg(test)]
-mod binary_op_expression_tests {
-    use super::test_utils::*;
-    use crate::{BinaryOp, UnaryOp};
-
-    #[test]
-    fn test_unary_op_expression() {
-        run_sunny_day_test(
-            "SELECT -1;",
-            &unary_op_expression(UnaryOp::Minus, numeric_literal_expression("1")),
-        );
         run_sunny_day_test(
             "SELECT -+1;",
             &unary_op_expression(
@@ -634,6 +495,12 @@ mod binary_op_expression_tests {
             ),
         );
     }
+}
+
+#[cfg(test)]
+mod binary_op_expression_tests {
+    use super::test_utils::*;
+    use crate::{BinaryOp, UnaryOp};
 
     #[test]
     fn test_expression_binary_op_valid() {
@@ -645,6 +512,7 @@ mod binary_op_expression_tests {
                 numeric_literal_expression("2"),
             ),
         );
+
         run_sunny_day_test(
             "SELECT 1 - 2;",
             &binary_op_expression(
@@ -653,6 +521,7 @@ mod binary_op_expression_tests {
                 numeric_literal_expression("2"),
             ),
         );
+
         run_sunny_day_test(
             "SELECT 1 * 2;",
             &binary_op_expression(
@@ -661,6 +530,7 @@ mod binary_op_expression_tests {
                 numeric_literal_expression("2"),
             ),
         );
+
         run_sunny_day_test(
             "SELECT 1 / 2;",
             &binary_op_expression(
@@ -669,6 +539,7 @@ mod binary_op_expression_tests {
                 numeric_literal_expression("2"),
             ),
         );
+
         run_sunny_day_test(
             "SELECT 1 ++ 2;",
             &binary_op_expression(
@@ -746,62 +617,5 @@ mod binary_op_expression_tests {
                 numeric_literal_expression("4"),
             ),
         );
-    }
-}
-
-#[cfg(test)]
-mod function_expression_tests {
-    // use super::test_utils::*;
-
-    #[test]
-    fn test_expression_function_valid() {
-        // run_sunny_day_test(
-        //     "SELECT abc();",
-        //     &function_expression("abc", &[], None, None),
-        // );
-
-        // run_sunny_day_test(
-        //     "SELECT abc(*);",
-        //     &function_expression("abc", &[], None, None),
-        // );
-
-        // run_sunny_day_test(
-        //     "SELECT abc(1);",
-        //     &function_expression("abc", &[numeric_literal_expression("1")], None, None),
-        // );
-
-        // run_sunny_day_test(
-        //     "SELECT abc(distinct 1);",
-        //     &function_expression("abc", &[numeric_literal_expression("1")], None, None),
-        // );
-
-        // run_sunny_day_test(
-        //     "SELECT abc(distinct 1 + 2);",
-        //     &function_expression("abc", &[numeric_literal_expression("1")], None, None),
-        // );
-
-        // run_sunny_day_test(
-        //     "SELECT abc(1, 2, 3);",
-        //     &function_expression(
-        //         "abc",
-        //         &[
-        //             numeric_literal_expression("1"),
-        //             numeric_literal_expression("2"),
-        //             numeric_literal_expression("3"),
-        //     ],
-        //     None,
-        //     None,
-        // ),
-        // );
-
-        // run_sunny_day_test(
-        //     "SELECT abc(distinct 1);",
-        //     &function_expression("abc", &[numeric_literal_expression("1")], None, None),
-        // );
-
-        // run_sunny_day_test(
-        //     "SELECT abc(-1);",
-        //     &function_expression("abc", &[numeric_literal_expression("-1")], None, None),
-        // );
     }
 }

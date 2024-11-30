@@ -22,5 +22,5 @@ pub enum ParsingError {
     TokenizerError(String),
 
     /// Unexpected parsing state
-    UnexpectedParsingState,
+    UnexpectedParsingState(String),
 }
