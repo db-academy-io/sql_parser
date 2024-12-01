@@ -271,13 +271,15 @@ impl<'a> FunctionParser for Parser<'a> {
             over_clause.order_by = Some(ordering_terms);
         }
 
+        if self.peek_as(TokenType::RightParen).is_ok() {
+            // consume the right parenthesis
+            self.consume_token()?;
+        }
+
         // frame spec
-        match self.peek_as_keyword()? {
-            Keyword::Range | Keyword::Rows | Keyword::Groups => {
-                // do not consume the keyword, as it will be used in the frame spec parsing
-                over_clause.frame_spec = Some(self.parse_function_over_clause_frame_spec()?);
-            }
-            _ => {}
+        if let Ok(Keyword::Range | Keyword::Rows | Keyword::Groups) = self.peek_as_keyword() {
+            // do not consume the keyword, as it will be used in the frame spec parsing
+            over_clause.frame_spec = Some(self.parse_function_over_clause_frame_spec()?);
         }
 
         Ok(over_clause)
@@ -295,6 +297,7 @@ impl<'a> FunctionParser for Parser<'a> {
                 )))
             }
         };
+
         // consume the frame type token
         self.consume_token()?;
 
