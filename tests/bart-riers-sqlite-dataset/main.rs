@@ -1,6 +1,6 @@
 use sql_parser::Parser;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[test]
 fn run_bart_riers_sqlite_dataset_test() {
@@ -19,16 +19,9 @@ fn run_bart_riers_sqlite_dataset_test() {
         let path = entry.path();
 
         if path.extension().and_then(|ext| ext.to_str()) == Some("sql") {
-            let sql_content =
-                fs::read_to_string(&path).expect(&format!("Failed to read SQL file: {:?}", path));
-            let sql_content = sql_content.as_str();
+            let parsing_result = std::panic::catch_unwind(|| run_test(&path));
 
-            let parsing_result = std::panic::catch_unwind(|| {
-                let mut parser = Parser::from(sql_content);
-                parser.parse_statement()
-            });
-
-            if parsing_result.is_ok() {
+            if parsing_result.is_ok() && parsing_result.unwrap() {
                 passed_test += 1;
             }
         }
@@ -47,4 +40,22 @@ fn run_bart_riers_sqlite_dataset_test() {
     );
 
     // assert_eq!(passed_test, total_tests);
+}
+
+/// Run a single test and return true if the test passes, false otherwise
+fn run_test(path: &PathBuf) -> bool {
+    let sql_content =
+        fs::read_to_string(path).expect(&format!("Failed to read SQL file: {:?}", path));
+    let mut parser = Parser::from(sql_content.as_str());
+    let statement = parser.parse_statement();
+    if statement.is_ok() {
+        let debug_output = format!("{:#?}", statement);
+        let debug_file_path = path.with_extension("result.txt");
+
+        std::fs::write(debug_file_path, debug_output).expect("Failed to write debug output");
+        println!("======\n{:?}\n======\n", &statement);
+        std::process::exit(1);
+    }
+
+    statement.is_ok()
 }
