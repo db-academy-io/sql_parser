@@ -32,7 +32,7 @@ pub enum Expression {
     ExpressionList(Vec<Expression>),
 
     /// A cast expression (e.g. CAST(expression AS type))
-    Cast(Box<Expression>, TypeName),
+    Cast(Box<Expression>, DataType),
 
     /// A collate expression (e.g. expression COLLATE collation_name)
     CollateExpression(Box<Expression>, String),
@@ -360,9 +360,15 @@ pub enum FrameSpecExclude {
 
 /// A type name
 #[derive(Debug, PartialEq, Clone)]
-pub enum TypeName {
-    /// A data type name
-    DataType(String),
+pub enum DataType {
+    /// A data type name, e.g. INTEGER
+    PlainDataType(String),
+
+    /// A sized data type, e.g. VARCHAR(10)
+    SizedDataType(String, String),
+
+    /// A bounded data type name, e.g. VARCHAR(1, 10)
+    BoundedDataType(String, String, String),
 }
 
 /// A unary matching expression type

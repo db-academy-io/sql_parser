@@ -1,8 +1,8 @@
 mod function;
 
 use crate::{
-    parser::select::SelectStatementParser, BinaryOp, ExistsStatement, Expression, Identifier,
-    Keyword, LiteralValue, Parser, ParsingError, RaiseFunction, TokenType, UnaryOp,
+    parser::select::SelectStatementParser, BinaryOp, DataType, ExistsStatement, Expression,
+    Identifier, Keyword, LiteralValue, Parser, ParsingError, RaiseFunction, TokenType, UnaryOp,
 };
 
 use function::FunctionParser;
@@ -308,7 +308,45 @@ impl<'a> ExpressionParser for Parser<'a> {
     }
 
     fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError> {
-        todo!()
+        self.consume_keyword(Keyword::Cast)?;
+
+        self.peek_as(TokenType::LeftParen)?;
+        self.consume_token()?;
+
+        dbg!("parse_cast_expression");
+        let expression = self.parse_expression()?;
+        dbg!("expression: {:?}", &expression);
+        self.consume_keyword(Keyword::As)?;
+
+        let data_type = {
+            let name = self.peek_as_id()?;
+            self.consume_token()?;
+
+            if self.peek_as(TokenType::LeftParen).is_ok() {
+                self.consume_token()?;
+                let lower_bound = self.peek_as_number()?;
+                self.consume_token()?;
+
+                if self.peek_as(TokenType::Comma).is_ok() {
+                    self.consume_token()?;
+                    let upper_bound = self.peek_as_number()?;
+                    self.consume_token()?;
+
+                    self.peek_as(TokenType::RightParen)?;
+                    self.consume_token()?;
+
+                    DataType::BoundedDataType(name.to_string(), lower_bound, upper_bound)
+                } else {
+                    self.peek_as(TokenType::RightParen)?;
+                    self.consume_token()?;
+                    DataType::SizedDataType(name.to_string(), lower_bound)
+                }
+            } else {
+                DataType::PlainDataType(name.to_string())
+            }
+        };
+
+        Ok(Expression::Cast(Box::new(expression), data_type))
     }
 
     fn parse_exist_expression(&mut self, is_inverted: bool) -> Result<Expression, ParsingError> {
@@ -398,8 +436,8 @@ impl<'a> ExpressionParser for Parser<'a> {
 pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
-        BinaryOp, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue, OverClause,
-        Parser, RaiseFunction, SelectStatement, Statement, UnaryOp,
+        BinaryOp, DataType, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue,
+        OverClause, Parser, RaiseFunction, SelectStatement, Statement, UnaryOp,
     };
 
     // TODO: Make this generic, and move to test_utils module
@@ -504,6 +542,10 @@ pub(crate) mod test_utils {
 
     pub fn raise_expression(function: RaiseFunction) -> Expression {
         Expression::RaiseFunction(function)
+    }
+
+    pub fn cast_expression(expression: Expression, data_type: DataType) -> Expression {
+        Expression::Cast(Box::new(expression), data_type)
     }
 }
 
@@ -852,6 +894,72 @@ mod raise_expression_tests {
         run_rainy_day_test(
             "SELECT RAISE(FAIL);",
             ParsingError::UnexpectedToken(")".to_string()),
+        );
+    }
+}
+
+#[cfg(test)]
+mod cast_expression_tests {
+    use crate::{BinaryOp, DataType};
+
+    use super::test_utils::*;
+
+    #[test]
+    fn test_expression_cast_basic() {
+        run_sunny_day_test(
+            "SELECT CAST(1 AS INTEGER);",
+            &cast_expression(
+                numeric_literal_expression("1"),
+                DataType::PlainDataType("INTEGER".to_string()),
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_cast_expression() {
+        run_sunny_day_test(
+            "SELECT CAST(1 + 2 AS INTEGER);",
+            &cast_expression(
+                binary_op_expression(
+                    BinaryOp::Plus,
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                ),
+                DataType::PlainDataType("INTEGER".to_string()),
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_cast_with_null() {
+        run_sunny_day_test(
+            "SELECT CAST(NULL AS INTEGER);",
+            &cast_expression(
+                null_literal_expression(),
+                DataType::PlainDataType("INTEGER".to_string()),
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_cast_with_complex_type() {
+        run_sunny_day_test(
+            "SELECT CAST(1 AS VARCHAR(10));",
+            &cast_expression(
+                numeric_literal_expression("1"),
+                DataType::SizedDataType("VARCHAR".to_string(), "10".to_string()),
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_cast_with_complex_type2() {
+        run_sunny_day_test(
+            "SELECT CAST(1 AS VARCHAR(1, 10));",
+            &cast_expression(
+                numeric_literal_expression("1"),
+                DataType::BoundedDataType("VARCHAR".to_string(), "1".to_string(), "10".to_string()),
+            ),
         );
     }
 }
