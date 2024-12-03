@@ -41,7 +41,8 @@ impl<'a> SelectStatementParser for Parser<'a> {
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError> {
         let mut select_items = Vec::new();
 
-        while let Ok(expression) = self.parse_expression() {
+        loop {
+            let expression = self.parse_expression()?;
             select_items.push(SelectItem::Expression(expression));
 
             if self.peek_as(TokenType::Comma).is_ok() {
