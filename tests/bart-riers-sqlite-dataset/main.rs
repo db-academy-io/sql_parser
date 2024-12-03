@@ -48,14 +48,13 @@ fn run_test(path: &PathBuf) -> bool {
         fs::read_to_string(path).expect(&format!("Failed to read SQL file: {:?}", path));
     let mut parser = Parser::from(sql_content.as_str());
     let statement = parser.parse_statement();
-    if statement.is_ok() {
-        let debug_output = format!("{:#?}", statement);
-        let debug_file_path = path.with_extension("result.txt");
-
-        std::fs::write(debug_file_path, debug_output).expect("Failed to write debug output");
-        println!("======\n{:?}\n======\n", &statement);
-        std::process::exit(1);
-    }
+    // if statement.is_ok() {
+    //     let debug_output = format!("{:#?}", statement);
+    //     let debug_file_path = path.with_extension("result.txt");
+    //     std::fs::write(debug_file_path, debug_output).expect("Failed to write debug output");
+    //     println!("======\n{:?}\n======\n", &statement);
+    //     std::process::exit(1);
+    // }
 
     statement.is_ok()
 }
