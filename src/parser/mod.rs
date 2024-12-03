@@ -154,7 +154,7 @@ impl<'a> Parser<'a> {
             Keyword::Release => self.parse_release_statement(),
             Keyword::Savepoint => self.parse_savepoint_statement(),
             Keyword::Pragma => self.parse_pragma_statement(),
-            Keyword::Select => self.parse_select_statement(),
+            Keyword::Select => self.parse_select_statement().map(Statement::Select),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),
         }
     }

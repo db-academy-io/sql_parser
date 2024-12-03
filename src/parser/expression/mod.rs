@@ -1,8 +1,8 @@
 mod function;
 
 use crate::{
-    BinaryOp, Expression, Identifier, Keyword, LiteralValue, Parser, ParsingError, TokenType,
-    UnaryOp,
+    parser::select::SelectStatementParser, BinaryOp, ExistsStatement, Expression, Identifier,
+    Keyword, LiteralValue, Parser, ParsingError, TokenType, UnaryOp,
 };
 
 use function::FunctionParser;
@@ -46,6 +46,18 @@ pub trait ExpressionParser {
     /// Parse an expression
     fn parse_expression(&mut self) -> Result<Expression, ParsingError>;
 
+    /// Parse a CASE expression
+    fn parse_case_expression(&mut self) -> Result<Expression, ParsingError>;
+
+    /// Parse a CAST expression
+    fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError>;
+
+    /// Parse an EXISTS expression
+    fn parse_exist_expression(&mut self, is_not: bool) -> Result<Expression, ParsingError>;
+
+    /// Parse a RAISE expression
+    fn parse_raise_expression(&mut self) -> Result<Expression, ParsingError>;
+
     /// Parse an identifier
     fn parse_identifier(&mut self) -> Result<Identifier, ParsingError>;
 
@@ -72,6 +84,28 @@ impl<'a> ExpressionParser for Parser<'a> {
     ///
     /// [sqlite-expression]: https://www.sqlite.org/lang_expr.html#the_expr_list
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
+        // Check if it's one of the special expressions
+        if let Ok(keyword) = self.peek_as_keyword() {
+            match keyword {
+                Keyword::Case => return self.parse_case_expression(),
+                Keyword::Cast => return self.parse_cast_expression(),
+                Keyword::Not => {
+                    self.consume_token()?;
+                    return self.parse_exist_expression(true);
+                }
+                Keyword::Exists => return self.parse_exist_expression(false),
+                Keyword::Raise => return self.parse_raise_expression(),
+                Keyword::Null
+                | Keyword::CurrentTime
+                | Keyword::CurrentDate
+                | Keyword::CurrentTimestamp => {
+                    // These are literals, so we don't need to do anything here
+                    // as the prefix parser will handle them
+                }
+                _ => return Err(ParsingError::UnexpectedKeyword(keyword)),
+            }
+        }
+
         // Check if it's a compound identifier
         if let Ok(identifier) = self.parse_identifier() {
             // Check if it's a function call
@@ -268,14 +302,51 @@ impl<'a> ExpressionParser for Parser<'a> {
     fn get_precedence(&mut self, operator: &TokenType) -> u8 {
         *PRECEDENCE.get(operator).unwrap_or(&0)
     }
+
+    fn parse_case_expression(&mut self) -> Result<Expression, ParsingError> {
+        todo!()
+    }
+
+    fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError> {
+        todo!()
+    }
+
+    fn parse_exist_expression(&mut self, is_inverted: bool) -> Result<Expression, ParsingError> {
+        // Consume the EXISTS keyword, if it's present. The result is ignored, because
+        // the EXISTS keyword is an optional keyword
+        let _ = self.consume_keyword(Keyword::Exists);
+
+        // Check if it's a left parenthesis, which indicates the start of a subquery
+        self.peek_as(TokenType::LeftParen)?;
+        self.consume_token()?;
+
+        let select_statement = self.parse_select_statement()?;
+
+        self.peek_as(TokenType::RightParen)?;
+        self.consume_token()?;
+
+        if is_inverted {
+            Ok(Expression::ExistsStatement(ExistsStatement::NotExists(
+                select_statement,
+            )))
+        } else {
+            Ok(Expression::ExistsStatement(ExistsStatement::Exists(
+                select_statement,
+            )))
+        }
+    }
+
+    fn parse_raise_expression(&mut self) -> Result<Expression, ParsingError> {
+        todo!()
+    }
 }
 
 #[cfg(test)]
 pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
-        BinaryOp, Function, FunctionArg, Identifier, LiteralValue, OverClause, Parser, Statement,
-        UnaryOp,
+        BinaryOp, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue, OverClause,
+        Parser, SelectStatement, Statement, UnaryOp,
     };
 
     // TODO: Make this generic, and move to test_utils module
@@ -368,6 +439,14 @@ pub(crate) mod test_utils {
         };
 
         Expression::Function(function)
+    }
+
+    pub fn exist_expression(is_inverted: bool, statement: SelectStatement) -> Expression {
+        Expression::ExistsStatement(if is_inverted {
+            ExistsStatement::NotExists(statement)
+        } else {
+            ExistsStatement::Exists(statement)
+        })
     }
 }
 
@@ -613,6 +692,61 @@ mod binary_op_expression_tests {
                     ),
                 ),
                 numeric_literal_expression("4"),
+            ),
+        );
+    }
+}
+
+#[cfg(test)]
+mod exist_expression_tests {
+    use crate::{SelectItem, SelectStatement};
+
+    use super::test_utils::*;
+
+    #[test]
+    fn test_expression_exists() {
+        run_sunny_day_test(
+            "SELECT EXISTS (SELECT 1);",
+            &exist_expression(
+                false,
+                SelectStatement {
+                    distinct: false,
+                    all: false,
+                    columns: vec![SelectItem::Expression(numeric_literal_expression("1"))],
+                    from: None,
+                },
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_not_exists() {
+        run_sunny_day_test(
+            "SELECT NOT EXISTS (SELECT 1);",
+            &exist_expression(
+                true,
+                SelectStatement {
+                    distinct: false,
+                    all: false,
+                    columns: vec![SelectItem::Expression(numeric_literal_expression("1"))],
+                    from: None,
+                },
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_not_exists_without_exists_keyword() {
+        run_sunny_day_test(
+            "SELECT NOT (SELECT 21);",
+            &exist_expression(
+                true,
+                SelectStatement {
+                    distinct: false,
+                    all: false,
+                    columns: vec![SelectItem::Expression(numeric_literal_expression("21"))],
+                    from: None,
+                },
             ),
         );
     }

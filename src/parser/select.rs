@@ -1,4 +1,4 @@
-use crate::{Keyword, Statement, TokenType};
+use crate::{Keyword, TokenType};
 
 use super::expression::ExpressionParser;
 use super::{Parser, ParsingError};
@@ -8,7 +8,7 @@ use crate::ast::{SelectItem, SelectStatement};
 /// The SELECT statement documentation can be found here:
 /// https://www.sqlite.org/lang_select.html
 pub trait SelectStatementParser {
-    fn parse_select_statement(&mut self) -> Result<Statement, ParsingError>;
+    fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError>;
 
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError>;
 
@@ -21,7 +21,7 @@ pub trait SelectStatementParser {
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
-    fn parse_select_statement(&mut self) -> Result<Statement, ParsingError> {
+    fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError> {
         // Consume the SELECT keyword
         self.consume_token()?;
 
@@ -35,7 +35,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
         // TODO:
         // self.parser_select_from_part()?;
 
-        Ok(Statement::Select(select_statement))
+        Ok(select_statement)
     }
 
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError> {
