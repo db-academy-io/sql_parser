@@ -952,6 +952,17 @@ impl<'input> Tokenizer<'input> {
             },
         }
     }
+
+    /// Collects all tokens into a vector, or returns an error if any tokenization error occurs
+    pub fn tokens(self) -> Result<Vec<Token<'input>>, TokenizerError<'input>> {
+        self.into()
+    }
+
+    /// Collects all tokens into a vector, or returns an error if any tokenization error occurs
+    /// alias for `tokens` method
+    pub fn collect(self) -> Result<Vec<Token<'input>>, TokenizerError<'input>> {
+        self.tokens()
+    }
 }
 
 impl<'a> From<&'a str> for Tokenizer<'a> {
@@ -970,6 +981,12 @@ impl<'input> Iterator for Tokenizer<'input> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next_token()
+    }
+}
+
+impl<'input> From<Tokenizer<'input>> for Result<Vec<Token<'input>>, TokenizerError<'input>> {
+    fn from(tokenizer: Tokenizer<'input>) -> Self {
+        tokenizer.into_iter().collect()
     }
 }
 
