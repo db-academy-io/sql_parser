@@ -2,9 +2,9 @@ mod function;
 
 use crate::{
     parser::select::SelectStatementParser, BetweenExpression, BinaryMatchingExpression, BinaryOp,
-    CaseExpression, DataType, ExistsStatement, Expression, Identifier, Keyword, LiteralValue,
-    Parser, ParsingError, RaiseFunction, TokenType, UnaryMatchingExpression, UnaryOp,
-    WhenExpression,
+    CaseExpression, DataType, EscapeExpression, ExistsStatement, Expression, Identifier, Keyword,
+    LikeExpressionType, LiteralValue, Parser, ParsingError, RaiseFunction, TokenType,
+    UnaryMatchingExpression, UnaryOp, WhenExpression,
 };
 
 use function::FunctionParser;
@@ -63,6 +63,13 @@ pub trait ExpressionParser {
 
     /// Parse a BETWEEN expression
     fn parse_between_expression(
+        &mut self,
+        expression: Expression,
+        inverted: bool,
+    ) -> Result<Expression, ParsingError>;
+
+    /// Parse a LIKE expression
+    fn parse_like_expression(
         &mut self,
         expression: Expression,
         inverted: bool,
@@ -170,10 +177,17 @@ impl<'a> ExpressionParser for Parser<'a> {
                     if let Ok(Keyword::Between) = self.peek_as_keyword() {
                         return self.parse_between_expression(expression, true);
                     }
+                    if let Ok(Keyword::Like) = self.peek_as_keyword() {
+                        return self.parse_like_expression(expression, true);
+                    }
                 }
                 Keyword::Between => {
                     // No need to consume the BETWEEN keyword, as the between parser will handle it
                     return self.parse_between_expression(expression, false);
+                }
+                Keyword::Like => {
+                    // No need to consume the LIKE keyword, as the like parser will handle it
+                    return self.parse_like_expression(expression, false);
                 }
                 _ => {}
             }
@@ -555,6 +569,48 @@ impl<'a> ExpressionParser for Parser<'a> {
                     lower_bound: Box::new(lower_bound),
                     upper_bound: Box::new(upper_bound),
                 }),
+            ))
+        }
+    }
+
+    fn parse_like_expression(
+        &mut self,
+        expression: Expression,
+        is_not: bool,
+    ) -> Result<Expression, ParsingError> {
+        self.consume_keyword(Keyword::Like)?;
+
+        let pattern = self.parse_expression()?;
+
+        let mut escape_expression = None;
+        if let Ok(Keyword::Escape) = self.peek_as_keyword() {
+            self.consume_keyword(Keyword::Escape)?;
+            escape_expression = Some(Box::new(self.parse_expression()?));
+        }
+
+        let matching_expression: BinaryMatchingExpression = {
+            match escape_expression {
+                Some(escape_expression) => BinaryMatchingExpression::Like(
+                    LikeExpressionType::EscapeExpression(EscapeExpression {
+                        expression: Box::new(pattern),
+                        escape_expression: Some(escape_expression),
+                    }),
+                ),
+                None => BinaryMatchingExpression::Like(LikeExpressionType::Expression(Box::new(
+                    pattern,
+                ))),
+            }
+        };
+
+        if is_not {
+            Ok(Expression::BinaryMatchingExpression(
+                Box::new(expression),
+                BinaryMatchingExpression::Not(Box::new(matching_expression)),
+            ))
+        } else {
+            Ok(Expression::BinaryMatchingExpression(
+                Box::new(expression),
+                matching_expression,
             ))
         }
     }
@@ -1313,6 +1369,68 @@ mod between_expression_tests {
                 numeric_literal_expression("3"),
                 numeric_literal_expression("4"),
                 true,
+            ),
+        );
+    }
+}
+
+#[cfg(test)]
+mod like_expression_tests {
+    use crate::{BinaryMatchingExpression, EscapeExpression, Expression, LikeExpressionType};
+
+    use super::test_utils::*;
+
+    fn like_expression(
+        expression: Expression,
+        like_expression_type: LikeExpressionType,
+        inverted: bool,
+    ) -> Expression {
+        let binary_matching_expression = if inverted {
+            BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::Like(
+                like_expression_type,
+            )))
+        } else {
+            BinaryMatchingExpression::Like(like_expression_type)
+        };
+
+        Expression::BinaryMatchingExpression(Box::new(expression), binary_matching_expression)
+    }
+
+    #[test]
+    fn test_expression_like_basic() {
+        run_sunny_day_test(
+            "SELECT 1 LIKE 'a%';",
+            &like_expression(
+                numeric_literal_expression("1"),
+                LikeExpressionType::Expression(Box::new(string_literal_expression("'a%'"))),
+                false,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_not_like_basic() {
+        run_sunny_day_test(
+            "SELECT 1 NOT LIKE 'a%';",
+            &like_expression(
+                numeric_literal_expression("1"),
+                LikeExpressionType::Expression(Box::new(string_literal_expression("'a%'"))),
+                true,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_like_with_escape_basic() {
+        run_sunny_day_test(
+            "SELECT 1 LIKE 'a%' ESCAPE 'b';",
+            &like_expression(
+                numeric_literal_expression("1"),
+                LikeExpressionType::EscapeExpression(EscapeExpression {
+                    expression: Box::new(string_literal_expression("'a%'")),
+                    escape_expression: Some(Box::new(string_literal_expression("'b'"))),
+                }),
+                false,
             ),
         );
     }
