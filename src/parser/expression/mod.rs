@@ -1,9 +1,10 @@
 mod function;
 
 use crate::{
-    parser::select::SelectStatementParser, BinaryOp, CaseExpression, DataType, ExistsStatement,
-    Expression, Identifier, Keyword, LiteralValue, Parser, ParsingError, RaiseFunction, TokenType,
-    UnaryMatchingExpression, UnaryOp, WhenExpression,
+    parser::select::SelectStatementParser, BetweenExpression, BinaryMatchingExpression, BinaryOp,
+    CaseExpression, DataType, ExistsStatement, Expression, Identifier, Keyword, LiteralValue,
+    Parser, ParsingError, RaiseFunction, TokenType, UnaryMatchingExpression, UnaryOp,
+    WhenExpression,
 };
 
 use function::FunctionParser;
@@ -59,6 +60,13 @@ pub trait ExpressionParser {
 
     /// Parse a RAISE expression
     fn parse_raise_expression(&mut self) -> Result<Expression, ParsingError>;
+
+    /// Parse a BETWEEN expression
+    fn parse_between_expression(
+        &mut self,
+        expression: Expression,
+        inverted: bool,
+    ) -> Result<Expression, ParsingError>;
 
     /// Parse an identifier
     fn parse_identifier(&mut self) -> Result<Identifier, ParsingError>;
@@ -151,11 +159,21 @@ impl<'a> ExpressionParser for Parser<'a> {
                 }
                 Keyword::Not => {
                     self.consume_keyword(Keyword::Not)?;
-                    self.consume_keyword(Keyword::Null)?;
-                    return Ok(Expression::UnaryMatchingExpression(
-                        Box::new(expression),
-                        UnaryMatchingExpression::IsNotNull,
-                    ));
+
+                    if let Ok(Keyword::Null) = self.peek_as_keyword() {
+                        self.consume_keyword(Keyword::Null)?;
+                        return Ok(Expression::UnaryMatchingExpression(
+                            Box::new(expression),
+                            UnaryMatchingExpression::IsNotNull,
+                        ));
+                    }
+                    if let Ok(Keyword::Between) = self.peek_as_keyword() {
+                        return self.parse_between_expression(expression, true);
+                    }
+                }
+                Keyword::Between => {
+                    // No need to consume the BETWEEN keyword, as the between parser will handle it
+                    return self.parse_between_expression(expression, false);
                 }
                 _ => {}
             }
@@ -504,6 +522,41 @@ impl<'a> ExpressionParser for Parser<'a> {
         self.consume_token()?;
 
         Ok(Expression::RaiseFunction(raise))
+    }
+
+    fn parse_between_expression(
+        &mut self,
+        expression: Expression,
+        inverted: bool,
+    ) -> Result<Expression, ParsingError> {
+        // Consume the BETWEEN keyword
+        self.consume_keyword(Keyword::Between)?;
+
+        let lower_bound = self.parse_expression()?;
+
+        self.consume_keyword(Keyword::And)?;
+
+        let upper_bound = self.parse_expression()?;
+
+        if inverted {
+            Ok(Expression::BinaryMatchingExpression(
+                Box::new(expression),
+                BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::Between(
+                    BetweenExpression {
+                        lower_bound: Box::new(lower_bound),
+                        upper_bound: Box::new(upper_bound),
+                    },
+                ))),
+            ))
+        } else {
+            Ok(Expression::BinaryMatchingExpression(
+                Box::new(expression),
+                BinaryMatchingExpression::Between(BetweenExpression {
+                    lower_bound: Box::new(lower_bound),
+                    upper_bound: Box::new(upper_bound),
+                }),
+            ))
+        }
     }
 }
 
@@ -1186,6 +1239,80 @@ mod unary_matching_expression_tests {
             &unary_matching_expression(
                 numeric_literal_expression("1"),
                 UnaryMatchingExpression::IsNotNull,
+            ),
+        );
+    }
+}
+
+#[cfg(test)]
+mod between_expression_tests {
+    use crate::{BetweenExpression, BinaryMatchingExpression, BinaryOp, Expression};
+
+    use super::test_utils::*;
+
+    fn between_expression(
+        expression: Expression,
+        lower_bound: Expression,
+        upper_bound: Expression,
+        inverted: bool,
+    ) -> Expression {
+        let between_expression = BinaryMatchingExpression::Between(BetweenExpression {
+            lower_bound: Box::new(lower_bound),
+            upper_bound: Box::new(upper_bound),
+        });
+
+        let binary_matching_expression = if inverted {
+            BinaryMatchingExpression::Not(Box::new(between_expression))
+        } else {
+            between_expression
+        };
+
+        Expression::BinaryMatchingExpression(Box::new(expression), binary_matching_expression)
+    }
+
+    #[test]
+    fn test_expression_between_basic() {
+        run_sunny_day_test(
+            "SELECT 1 BETWEEN 2 AND 3;",
+            &between_expression(
+                numeric_literal_expression("1"),
+                numeric_literal_expression("2"),
+                numeric_literal_expression("3"),
+                false,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_between_with_expression() {
+        run_sunny_day_test(
+            "SELECT 1 + 2 BETWEEN 3 AND 4;",
+            &between_expression(
+                binary_op_expression(
+                    BinaryOp::Plus,
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                ),
+                numeric_literal_expression("3"),
+                numeric_literal_expression("4"),
+                false,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_not_between_with_expression() {
+        run_sunny_day_test(
+            "SELECT 1 + 2 NOT BETWEEN 3 AND 4;",
+            &between_expression(
+                binary_op_expression(
+                    BinaryOp::Plus,
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                ),
+                numeric_literal_expression("3"),
+                numeric_literal_expression("4"),
+                true,
             ),
         );
     }

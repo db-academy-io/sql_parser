@@ -387,7 +387,7 @@ pub enum UnaryMatchingExpression {
 /// A binary matching expression
 #[derive(Debug, PartialEq, Clone)]
 pub enum BinaryMatchingExpression {
-    /// Not BinaryMatchingExpression, i.e. NOT $expression
+    /// For NOT $BinaryMatchingExpression use cases
     Not(Box<BinaryMatchingExpression>),
 
     /// Like

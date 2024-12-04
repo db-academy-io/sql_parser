@@ -43,7 +43,7 @@ The items were taken from the official SQLite documentation from
     1. [like-expression](https://www.sqlite.org/lang_expr.html#likeexp)
     1. [null-expression](https://www.sqlite.org/lang_expr.html#likeexp)&#9989;
     1. [expression-from-expression](https://www.sqlite.org/lang_expr.html#exprlist)
-    1. [between-expression](https://www.sqlite.org/lang_expr.html#betweenexp)
+    1. [between-expression](https://www.sqlite.org/lang_expr.html#betweenexp)&#9989;
     1. [expression-in-select](https://www.sqlite.org/lang_expr.html#exprlist)
     1. [exists-expression](https://www.sqlite.org/lang_expr.html#exprlist)&#9989;
     1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)&#9989;
