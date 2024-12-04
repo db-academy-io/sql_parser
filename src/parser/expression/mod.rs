@@ -3,7 +3,7 @@ mod function;
 use crate::{
     parser::select::SelectStatementParser, BinaryOp, CaseExpression, DataType, ExistsStatement,
     Expression, Identifier, Keyword, LiteralValue, Parser, ParsingError, RaiseFunction, TokenType,
-    UnaryOp, WhenExpression,
+    UnaryMatchingExpression, UnaryOp, WhenExpression,
 };
 
 use function::FunctionParser;
@@ -123,20 +123,45 @@ impl<'a> ExpressionParser for Parser<'a> {
         dbg!("parse_expression: {:?}", &expression);
 
         if let Ok(keyword) = self.peek_as_keyword() {
-            if keyword == Keyword::Collate {
-                self.consume_keyword(Keyword::Collate)?;
+            match keyword {
+                Keyword::Collate => {
+                    self.consume_keyword(Keyword::Collate)?;
 
-                let name = self.peek_as_string()?;
-                self.consume_token()?;
+                    let name = self.peek_as_string()?;
+                    self.consume_token()?;
 
-                return Ok(Expression::CollateExpression(
-                    Box::new(expression),
-                    name.to_string(),
-                ));
+                    return Ok(Expression::CollateExpression(
+                        Box::new(expression),
+                        name.to_string(),
+                    ));
+                }
+                Keyword::Isnull => {
+                    self.consume_keyword(Keyword::Isnull)?;
+                    return Ok(Expression::UnaryMatchingExpression(
+                        Box::new(expression),
+                        UnaryMatchingExpression::IsNull,
+                    ));
+                }
+                Keyword::Notnull => {
+                    self.consume_keyword(Keyword::Notnull)?;
+                    return Ok(Expression::UnaryMatchingExpression(
+                        Box::new(expression),
+                        UnaryMatchingExpression::IsNotNull,
+                    ));
+                }
+                Keyword::Not => {
+                    self.consume_keyword(Keyword::Not)?;
+                    self.consume_keyword(Keyword::Null)?;
+                    return Ok(Expression::UnaryMatchingExpression(
+                        Box::new(expression),
+                        UnaryMatchingExpression::IsNotNull,
+                    ));
+                }
+                _ => {}
             }
         }
 
-        todo!()
+        Ok(expression)
     }
 
     /// Parse an identifier
@@ -1118,6 +1143,49 @@ mod collate_expression_tests {
                     numeric_literal_expression("2"),
                 ),
                 "'utf8'".to_string(),
+            ),
+        );
+    }
+}
+
+#[cfg(test)]
+mod unary_matching_expression_tests {
+    use crate::{Expression, UnaryMatchingExpression};
+
+    use super::test_utils::*;
+
+    fn unary_matching_expression(
+        expression: Expression,
+        unary_matching_expression: UnaryMatchingExpression,
+    ) -> Expression {
+        Expression::UnaryMatchingExpression(Box::new(expression), unary_matching_expression)
+    }
+
+    #[test]
+    fn test_expression_matching_isnull() {
+        run_sunny_day_test(
+            "SELECT 1 ISNULL;",
+            &unary_matching_expression(
+                numeric_literal_expression("1"),
+                UnaryMatchingExpression::IsNull,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_matching_notnull() {
+        run_sunny_day_test(
+            "SELECT 1 NOT NULL;",
+            &unary_matching_expression(
+                numeric_literal_expression("1"),
+                UnaryMatchingExpression::IsNotNull,
+            ),
+        );
+        run_sunny_day_test(
+            "SELECT 1 NOTNULL;",
+            &unary_matching_expression(
+                numeric_literal_expression("1"),
+                UnaryMatchingExpression::IsNotNull,
             ),
         );
     }
