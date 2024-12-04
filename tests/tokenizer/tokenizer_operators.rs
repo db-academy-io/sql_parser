@@ -80,7 +80,7 @@ fn test_H41427() {
 /// (u003d u003d) as token EQ
 #[test]
 fn test_H41430() {
-    run_sunny_day_test("==", vec![TokenType::Equals, TokenType::Semi]);
+    run_sunny_day_test("==", vec![TokenType::EqualsEquals, TokenType::Semi]);
 }
 
 /// H41433  SQLite shall recognize the 2-character sequenence "<="

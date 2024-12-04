@@ -101,8 +101,9 @@ pub enum TokenType<'a> {
     // The factorial or not symbol !
     // The query parameter marker ?
     /// - H41427: SQLite shall recognize the 1-character sequenence "=" (u003d) as token EQ
-    /// - H41430: SQLite shall recognize the 2-character sequenence "==" (u003d u003d) as token EQ
     Equals,
+    /// - H41430: SQLite shall recognize the 2-character sequenence "==" (u003d u003d) as token EQ
+    EqualsEquals,
     /// - H41433: SQLite shall recognize the 2-character sequenence "<=" (u003c u003d) as token LE
     LessEquals,
     /// - H41436: SQLite shall recognize the 2-character sequenence "<>" (u003c u003e) as token NE
@@ -150,7 +151,8 @@ impl<'a> Display for TokenType<'a> {
             TokenType::BitNot => write!(f, "~"),
             TokenType::BitOr => write!(f, "|"),
             TokenType::Dot => write!(f, "."),
-            TokenType::Equals => write!(f, "=="),
+            TokenType::Equals => write!(f, "="),
+            TokenType::EqualsEquals => write!(f, "=="),
             TokenType::LessEquals => write!(f, "<="),
             TokenType::NotEquals => write!(f, "!="),
             TokenType::LeftShift => write!(f, "<<"),

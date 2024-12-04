@@ -809,9 +809,13 @@ impl<'input> Tokenizer<'input> {
                     if next_ch == '=' {
                         // Consume the second '='
                         self.next_char();
+                        TokenType::EqualsEquals
+                    } else {
+                        TokenType::Equals
                     }
+                } else {
+                    TokenType::Equals
                 }
-                TokenType::Equals
             }
             '<' => {
                 // Could be '<', '<=', '<>', '<<'
@@ -1273,7 +1277,7 @@ mod tests {
 
     #[test]
     fn test_single_character_operators() {
-        let operators = "+ - * / % & ~ | = < >";
+        let operators = "+ - * / % & ~ | = == < >";
         let expected_tokens = vec![
             TokenType::Plus,
             TokenType::Minus,
@@ -1284,6 +1288,7 @@ mod tests {
             TokenType::BitNot,
             TokenType::BitOr,
             TokenType::Equals,
+            TokenType::EqualsEquals,
             TokenType::LessThan,
             TokenType::GreaterThan,
             TokenType::Semi, // Implicitly ; added
@@ -1295,7 +1300,7 @@ mod tests {
     fn test_multi_character_operators() {
         let operators = "== != >= <= <> << >> ||";
         let expected_tokens = vec![
-            TokenType::Equals,
+            TokenType::EqualsEquals,
             TokenType::NotEquals,
             TokenType::GreaterEquals,
             TokenType::LessEquals,
