@@ -119,10 +119,21 @@ impl<'a> ExpressionParser for Parser<'a> {
             }
         }
 
-        let expression = self.parse_expression_pratt(0);
+        let expression = self.parse_expression_pratt(0)?;
         dbg!("parse_expression: {:?}", &expression);
-        if let Ok(expression) = expression {
-            return Ok(expression);
+
+        if let Ok(keyword) = self.peek_as_keyword() {
+            if keyword == Keyword::Collate {
+                self.consume_keyword(Keyword::Collate)?;
+
+                let name = self.peek_as_string()?;
+                self.consume_token()?;
+
+                return Ok(Expression::CollateExpression(
+                    Box::new(expression),
+                    name.to_string(),
+                ));
+            }
         }
 
         todo!()
@@ -1074,6 +1085,40 @@ mod case_expression_tests {
         run_sunny_day_test(
             "SELECT CASE 1 == 1 WHEN TRUE THEN 1 ELSE 2 END;",
             &case_expression(expression, when_expressions, else_expression),
+        );
+    }
+}
+
+#[cfg(test)]
+mod collate_expression_tests {
+    use crate::{BinaryOp, Expression};
+
+    use super::test_utils::*;
+
+    fn collate_expression(expression: Expression, name: String) -> Expression {
+        Expression::CollateExpression(Box::new(expression), name)
+    }
+
+    #[test]
+    fn test_expression_collate_basic() {
+        run_sunny_day_test(
+            "SELECT 1 COLLATE 'utf8';",
+            &collate_expression(numeric_literal_expression("1"), "'utf8'".to_string()),
+        );
+    }
+
+    #[test]
+    fn test_expression_collate_with_expression() {
+        run_sunny_day_test(
+            "SELECT 1 + 2 COLLATE 'utf8';",
+            &collate_expression(
+                binary_op_expression(
+                    BinaryOp::Plus,
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                ),
+                "'utf8'".to_string(),
+            ),
         );
     }
 }

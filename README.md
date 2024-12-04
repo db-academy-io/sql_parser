@@ -37,18 +37,17 @@ The items were taken from the official SQLite documentation from
     1. [unary-operator](https://www.sqlite.org/lang_expr.html#unaryexp)&#9989;
     1. [binary-operator](https://www.sqlite.org/lang_expr.html#binaryexp)&#9989;
     1. [function](https://www.sqlite.org/lang_expr.html#function.html)&#9989;
-    1. [exists-expression](https://www.sqlite.org/lang_expr.html#exprlist)&#9989;
-    1. [raise-function](https://www.sqlite.org/lang_expr.html#raisefunc)&#9989;
-    1. [cast-expression](https://www.sqlite.org/lang_expr.html#cast)&#9989;
-    1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)&#9989;
     1. [parenthesized-expression](https://www.sqlite.org/lang_expr.html#parenexp)
-    1. [collate-expression](https://www.sqlite.org/lang_expr.html#collateexp)
+    1. [cast-expression](https://www.sqlite.org/lang_expr.html#cast)&#9989;
+    1. [collate-expression](https://www.sqlite.org/lang_expr.html#collateexp)&#9989;
     1. [like-expression](https://www.sqlite.org/lang_expr.html#likeexp)
     1. [null-expression](https://www.sqlite.org/lang_expr.html#likeexp)
     1. [expression-from-expression](https://www.sqlite.org/lang_expr.html#exprlist)
     1. [between-expression](https://www.sqlite.org/lang_expr.html#betweenexp)
-    1. [expression-in-select](https://www.sqlite.org/lang_expr.html#exprlist)    
-
+    1. [expression-in-select](https://www.sqlite.org/lang_expr.html#exprlist)
+    1. [exists-expression](https://www.sqlite.org/lang_expr.html#exprlist)&#9989;
+    1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)&#9989;
+    1. [raise-function](https://www.sqlite.org/lang_expr.html#raisefunc)&#9989;
 1. [attach-stmt](https://www.sqlite.org/lang_attach.html)
 1. [math-functions](https://www.sqlite.org/lang_mathfunc.html)
 1. [date-and-time-functions](https://www.sqlite.org/lang_datefunc.html)
