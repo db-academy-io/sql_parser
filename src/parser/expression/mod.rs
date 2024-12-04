@@ -1,8 +1,9 @@
 mod function;
 
 use crate::{
-    parser::select::SelectStatementParser, BinaryOp, DataType, ExistsStatement, Expression,
-    Identifier, Keyword, LiteralValue, Parser, ParsingError, RaiseFunction, TokenType, UnaryOp,
+    parser::select::SelectStatementParser, BinaryOp, CaseExpression, DataType, ExistsStatement,
+    Expression, Identifier, Keyword, LiteralValue, Parser, ParsingError, RaiseFunction, TokenType,
+    UnaryOp, WhenExpression,
 };
 
 use function::FunctionParser;
@@ -33,6 +34,7 @@ static PRECEDENCE: Lazy<HashMap<TokenType, u8>> = Lazy::new(|| {
         (TokenType::GreaterEquals, 20),
         (TokenType::LessEquals, 20),
         (TokenType::Equals, 10),
+        (TokenType::EqualsEquals, 10),
         (TokenType::NotEquals, 10),
     ];
 
@@ -177,6 +179,7 @@ impl<'a> ExpressionParser for Parser<'a> {
         let operator = BinaryOp::try_from(&token.token_type)?;
         // Consume the operator token
         self.consume_token()?;
+
         let right = self.parse_expression_pratt(precedence)?;
         Ok(Expression::BinaryOp(
             Box::new(left),
@@ -304,7 +307,45 @@ impl<'a> ExpressionParser for Parser<'a> {
     }
 
     fn parse_case_expression(&mut self) -> Result<Expression, ParsingError> {
-        todo!()
+        self.consume_keyword(Keyword::Case)?;
+
+        // the main expression is optional, so we have to try to parse it first
+        let expression = self
+            .parse_expression()
+            .map(|expression| Some(Box::new(expression)))
+            .unwrap_or(None);
+
+        let mut when_expressions = Vec::new();
+
+        while let Ok(Keyword::When) = self.peek_as_keyword() {
+            // the when expression must start with the WHEN keyword
+            self.consume_keyword(Keyword::When)?;
+
+            let expression = self.parse_expression()?;
+
+            // The THEN keyword is required after the WHEN expression
+            self.consume_keyword(Keyword::Then)?;
+
+            let then_expression = self.parse_expression()?;
+
+            when_expressions.push(WhenExpression {
+                condition: Box::new(expression),
+                then_expression: Box::new(then_expression),
+            });
+        }
+
+        let mut else_expression = None;
+        if let Ok(Keyword::Else) = self.peek_as_keyword() {
+            self.consume_keyword(Keyword::Else)?;
+            else_expression = Some(Box::new(self.parse_expression()?));
+        }
+
+        self.consume_keyword(Keyword::End)?;
+        Ok(Expression::CaseExpression(CaseExpression {
+            expression,
+            when_expressions,
+            else_expression,
+        }))
     }
 
     fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError> {
@@ -692,6 +733,7 @@ mod binary_op_expression_tests {
             LessThan,
             LessThanOrEquals,
             Equals,
+            EqualsEquals,
             NotEquals,
             Concat,
             BitAnd,
@@ -958,6 +1000,80 @@ mod cast_expression_tests {
                 numeric_literal_expression("1"),
                 DataType::BoundedDataType("VARCHAR".to_string(), "1".to_string(), "10".to_string()),
             ),
+        );
+    }
+}
+
+#[cfg(test)]
+mod case_expression_tests {
+    use crate::{BinaryOp, CaseExpression, Expression, WhenExpression};
+
+    use super::test_utils::*;
+
+    fn case_expression(
+        expression: Option<Box<Expression>>,
+        when_expressions: Vec<WhenExpression>,
+        else_expression: Option<Box<Expression>>,
+    ) -> Expression {
+        Expression::CaseExpression(CaseExpression {
+            expression,
+            when_expressions,
+            else_expression,
+        })
+    }
+
+    #[test]
+    fn test_expression_case_basic() {
+        let expression = None;
+        let when_expressions = vec![WhenExpression {
+            condition: Box::new(numeric_literal_expression("1")),
+            then_expression: Box::new(numeric_literal_expression("2")),
+        }];
+        let else_expression = Some(Box::new(numeric_literal_expression("3")));
+
+        run_sunny_day_test(
+            "SELECT CASE WHEN 1 THEN 2 ELSE 3 END;",
+            &case_expression(expression, when_expressions, else_expression),
+        );
+    }
+
+    #[test]
+    fn test_expression_case_with_multiple_when_expressions() {
+        let expression = None;
+        let when_expressions = vec![
+            WhenExpression {
+                condition: Box::new(numeric_literal_expression("1")),
+                then_expression: Box::new(numeric_literal_expression("2")),
+            },
+            WhenExpression {
+                condition: Box::new(numeric_literal_expression("3")),
+                then_expression: Box::new(numeric_literal_expression("4")),
+            },
+        ];
+        let else_expression = Some(Box::new(numeric_literal_expression("5")));
+
+        run_sunny_day_test(
+            "SELECT CASE WHEN 1 THEN 2 WHEN 3 THEN 4 ELSE 5 END;",
+            &case_expression(expression, when_expressions, else_expression),
+        );
+    }
+
+    #[test]
+    fn test_expression_case_with_main_expression() {
+        let expression = Some(Box::new(binary_op_expression(
+            BinaryOp::EqualsEquals,
+            numeric_literal_expression("1"),
+            numeric_literal_expression("1"),
+        )));
+        let when_expressions = vec![WhenExpression {
+            condition: Box::new(boolean_literal_expression(true)),
+            then_expression: Box::new(numeric_literal_expression("1")),
+        }];
+        let else_expression = Some(Box::new(numeric_literal_expression("2")));
+
+        run_sunny_day_test(
+            "SELECT CASE 1 == 1 WHEN TRUE THEN 1 ELSE 2 END;",
+            &case_expression(expression, when_expressions, else_expression),
         );
     }
 }

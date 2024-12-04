@@ -40,7 +40,7 @@ The items were taken from the official SQLite documentation from
     1. [exists-expression](https://www.sqlite.org/lang_expr.html#exprlist)&#9989;
     1. [raise-function](https://www.sqlite.org/lang_expr.html#raisefunc)&#9989;
     1. [cast-expression](https://www.sqlite.org/lang_expr.html#cast)&#9989;
-    1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)
+    1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)&#9989;
     1. [parenthesized-expression](https://www.sqlite.org/lang_expr.html#parenexp)
     1. [collate-expression](https://www.sqlite.org/lang_expr.html#collateexp)
     1. [like-expression](https://www.sqlite.org/lang_expr.html#likeexp)

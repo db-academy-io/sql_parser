@@ -133,6 +133,8 @@ pub enum BinaryOp {
     LessThanOrEquals,
     /// Equals (=)
     Equals,
+    /// Equals equals (==)
+    EqualsEquals,
     /// Not equals (!=)
     NotEquals,
     /// Concatenation (||)
@@ -160,6 +162,7 @@ impl Display for BinaryOp {
             BinaryOp::LessThan => write!(f, "<"),
             BinaryOp::LessThanOrEquals => write!(f, "<="),
             BinaryOp::Equals => write!(f, "="),
+            BinaryOp::EqualsEquals => write!(f, "=="),
             BinaryOp::NotEquals => write!(f, "!="),
             BinaryOp::Concat => write!(f, "||"),
             BinaryOp::BitAnd => write!(f, "&"),
@@ -185,6 +188,7 @@ impl<'a> TryFrom<&'a TokenType<'a>> for BinaryOp {
             TokenType::LessThan => Ok(BinaryOp::LessThan),
             TokenType::LessEquals => Ok(BinaryOp::LessThanOrEquals),
             TokenType::Equals => Ok(BinaryOp::Equals),
+            TokenType::EqualsEquals => Ok(BinaryOp::EqualsEquals),
             TokenType::NotEquals => Ok(BinaryOp::NotEquals),
             TokenType::Concat => Ok(BinaryOp::Concat),
             TokenType::BitAnd => Ok(BinaryOp::BitAnd),
@@ -478,13 +482,13 @@ pub enum ExistsStatement {
 #[derive(Debug, PartialEq, Clone)]
 pub struct CaseExpression {
     /// The expression
-    pub expression: Box<Option<Expression>>,
+    pub expression: Option<Box<Expression>>,
 
     /// The when expressions
     pub when_expressions: Vec<WhenExpression>,
 
     /// The else expression
-    pub else_expression: Box<Option<Expression>>,
+    pub else_expression: Option<Box<Expression>>,
 }
 
 /// A when expression
@@ -493,7 +497,7 @@ pub struct WhenExpression {
     /// The condition (next after WHEN keyword)
     pub condition: Box<Expression>,
     /// The result (next after THEN keyword)
-    pub result: Box<Expression>,
+    pub then_expression: Box<Expression>,
 }
 
 /// A raise function
