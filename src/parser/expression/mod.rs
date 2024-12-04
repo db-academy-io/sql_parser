@@ -100,7 +100,7 @@ impl<'a> ExpressionParser for Parser<'a> {
                 | Keyword::CurrentDate
                 | Keyword::CurrentTimestamp => {
                     // These are literals, so we don't need to do anything here
-                    // as the prefix parser will handle them
+                    // as the pratt parser will handle them
                 }
                 _ => return Err(ParsingError::UnexpectedKeyword(keyword)),
             }
@@ -313,9 +313,7 @@ impl<'a> ExpressionParser for Parser<'a> {
         self.peek_as(TokenType::LeftParen)?;
         self.consume_token()?;
 
-        dbg!("parse_cast_expression");
         let expression = self.parse_expression()?;
-        dbg!("expression: {:?}", &expression);
         self.consume_keyword(Keyword::As)?;
 
         let data_type = {
