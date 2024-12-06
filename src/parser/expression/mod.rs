@@ -1105,7 +1105,7 @@ mod unary_op_expression_tests {
 #[cfg(test)]
 mod binary_op_expression_tests {
     use super::test_utils::*;
-    use crate::{BinaryOp, UnaryOp};
+    use crate::{BinaryOp, FunctionArg, FunctionArgType, UnaryOp};
 
     #[test]
     fn test_expression_binary_ops() {
@@ -1245,6 +1245,34 @@ mod binary_op_expression_tests {
                     BinaryOp::Mul,
                     identifier_expression(&["col2"]),
                     numeric_literal_expression("3"),
+                ),
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_binary_operation_precedence_with_function() {
+        run_sunny_day_test(
+            "SELECT col1 + col2 * max(1, 3, 4);",
+            &binary_op_expression(
+                BinaryOp::Plus,
+                identifier_expression(&["col1"]),
+                binary_op_expression(
+                    BinaryOp::Mul,
+                    identifier_expression(&["col2"]),
+                    function_expression(
+                        "max",
+                        FunctionArg {
+                            distinct: false,
+                            arguments: vec![
+                                FunctionArgType::Expression(numeric_literal_expression("1")),
+                                FunctionArgType::Expression(numeric_literal_expression("3")),
+                                FunctionArgType::Expression(numeric_literal_expression("4")),
+                            ],
+                        },
+                        None,
+                        None,
+                    ),
                 ),
             ),
         );
