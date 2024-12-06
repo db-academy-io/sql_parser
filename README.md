@@ -27,7 +27,7 @@ The items were taken from the official SQLite documentation
 1. [rollback-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
 1. [pragma-stmt](https://www.sqlite.org/pragma.html) &#9989;
 
-## Parsing sql expr ![progress](https://progress-bar.xyz/14/?scale=17&suffix=%%%20(14%20of%2017)&width=140)
+## Parsing sql expr ![progress](https://progress-bar.xyz/15/?scale=17&suffix=%%%20(15%20of%2017)&width=140)
 1. [literal-value](https://www.sqlite.org/lang_expr.html#literalvalue) &#9989;
 1. [bind-parameter](https://www.sqlite.org/lang_expr.html#bindvar)&#9989;
 1. [identifiers](https://www.sqlite.org/lang_expr.html#columnname)&#9989;
@@ -39,7 +39,7 @@ The items were taken from the official SQLite documentation
 1. [collate-expression](https://www.sqlite.org/lang_expr.html#collateexp)&#9989;
 1. [like-expression](https://www.sqlite.org/lang_expr.html#likeexp)&#9989;
 1. [null-expression](https://www.sqlite.org/lang_expr.html#likeexp)&#9989;
-1. [expression-from-expression](https://www.sqlite.org/lang_expr.html#exprlist)
+1. [expression-from-expression](https://www.sqlite.org/lang_expr.html#exprlist)&#9989;
 1. [between-expression](https://www.sqlite.org/lang_expr.html#betweenexp)&#9989;
 1. [expression-in-select](https://www.sqlite.org/lang_expr.html#exprlist)
 1. [exists-expression](https://www.sqlite.org/lang_expr.html#exprlist)&#9989;
