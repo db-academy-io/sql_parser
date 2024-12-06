@@ -147,16 +147,16 @@ impl<'a> ExpressionParser for Parser<'a> {
             }
         }
 
-        // Check if it's a compound identifier
-        if let Ok(identifier) = self.parse_identifier() {
-            // Check if it's a function call
-            if self.peek_as(TokenType::LeftParen).is_ok() {
-                // Parse the function call
-                return self.parse_function(identifier);
-            } else {
-                return Ok(Expression::Identifier(identifier));
-            }
-        }
+        // // Check if it's a compound identifier
+        // if let Ok(identifier) = self.parse_identifier() {
+        //     // Check if it's a function call
+        //     if self.peek_as(TokenType::LeftParen).is_ok() {
+        //         // Parse the function call
+        //         return self.parse_function(identifier);
+        //     } else {
+        //         return Ok(Expression::Identifier(identifier));
+        //     }
+        // }
 
         if self.peek_as(TokenType::LeftParen).is_ok() {
             // Consume the left parenthesis
@@ -371,11 +371,13 @@ impl<'a> ExpressionParser for Parser<'a> {
         let token = self.peek_token()?;
 
         match token.token_type {
-            TokenType::Id(value) => {
-                self.consume_token()?;
-                Ok(Expression::Identifier(Identifier::Single(
-                    value.to_string(),
-                )))
+            TokenType::Id(_) => {
+                let id = self.parse_identifier()?;
+
+                if self.peek_as(TokenType::LeftParen).is_ok() {
+                    return self.parse_function(id);
+                }
+                Ok(Expression::Identifier(id))
             }
             TokenType::Integer(value) => {
                 self.consume_token()?;
@@ -923,14 +925,14 @@ pub(crate) mod test_utils {
         Expression::BindParameter(value.to_string())
     }
 
-    pub fn identifier_expression(value: &str) -> Expression {
-        Expression::Identifier(Identifier::Single(value.to_string()))
-    }
-
-    pub fn compound_identifier_expression(values: &[&str]) -> Expression {
-        Expression::Identifier(Identifier::Compound(
-            values.iter().map(|s| s.to_string()).collect(),
-        ))
+    pub fn identifier_expression(values: &[&str]) -> Expression {
+        if values.len() == 1 {
+            Expression::Identifier(Identifier::Single(values[0].to_string()))
+        } else {
+            Expression::Identifier(Identifier::Compound(
+                values.iter().map(|s| s.to_string()).collect(),
+            ))
+        }
     }
 
     pub fn unary_op_expression(op: UnaryOp, value: Expression) -> Expression {
@@ -1046,14 +1048,14 @@ mod identifier_expression_tests {
 
     #[test]
     fn test_expression_identifier_valid() {
-        run_sunny_day_test("SELECT id;", &identifier_expression("id"));
+        run_sunny_day_test("SELECT id;", &identifier_expression(&["id"]));
         run_sunny_day_test(
             "SELECT table1.column1;",
-            &compound_identifier_expression(&["table1", "column1"]),
+            &identifier_expression(&["table1", "column1"]),
         );
         run_sunny_day_test(
             "SELECT schema1.table1.column1;",
-            &compound_identifier_expression(&["schema1", "table1", "column1"]),
+            &identifier_expression(&["schema1", "table1", "column1"]),
         );
     }
 }
@@ -1076,11 +1078,11 @@ mod unary_op_expression_tests {
         );
         run_sunny_day_test(
             "SELECT -abc;",
-            &unary_op_expression(UnaryOp::Minus, identifier_expression("abc")),
+            &unary_op_expression(UnaryOp::Minus, identifier_expression(&["abc"])),
         );
         run_sunny_day_test(
             "SELECT +abc;",
-            &unary_op_expression(UnaryOp::Plus, identifier_expression("abc")),
+            &unary_op_expression(UnaryOp::Plus, identifier_expression(&["abc"])),
         );
 
         run_sunny_day_test(
@@ -1138,6 +1140,18 @@ mod binary_op_expression_tests {
                 ),
             );
         }
+    }
+
+    #[test]
+    fn test_expression_binary_operation() {
+        run_sunny_day_test(
+            "SELECT col1 + col2;",
+            &binary_op_expression(
+                BinaryOp::Plus,
+                identifier_expression(&["col1"]),
+                identifier_expression(&["col2"]),
+            ),
+        );
     }
 
     #[test]
@@ -1216,6 +1230,22 @@ mod binary_op_expression_tests {
                     ),
                 ),
                 numeric_literal_expression("4"),
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_binary_operation_precedence3() {
+        run_sunny_day_test(
+            "SELECT col1 + col2 * 3;",
+            &binary_op_expression(
+                BinaryOp::Plus,
+                identifier_expression(&["col1"]),
+                binary_op_expression(
+                    BinaryOp::Mul,
+                    identifier_expression(&["col2"]),
+                    numeric_literal_expression("3"),
+                ),
             ),
         );
     }
