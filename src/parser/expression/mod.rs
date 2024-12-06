@@ -842,38 +842,46 @@ pub(crate) mod test_utils {
         OverClause, Parser, RaiseFunction, SelectStatement, Statement, UnaryOp,
     };
 
-    // TODO: Make this generic, and move to test_utils module
-    pub fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
+    pub fn run_sunny_day_test_with_multiple_expressions(
+        sql: &str,
+        expected_expressions: &[&Expression],
+    ) {
         let mut parser = Parser::from(sql);
-        let actual_expression = parser
+        let actual_statement = parser
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        dbg!("actual_expression: {:?}", &actual_expression);
+        dbg!("actual_expression: {:?}", &actual_statement);
 
-        match actual_expression {
+        match actual_statement {
             Statement::Select(select_statement) => {
                 assert_eq!(
-                    1,
+                    expected_expressions.len(),
                     select_statement.columns.len(),
-                    "Expected 1 column, got {:?}",
+                    "Expected {} columns, got {:?}",
+                    expected_expressions.len(),
                     select_statement.columns.len()
                 );
-                let select_item = &select_statement.columns[0];
 
-                match select_item {
-                    SelectItem::Expression(actual_expression) => {
-                        assert_eq!(
-                            expected_expression, actual_expression,
-                            "Expected expression {:?}, got {:?}",
-                            expected_expression, actual_expression
-                        );
+                for (i, select_item) in select_statement.columns.iter().enumerate() {
+                    match select_item {
+                        SelectItem::Expression(actual_expression) => {
+                            assert_eq!(
+                                expected_expressions[i], actual_expression,
+                                "Expected expression {:?}, got {:?}",
+                                expected_expressions[i], actual_expression
+                            );
+                        }
+                        _ => panic!("Expected Expression, got {:?}", select_item),
                     }
-                    _ => panic!("Expected Expression, got {:?}", select_item),
                 }
             }
-            _ => panic!("Expected Select statement, got {:?}", actual_expression),
+            _ => panic!("Expected Select statement, got {:?}", actual_statement),
         }
+    }
+
+    pub fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
+        run_sunny_day_test_with_multiple_expressions(sql, &vec![expected_expression]);
     }
 
     pub fn numeric_literal_expression(value: &str) -> Expression {
@@ -1855,13 +1863,13 @@ mod expression_with_in_statement_tests {
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
                 InExpression::Expression(vec![
-                    Box::new(numeric_literal_expression("2")),
-                    Box::new(numeric_literal_expression("3")),
-                    Box::new(binary_op_expression(
+                    numeric_literal_expression("2"),
+                    numeric_literal_expression("3"),
+                    binary_op_expression(
                         BinaryOp::Plus,
                         numeric_literal_expression("4"),
                         numeric_literal_expression("5"),
-                    )),
+                    ),
                 ]),
                 false,
             ),
@@ -1940,9 +1948,9 @@ mod expression_with_in_statement_tests {
                         "table_function".to_string(),
                     ]),
                     vec![
-                        Box::new(numeric_literal_expression("1")),
-                        Box::new(numeric_literal_expression("2")),
-                        Box::new(numeric_literal_expression("3")),
+                        numeric_literal_expression("1"),
+                        numeric_literal_expression("2"),
+                        numeric_literal_expression("3"),
                     ],
                 ),
                 true,
@@ -1959,16 +1967,16 @@ mod expression_with_in_statement_tests {
                 InExpression::TableFunction(
                     Identifier::Single("table_function".to_string()),
                     vec![
-                        Box::new(binary_op_expression(
+                        binary_op_expression(
                             BinaryOp::Plus,
                             numeric_literal_expression("1"),
                             numeric_literal_expression("2"),
-                        )),
-                        Box::new(binary_op_expression(
+                        ),
+                        binary_op_expression(
                             BinaryOp::Mul,
                             numeric_literal_expression("3"),
                             numeric_literal_expression("4"),
-                        )),
+                        ),
                     ],
                 ),
                 true,
