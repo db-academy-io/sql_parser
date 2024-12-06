@@ -19,7 +19,8 @@ fn run_codeschool_sqlite_parser_test() {
             let file = entry.expect("Failed to read directory entry").path();
 
             if file.extension().and_then(|ext| ext.to_str()) == Some("sql") {
-                let parsing_result = std::panic::catch_unwind(|| run_test(&file));
+                let sql_content = fs::read_to_string(file).expect("Failed to read file");
+                let parsing_result = std::panic::catch_unwind(|| run_test(&sql_content));
 
                 if parsing_result.is_ok() && parsing_result.unwrap() {
                     passed_test += 1;
@@ -41,9 +42,8 @@ fn run_codeschool_sqlite_parser_test() {
     );
 }
 
-fn run_test(file: &Path) -> bool {
-    let sql_content = fs::read_to_string(file).expect("Failed to read file");
-    let mut parser = Parser::from(sql_content.as_str());
+fn run_test(sql_content: &str) -> bool {
+    let mut parser = Parser::from(sql_content);
     let statement = parser.parse_statement();
     statement.is_ok()
 }

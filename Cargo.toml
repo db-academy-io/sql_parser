@@ -32,3 +32,6 @@ large_futures = "warn"
 [package.metadata.precommit]
 fmt = "cargo fmt --check"
 clippy = "cargo clippy"
+
+[profile.bench]
+debug = true
