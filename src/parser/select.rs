@@ -23,7 +23,7 @@ pub trait SelectStatementParser {
 impl<'a> SelectStatementParser for Parser<'a> {
     fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError> {
         // Consume the SELECT keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Select)?;
 
         let select_statement = SelectStatement {
             distinct: self.parse_select_distinct()?,

@@ -3,8 +3,9 @@ mod function;
 use crate::{
     parser::select::SelectStatementParser, AnIsExpression, BetweenExpression,
     BinaryMatchingExpression, BinaryOp, CaseExpression, DataType, EscapeExpression,
-    ExistsStatement, Expression, Identifier, Keyword, LikeExpressionType, LiteralValue, Parser,
-    ParsingError, RaiseFunction, TokenType, UnaryMatchingExpression, UnaryOp, WhenExpression,
+    ExistsStatement, Expression, Identifier, InExpression, Keyword, LikeExpressionType,
+    LiteralValue, Parser, ParsingError, RaiseFunction, TokenType, UnaryMatchingExpression, UnaryOp,
+    WhenExpression,
 };
 
 use function::FunctionParser;
@@ -48,6 +49,9 @@ static PRECEDENCE: Lazy<HashMap<TokenType, u8>> = Lazy::new(|| {
 pub trait ExpressionParser {
     /// Parse an expression
     fn parse_expression(&mut self) -> Result<Expression, ParsingError>;
+
+    /// Parse a comma separated list of expressions
+    fn parse_comma_separated_expressions(&mut self) -> Result<Vec<Expression>, ParsingError>;
 
     /// Parse a CASE expression
     fn parse_case_expression(&mut self) -> Result<Expression, ParsingError>;
@@ -106,6 +110,13 @@ pub trait ExpressionParser {
 
     /// Get the precedence of the given operator
     fn get_precedence(&mut self, operator: &TokenType) -> u8;
+
+    /// Parse an $expr IN $expr expression
+    fn parse_in_expression(
+        &mut self,
+        expression: Expression,
+        is_not: bool,
+    ) -> Result<Expression, ParsingError>;
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
@@ -204,6 +215,9 @@ impl<'a> ExpressionParser for Parser<'a> {
                             Keyword::Match => {
                                 return self.parse_regexp_match_expression(expression, true);
                             }
+                            Keyword::In => {
+                                return self.parse_in_expression(expression, true);
+                            }
                             _ => {
                                 return Err(ParsingError::UnexpectedKeyword(nested_keyword));
                             }
@@ -228,11 +242,31 @@ impl<'a> ExpressionParser for Parser<'a> {
                     // No need to consume the IS keyword, as the is parser will handle it
                     return self.parse_is_expression(expression);
                 }
+                Keyword::In => {
+                    // No need to consume the IN keyword, as the in parser will handle it
+                    return self.parse_in_expression(expression, false);
+                }
                 _ => {}
             }
         }
 
         Ok(expression)
+    }
+
+    /// Parse a comma separated list of expressions
+    fn parse_comma_separated_expressions(&mut self) -> Result<Vec<Expression>, ParsingError> {
+        let mut expressions = Vec::new();
+
+        loop {
+            expressions.push(self.parse_expression()?);
+
+            if self.peek_as(TokenType::Comma).is_ok() {
+                self.consume_token()?;
+            } else {
+                break;
+            }
+        }
+        Ok(expressions)
     }
 
     /// Parse an identifier
@@ -718,6 +752,85 @@ impl<'a> ExpressionParser for Parser<'a> {
             Box::new(expression),
             result,
         ))
+    }
+
+    fn parse_in_expression(
+        &mut self,
+        expression: Expression,
+        is_not: bool,
+    ) -> Result<Expression, ParsingError> {
+        self.consume_keyword(Keyword::In)?;
+
+        let in_expression = if self.peek_as(TokenType::LeftParen).is_ok() {
+            // Consume the left parenthesis
+            self.consume_token()?;
+
+            let result = if self.peek_as(TokenType::RightParen).is_ok() {
+                BinaryMatchingExpression::In(InExpression::Empty)
+            } else if let Ok(Keyword::Select) = self.peek_as_keyword() {
+                // The IN expression is a subquery
+                let select_statement = self.parse_select_statement()?;
+                BinaryMatchingExpression::In(InExpression::Select(select_statement))
+            } else {
+                let expressions = self.parse_comma_separated_expressions()?;
+                BinaryMatchingExpression::In(InExpression::Expression(expressions))
+            };
+
+            self.peek_as(TokenType::RightParen)?;
+            // Consume the right parenthesis
+            self.consume_token()?;
+            result
+        } else {
+            // Parse expressions like $expr IN $schema.table or schema.function(*args)
+            let id1 = self.peek_as_id()?;
+            self.consume_token()?;
+
+            let identifier = if self.peek_as(TokenType::Dot).is_ok() {
+                // Consume the dot token
+                self.consume_token()?;
+
+                let id2 = self.peek_as_id()?;
+                self.consume_token()?;
+                Identifier::Compound(vec![id1.to_string(), id2.to_string()])
+            } else {
+                Identifier::Single(id1.to_string())
+            };
+
+            dbg!("identifier: {:?}", &identifier);
+            dbg!("token: {:?}", &self.peek_token());
+
+            if self.peek_as(TokenType::LeftParen).is_ok() {
+                self.consume_token()?;
+
+                if self.peek_as(TokenType::RightParen).is_ok() {
+                    self.consume_token()?;
+                    BinaryMatchingExpression::In(InExpression::TableFunction(identifier, vec![]))
+                } else {
+                    let args = self.parse_comma_separated_expressions()?;
+
+                    self.peek_as(TokenType::RightParen)?;
+                    self.consume_token()?;
+
+                    BinaryMatchingExpression::In(InExpression::TableFunction(identifier, args))
+                }
+            } else {
+                BinaryMatchingExpression::In(InExpression::Identity(identifier))
+            }
+        };
+
+        dbg!("in_expression: {:?}", &in_expression);
+
+        if is_not {
+            Ok(Expression::BinaryMatchingExpression(
+                Box::new(expression),
+                BinaryMatchingExpression::Not(Box::new(in_expression)),
+            ))
+        } else {
+            Ok(Expression::BinaryMatchingExpression(
+                Box::new(expression),
+                in_expression,
+            ))
+        }
     }
 }
 
@@ -1671,6 +1784,194 @@ mod expression_from_expression_tests {
                 numeric_literal_expression("1"),
                 true,
                 false,
+            ),
+        );
+    }
+}
+
+#[cfg(test)]
+mod expression_with_in_statement_tests {
+    use crate::{
+        BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression, SelectItem,
+        SelectStatement,
+    };
+
+    use super::test_utils::*;
+
+    fn expression_with_in_statement(
+        expression: Expression,
+        in_expression: InExpression,
+        is_not: bool,
+    ) -> Expression {
+        let in_expression = if is_not {
+            BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::In(in_expression)))
+        } else {
+            BinaryMatchingExpression::In(in_expression)
+        };
+
+        Expression::BinaryMatchingExpression(Box::new(expression), in_expression)
+    }
+
+    #[test]
+    fn test_expression_with_empty_select_statement() {
+        run_sunny_day_test(
+            "SELECT 1 IN ();",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::Empty,
+                false,
+            ),
+        );
+
+        run_sunny_day_test(
+            "SELECT 1 NOT IN ();",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::Empty,
+                true,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_with_select_statement() {
+        let mut select_statement = SelectStatement::default();
+        select_statement.columns = vec![SelectItem::Expression(numeric_literal_expression("2"))];
+
+        run_sunny_day_test(
+            "SELECT 1 IN (SELECT 2);",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::Select(select_statement),
+                false,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_with_multiple_expressions() {
+        run_sunny_day_test(
+            "SELECT 1 IN (2, 3, 4 + 5);",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::Expression(vec![
+                    Box::new(numeric_literal_expression("2")),
+                    Box::new(numeric_literal_expression("3")),
+                    Box::new(binary_op_expression(
+                        BinaryOp::Plus,
+                        numeric_literal_expression("4"),
+                        numeric_literal_expression("5"),
+                    )),
+                ]),
+                false,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_with_not_in_expression() {
+        let mut select_statement = SelectStatement::default();
+        select_statement.columns = vec![SelectItem::Expression(numeric_literal_expression("2"))];
+
+        run_sunny_day_test(
+            "SELECT 1 NOT IN (SELECT 2);",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::Select(select_statement),
+                true,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_with_table_name() {
+        run_sunny_day_test(
+            "SELECT 1 NOT IN table_name;",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::Identity(Identifier::Single("table_name".to_string())),
+                true,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_with_schema_and_table_names() {
+        run_sunny_day_test(
+            "SELECT 1 NOT IN schema_name.table_name;",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::Identity(Identifier::Compound(vec![
+                    "schema_name".to_string(),
+                    "table_name".to_string(),
+                ])),
+                true,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_with_schema_and_table_function_without_arguments() {
+        run_sunny_day_test(
+            "SELECT 1 NOT IN schema_name.table_function();",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::TableFunction(
+                    Identifier::Compound(vec![
+                        "schema_name".to_string(),
+                        "table_function".to_string(),
+                    ]),
+                    vec![],
+                ),
+                true,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_with_schema_and_table_function_with_arguments() {
+        run_sunny_day_test(
+            "SELECT 1 NOT IN schema_name.table_function(1, 2, 3);",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::TableFunction(
+                    Identifier::Compound(vec![
+                        "schema_name".to_string(),
+                        "table_function".to_string(),
+                    ]),
+                    vec![
+                        Box::new(numeric_literal_expression("1")),
+                        Box::new(numeric_literal_expression("2")),
+                        Box::new(numeric_literal_expression("3")),
+                    ],
+                ),
+                true,
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_with_table_function_with_arguments() {
+        run_sunny_day_test(
+            "SELECT 1 NOT IN table_function(1+2, 3*4);",
+            &expression_with_in_statement(
+                numeric_literal_expression("1"),
+                InExpression::TableFunction(
+                    Identifier::Single("table_function".to_string()),
+                    vec![
+                        Box::new(binary_op_expression(
+                            BinaryOp::Plus,
+                            numeric_literal_expression("1"),
+                            numeric_literal_expression("2"),
+                        )),
+                        Box::new(binary_op_expression(
+                            BinaryOp::Mul,
+                            numeric_literal_expression("3"),
+                            numeric_literal_expression("4"),
+                        )),
+                    ],
+                ),
+                true,
             ),
         );
     }

@@ -406,7 +406,7 @@ pub enum BinaryMatchingExpression {
     Is(AnIsExpression),
 
     /// In
-    In(InExpressionType),
+    In(InExpression),
 
     /// Between
     Between(BetweenExpression),
@@ -451,7 +451,7 @@ pub struct BetweenExpression {
 
 /// An in expression
 #[derive(Debug, PartialEq, Clone)]
-pub enum InExpressionType {
+pub enum InExpression {
     /// Empty
     Empty,
 
@@ -459,13 +459,13 @@ pub enum InExpressionType {
     Select(SelectStatement),
 
     /// Expressions
-    Expression(Vec<Box<Expression>>),
+    Expression(Vec<Expression>),
 
-    /// Identity, i.e. schema_name.table_name.*
-    Identity(Vec<String>),
+    /// Identity, i.e. schema_name.table_name
+    Identity(Identifier),
 
     /// Table function
-    TableFunction(Vec<Box<Expression>>),
+    TableFunction(Identifier, Vec<Expression>),
 }
 
 /// An exists statement type
