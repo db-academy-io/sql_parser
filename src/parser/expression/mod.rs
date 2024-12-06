@@ -158,6 +158,18 @@ impl<'a> ExpressionParser for Parser<'a> {
             }
         }
 
+        if self.peek_as(TokenType::LeftParen).is_ok() {
+            // Consume the left parenthesis
+            self.consume_token()?;
+
+            let expressions = self.parse_comma_separated_expressions()?;
+
+            self.peek_as(TokenType::RightParen)?;
+            // Consume the right parenthesis
+            self.consume_token()?;
+            return Ok(Expression::ExpressionList(expressions));
+        }
+
         let expression = self.parse_expression_pratt(0)?;
         dbg!("parse_expression: {:?}", &expression);
 
@@ -525,6 +537,9 @@ impl<'a> ExpressionParser for Parser<'a> {
                 DataType::PlainDataType(name.to_string())
             }
         };
+
+        self.peek_as(TokenType::RightParen)?;
+        self.consume_token()?;
 
         Ok(Expression::Cast(Box::new(expression), data_type))
     }
@@ -1981,6 +1996,73 @@ mod expression_with_in_statement_tests {
                 ),
                 true,
             ),
+        );
+    }
+}
+
+#[cfg(test)]
+mod parenthesized_expression_tests {
+    use crate::{BinaryOp, DataType, Expression, RaiseFunction, UnaryOp};
+
+    use super::test_utils::*;
+
+    #[test]
+    fn test_parenthesized_expression() {
+        run_sunny_day_test(
+            "SELECT (1 + 2 * 3)",
+            &Expression::ExpressionList(vec![binary_op_expression(
+                BinaryOp::Plus,
+                numeric_literal_expression("1"),
+                binary_op_expression(
+                    BinaryOp::Mul,
+                    numeric_literal_expression("2"),
+                    numeric_literal_expression("3"),
+                ),
+            )]),
+        );
+    }
+
+    #[test]
+    fn test_parenthesized_two_expressions() {
+        run_sunny_day_test(
+            "SELECT (1 + 2, 3 / 4);",
+            &Expression::ExpressionList(vec![
+                binary_op_expression(
+                    BinaryOp::Plus,
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                ),
+                binary_op_expression(
+                    BinaryOp::Div,
+                    numeric_literal_expression("3"),
+                    numeric_literal_expression("4"),
+                ),
+            ]),
+        );
+    }
+
+    #[test]
+    fn test_parenthesized_multiple_expressions() {
+        run_sunny_day_test(
+            "SELECT (1 + 2, 3 / 4, cast(5 as int), -5, raise (ignore));",
+            &Expression::ExpressionList(vec![
+                binary_op_expression(
+                    BinaryOp::Plus,
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                ),
+                binary_op_expression(
+                    BinaryOp::Div,
+                    numeric_literal_expression("3"),
+                    numeric_literal_expression("4"),
+                ),
+                cast_expression(
+                    numeric_literal_expression("5"),
+                    DataType::PlainDataType("int".to_string()),
+                ),
+                unary_op_expression(UnaryOp::Minus, numeric_literal_expression("5")),
+                raise_expression(RaiseFunction::Ignore),
+            ]),
         );
     }
 }
