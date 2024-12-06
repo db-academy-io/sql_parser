@@ -1141,7 +1141,7 @@ mod binary_op_expression_tests {
     }
 
     #[test]
-    fn test_expression_binary_op_valid() {
+    fn test_expression_binary_with_prefix() {
         run_sunny_day_test(
             "SELECT 1 ++ 2;",
             &binary_op_expression(
@@ -1150,33 +1150,10 @@ mod binary_op_expression_tests {
                 unary_op_expression(UnaryOp::Plus, numeric_literal_expression("2")),
             ),
         );
+    }
 
-        run_sunny_day_test(
-            "SELECT 1 + 2 * 3;",
-            &binary_op_expression(
-                BinaryOp::Plus,
-                numeric_literal_expression("1"),
-                binary_op_expression(
-                    BinaryOp::Mul,
-                    numeric_literal_expression("2"),
-                    numeric_literal_expression("3"),
-                ),
-            ),
-        );
-
-        run_sunny_day_test(
-            "SELECT 1 * 2 / 3;",
-            &binary_op_expression(
-                BinaryOp::Div,
-                binary_op_expression(
-                    BinaryOp::Mul,
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
-                ),
-                numeric_literal_expression("3"),
-            ),
-        );
-
+    #[test]
+    fn test_expression_binary_operation_the_same_precedence() {
         run_sunny_day_test(
             "SELECT 1 + 2 + 3;",
             &binary_op_expression(
@@ -1189,11 +1166,14 @@ mod binary_op_expression_tests {
                 numeric_literal_expression("3"),
             ),
         );
+    }
 
+    #[test]
+    fn test_expression_binary_operation_the_same_precedence2() {
         run_sunny_day_test(
-            "SELECT 1 * 2 * 3;",
+            "SELECT 1 * 2 / 3;",
             &binary_op_expression(
-                BinaryOp::Mul,
+                BinaryOp::Div,
                 binary_op_expression(
                     BinaryOp::Mul,
                     numeric_literal_expression("1"),
@@ -1202,7 +1182,26 @@ mod binary_op_expression_tests {
                 numeric_literal_expression("3"),
             ),
         );
+    }
 
+    #[test]
+    fn test_expression_binary_operation_precedence() {
+        run_sunny_day_test(
+            "SELECT 1 + 2 * 3;",
+            &binary_op_expression(
+                BinaryOp::Plus,
+                numeric_literal_expression("1"),
+                binary_op_expression(
+                    BinaryOp::Mul,
+                    numeric_literal_expression("2"),
+                    numeric_literal_expression("3"),
+                ),
+            ),
+        );
+    }
+
+    #[test]
+    fn test_expression_binary_operation_precedence2() {
         run_sunny_day_test(
             "SELECT 1 + 2 * 3 - 4",
             &binary_op_expression(
