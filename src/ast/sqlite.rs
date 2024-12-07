@@ -1,3 +1,5 @@
+use super::{Expression, Identifier};
+
 /// An AST for VACUUM SQL statement.
 /// See details [sqlite-vacuum-statement]
 ///
@@ -54,4 +56,9 @@ pub struct PragmaStatement {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct AttachStatement {}
+pub struct AttachStatement {
+    /// an attach expression
+    pub expression: Expression,
+    /// an attached schema name
+    pub schema_name: Identifier,
+}

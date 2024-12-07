@@ -145,6 +145,7 @@ impl<'a> Parser<'a> {
         match self.peek_as_keyword()? {
             Keyword::Drop => self.parse_drop_statement(),
             Keyword::Vacuum => self.parse_vacuum_statement(),
+            Keyword::Attach => self.parse_attach_statement(),
             Keyword::Detach => self.parse_detach_statement(),
             Keyword::Analyze => self.parse_analyze_statement(),
             Keyword::Reindex => self.parse_reindex_statement(),

@@ -1,7 +1,7 @@
-use super::Parser;
+use super::{expression::ExpressionParser, Parser};
 use crate::{
-    AnalyzeStatement, Keyword, ParsingError, PragmaStatement, ReindexStatement, Statement,
-    TokenType, VacuumStatement,
+    AnalyzeStatement, AttachStatement, Keyword, ParsingError, PragmaStatement, ReindexStatement,
+    Statement, TokenType, VacuumStatement,
 };
 
 pub trait SQLite3StatementParser {
@@ -10,6 +10,9 @@ pub trait SQLite3StatementParser {
 
     /// Parses a DETACH statement
     fn parse_detach_statement(&mut self) -> Result<Statement, ParsingError>;
+
+    /// Parses a ATTACH statement
+    fn parse_attach_statement(&mut self) -> Result<Statement, ParsingError>;
 
     /// Parses an ANALYZE statement
     fn parse_analyze_statement(&mut self) -> Result<Statement, ParsingError>;
@@ -69,6 +72,23 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
         Ok(Statement::Vacuum(VacuumStatement {
             schema_name: schema,
             file_name: Some(filename),
+        }))
+    }
+
+    fn parse_attach_statement(&mut self) -> Result<Statement, ParsingError> {
+        self.consume_keyword(Keyword::Attach)?;
+
+        // Consume the optional DATABASE keyword
+        let _ = self.consume_keyword(Keyword::Database);
+
+        let expression = self.parse_expression()?;
+
+        self.consume_keyword(Keyword::As)?;
+        let schema_name = self.parse_identifier()?;
+
+        Ok(Statement::Attach(AttachStatement {
+            expression,
+            schema_name,
         }))
     }
 
@@ -1511,6 +1531,36 @@ mod pragma_statements_tests {
                 schema_name: None,
                 pragma_name: "cache_size".to_string(),
                 pragma_value: Some("1000".to_string()),
+            }),
+        );
+    }
+}
+
+#[cfg(test)]
+mod attach_statement_tests {
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::{AttachStatement, Expression, Identifier, LiteralValue, Statement};
+
+    #[test]
+    fn test_attach_statement() {
+        let sql = "ATTACH DATABASE 'test.db' AS db2;";
+        run_sunny_day_test(
+            sql,
+            Statement::Attach(AttachStatement {
+                expression: Expression::LiteralValue(LiteralValue::String("'test.db'".to_string())),
+                schema_name: Identifier::Single("db2".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_attach_statement_without_database_keyword() {
+        let sql = "ATTACH 'sub_f' AS sub_name;";
+        run_sunny_day_test(
+            sql,
+            Statement::Attach(AttachStatement {
+                expression: Expression::LiteralValue(LiteralValue::String("'sub_f'".to_string())),
+                schema_name: Identifier::Single("sub_name".to_string()),
             }),
         );
     }
