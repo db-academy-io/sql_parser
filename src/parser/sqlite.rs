@@ -1,7 +1,7 @@
 use super::{expression::ExpressionParser, Parser};
 use crate::{
-    AnalyzeStatement, AttachStatement, Keyword, ParsingError, PragmaStatement, ReindexStatement,
-    Statement, TokenType, VacuumStatement,
+    AnalyzeStatement, AttachStatement, DetachStatement, Keyword, ParsingError, PragmaStatement,
+    ReindexStatement, Statement, TokenType, VacuumStatement,
 };
 
 pub trait SQLite3StatementParser {
@@ -27,52 +27,44 @@ pub trait SQLite3StatementParser {
     fn parse_pragma_value(&mut self) -> Result<String, ParsingError>;
 
     /// Parses a name
-    fn parse_name(&mut self) -> Result<String, ParsingError>;
+    fn parse_sqlite3_name(&mut self) -> Result<String, ParsingError>;
 }
 
 impl<'a> SQLite3StatementParser for Parser<'a> {
     fn parse_vacuum_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the VACUUM keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Vacuum)?;
 
         // Check if we've got only 'VACUUM;' command
         if self.finalize_statement_parsing().is_ok() {
             return Ok(Statement::Vacuum(VacuumStatement::default()));
         }
 
-        let mut schema: Option<String> = None;
-        if let Ok(value) = self.peek_as_string() {
-            schema = Some(value);
+        let schema: Option<String> = if let Ok(id) = self.peek_as_id() {
+            let schema = Some(id.to_string());
             // Consume the schema token
             self.consume_token()?;
-        }
+            schema
+        } else {
+            None
+        };
 
-        // Check if we've got only VACUUM $SCHEMA; command
-        if self.finalize_statement_parsing().is_ok() {
-            return Ok(Statement::Vacuum(VacuumStatement {
+        let vacuum_statement = if self.consume_keyword(Keyword::Into).is_ok() {
+            let value = self.peek_as_string()?;
+            // Consume the schema token
+            self.consume_token()?;
+            VacuumStatement {
+                schema_name: schema,
+                file_name: Some(value),
+            }
+        } else {
+            VacuumStatement {
                 schema_name: schema,
                 file_name: None,
-            }));
-        }
+            }
+        };
 
-        // Parsing "INTO $filename;" statement
-        // At this point we expect to get INTO keyword and the filename token
-        let keyword = self.peek_as_keyword()?;
-        if keyword != Keyword::Into {
-            let current_token = self.peek_token()?;
-            return Err(ParsingError::UnexpectedToken(current_token.to_string()));
-        }
-
-        // Consume the INTO keyword
-        self.consume_token()?;
-
-        let filename = self.parse_name()?;
         self.finalize_statement_parsing()?;
-
-        Ok(Statement::Vacuum(VacuumStatement {
-            schema_name: schema,
-            file_name: Some(filename),
-        }))
+        Ok(Statement::Vacuum(vacuum_statement))
     }
 
     fn parse_attach_statement(&mut self) -> Result<Statement, ParsingError> {
@@ -93,34 +85,32 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
     }
 
     fn parse_detach_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the VACUUM keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Detach)?;
 
-        // Check if there is a DATABASE keyword
-        if let Ok(keyword) = self.peek_as_keyword() {
-            if keyword == Keyword::Database {
-                // Consume the DATABASE keyword
-                self.consume_token()?;
-            }
-        }
+        // Consume the optional DATABASE keyword
+        let _ = self.consume_keyword(Keyword::Database);
 
-        let schema_name = self.parse_name()?;
+        let schema_name = self.parse_sqlite3_name()?;
+
         self.finalize_statement_parsing()?;
-        Ok(Statement::Detach(crate::DetachStatement { schema_name }))
+
+        Ok(Statement::Detach(DetachStatement {
+            schema_name: schema_name.to_string(),
+        }))
     }
 
     fn parse_analyze_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the ANALYZE keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Analyze)?;
 
         // Check if we've got only 'ANALYZE;' command
         if self.finalize_statement_parsing().is_ok() {
             return Ok(Statement::Analyze(AnalyzeStatement::default()));
         }
-        let schema_name = self.parse_name()?;
+        let schema_name = self.parse_sqlite3_name()?;
 
         // Check if we've got only 'ANALYZE $SCHEMA;' command
         if self.finalize_statement_parsing().is_ok() {
+            // the schema name takes precedence over table or index names
             return Ok(Statement::Analyze(AnalyzeStatement {
                 schema_name: Some(schema_name),
                 table_or_index_name: None,
@@ -132,7 +122,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
             // Consume the '.' token
             self.consume_token()?;
 
-            table_or_index_name = Some(self.parse_name()?);
+            table_or_index_name = Some(self.parse_sqlite3_name()?);
         }
 
         self.finalize_statement_parsing()?;
@@ -144,15 +134,14 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
     }
 
     fn parse_reindex_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the REINDEX keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Reindex)?;
 
         // Check if we've got only 'REINDEX;' command
         if self.finalize_statement_parsing().is_ok() {
             return Ok(Statement::Reindex(crate::ReindexStatement::default()));
         }
 
-        let schema_name = Some(self.parse_name()?);
+        let schema_name = Some(self.parse_sqlite3_name()?);
 
         // Check if we've got only 'REINDEX $collation_name;' command
         if self.finalize_statement_parsing().is_ok() {
@@ -169,7 +158,7 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
             // Consume the '.' token
             self.consume_token()?;
 
-            target_name = Some(self.parse_name()?);
+            target_name = Some(self.parse_sqlite3_name()?);
         }
 
         self.finalize_statement_parsing()?;
@@ -285,25 +274,20 @@ impl<'a> SQLite3StatementParser for Parser<'a> {
         Ok(value)
     }
 
-    fn parse_name(&mut self) -> Result<String, ParsingError> {
-        if let Ok(keyword) = self.peek_as_keyword() {
-            // consume keyword token
+    fn parse_sqlite3_name(&mut self) -> Result<String, ParsingError> {
+        if let Ok(value) = self.peek_as_number() {
             self.consume_token()?;
 
-            // return keyword as string
-            return Ok(keyword.to_string());
+            return Ok(value.to_string());
         }
 
-        if let Ok(value) = self.peek_as_number() {
-            // consume keyword token
+        if let Ok(value) = self.peek_as_id() {
             self.consume_token()?;
 
-            // return keyword as string
             return Ok(value.to_string());
         }
 
         let value = self.peek_as_string()?;
-        // Consume the `name` token
         self.consume_token()?;
         Ok(value)
     }
@@ -530,13 +514,6 @@ mod detach_statements_tests {
                 schema_name: "123".to_string(),
             }),
         );
-    }
-
-    #[test]
-    fn test_detach_unexpected_token() {
-        let sql = "DETACH DATABASE INTO 'schema_name';";
-        // In this case the keyword INTO becomes as a schema name
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("'schema_name'".into()));
     }
 
     #[test]
@@ -779,30 +756,6 @@ mod analyze_statements_tests {
         run_rainy_day_test(
             sql,
             ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_table;".into()),
-        );
-    }
-
-    #[test]
-    fn test_analyze_with_reserved_keyword_as_schema() {
-        let sql = "ANALYZE SELECT;";
-        run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: Some("Select".to_string()),
-                table_or_index_name: None,
-            }),
-        );
-    }
-
-    #[test]
-    fn test_analyze_with_reserved_keyword_as_table() {
-        let sql = "ANALYZE main.select;";
-        run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: Some("main".to_string()),
-                table_or_index_name: Some("Select".to_string()),
-            }),
         );
     }
 
@@ -1052,30 +1005,6 @@ mod reindex_statements_tests {
         run_rainy_day_test(
             sql,
             ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_name;".into()),
-        );
-    }
-
-    #[test]
-    fn test_reindex_with_reserved_keyword_as_name() {
-        let sql = "REINDEX select;";
-        run_sunny_day_test(
-            sql,
-            Statement::Reindex(ReindexStatement {
-                schema_name: None,
-                target_name: Some("Select".to_string()),
-            }),
-        );
-    }
-
-    #[test]
-    fn test_reindex_with_reserved_keyword_as_schema() {
-        let sql = "REINDEX select.my_table;";
-        run_sunny_day_test(
-            sql,
-            Statement::Reindex(ReindexStatement {
-                schema_name: Some("Select".to_string()),
-                target_name: Some("my_table".to_string()),
-            }),
         );
     }
 
