@@ -82,7 +82,7 @@ impl<'a> Parser<'a> {
             Ok(())
         } else {
             Err(ParsingError::UnexpectedToken(format!(
-                "Expected keyword: {}, got: {}",
+                "Expected {} keyword, got: {}",
                 keyword, token
             )))
         }

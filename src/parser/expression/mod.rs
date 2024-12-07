@@ -293,6 +293,8 @@ impl<'a> ExpressionParser for Parser<'a> {
             if self.peek_as(TokenType::Dot).is_ok() {
                 // Consume the dot token
                 self.consume_token()?;
+            } else {
+                break;
             }
         }
 

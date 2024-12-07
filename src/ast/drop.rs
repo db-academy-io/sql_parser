@@ -1,3 +1,5 @@
+use super::Identifier;
+
 /// An AST for DROP TABLE SQL statement.
 /// See details [sqlite-drop-table-statement]
 ///
@@ -5,16 +7,14 @@
 #[derive(Debug, PartialEq)]
 pub struct DropTableStatement {
     pub if_exists: bool,
-    pub schema_name: Option<String>,
-    pub table_name: String,
+    pub identifier: Identifier,
 }
 
 impl DropTableStatement {
     pub fn name(name: String) -> Self {
         Self {
             if_exists: false,
-            schema_name: None,
-            table_name: name,
+            identifier: Identifier::Single(name),
         }
     }
 }
@@ -26,16 +26,14 @@ impl DropTableStatement {
 #[derive(Debug, PartialEq)]
 pub struct DropIndexStatement {
     pub if_exists: bool,
-    pub schema_name: Option<String>,
-    pub index_name: String,
+    pub identifier: Identifier,
 }
 
 impl DropIndexStatement {
     pub fn name(name: String) -> Self {
         Self {
             if_exists: false,
-            schema_name: None,
-            index_name: name,
+            identifier: Identifier::Single(name),
         }
     }
 }
@@ -47,16 +45,14 @@ impl DropIndexStatement {
 #[derive(Debug, PartialEq)]
 pub struct DropTriggerStatement {
     pub if_exists: bool,
-    pub schema_name: Option<String>,
-    pub trigger_name: String,
+    pub identifier: Identifier,
 }
 
 impl DropTriggerStatement {
     pub fn name(name: String) -> Self {
         Self {
             if_exists: false,
-            schema_name: None,
-            trigger_name: name,
+            identifier: Identifier::Single(name),
         }
     }
 }
@@ -68,16 +64,14 @@ impl DropTriggerStatement {
 #[derive(Debug, PartialEq)]
 pub struct DropViewStatement {
     pub if_exists: bool,
-    pub schema_name: Option<String>,
-    pub view_name: String,
+    pub identifier: Identifier,
 }
 
 impl DropViewStatement {
     pub fn name(name: String) -> Self {
         Self {
             if_exists: false,
-            schema_name: None,
-            view_name: name,
+            identifier: Identifier::Single(name),
         }
     }
 }

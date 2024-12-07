@@ -1,5 +1,7 @@
 use crate::ast::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
-use crate::{Keyword, Parser, ParsingError, Statement, TokenType};
+use crate::{Identifier, Keyword, Parser, ParsingError, Statement};
+
+use super::expression::ExpressionParser;
 
 pub trait DropStatementParser {
     fn parse_drop_statement(&mut self) -> Result<Statement, ParsingError>;
@@ -12,9 +14,7 @@ pub trait DropStatementParser {
 
     fn parse_drop_trigger_statement(&mut self) -> Result<Statement, ParsingError>;
 
-    fn parse_drop_statement_generic(
-        &mut self,
-    ) -> Result<(bool, Option<String>, String), ParsingError>;
+    fn parse_drop_statement_generic(&mut self) -> Result<(bool, Identifier), ParsingError>;
 }
 
 impl<'a> DropStatementParser for Parser<'a> {
@@ -25,114 +25,75 @@ impl<'a> DropStatementParser for Parser<'a> {
     ///   - DROP INDEX statements
     ///   - DROP TRIGGER statements
     fn parse_drop_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the DROP keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Drop)?;
         let keyword = self.peek_as_keyword()?;
 
-        match keyword {
-            Keyword::Table => self.parse_drop_table_statement(),
-            Keyword::View => self.parse_drop_view_statement(),
-            Keyword::Index => self.parse_drop_index_statement(),
-            Keyword::Trigger => self.parse_drop_trigger_statement(),
-            _ => Err(ParsingError::UnexpectedKeyword(keyword)),
-        }
-    }
+        let drop_statement = match keyword {
+            Keyword::Table => self.parse_drop_table_statement()?,
+            Keyword::View => self.parse_drop_view_statement()?,
+            Keyword::Index => self.parse_drop_index_statement()?,
+            Keyword::Trigger => self.parse_drop_trigger_statement()?,
+            _ => return Err(ParsingError::UnexpectedKeyword(keyword)),
+        };
 
-    fn parse_drop_statement_generic(
-        &mut self,
-    ) -> Result<(bool, Option<String>, String), ParsingError> {
-        let mut if_exists = false;
-        // Parse optional [IF EXISTS] part of the statement
-        if let Ok(Keyword::If) = self.peek_as_keyword() {
-            // Consume the IF keyword
-            self.consume_token()?;
-            match self.peek_as_keyword()? {
-                Keyword::Exists => {
-                    if_exists = true;
-                    // Consume the EXISTS keyword
-                    self.consume_token()?;
-                }
-                _ => return Err(ParsingError::ExpectedKeyword(Keyword::Exists)),
-            }
-        }
-
-        let mut schema_name: Option<String> = None;
-        let mut name: String = self.peek_as_id()?.to_string();
-
-        // consume the first id token (which might be the table name)
-        self.consume_token()?;
-
-        if let Ok(token) = self.peek_token() {
-            if token.token_type == TokenType::Dot {
-                // in this case we need to parse schema and name
-
-                // consume the DOT token
-                self.consume_token()?;
-
-                // swap: The first ID token was for the schema name
-                schema_name = Some(name);
-                name = self.peek_as_id()?.to_string();
-
-                // consume table_name token
-                self.consume_token()?;
-            }
-        }
-
-        // check if it is end-of-statement
         self.finalize_statement_parsing()?;
 
-        Ok((if_exists, schema_name, name))
+        Ok(drop_statement)
+    }
+
+    fn parse_drop_statement_generic(&mut self) -> Result<(bool, Identifier), ParsingError> {
+        // Parse optional [IF EXISTS] part of the statement
+        let if_exists = if self.consume_keyword(Keyword::If).is_ok() {
+            self.consume_keyword(Keyword::Exists)?;
+            true
+        } else {
+            false
+        };
+        let identifier = self.parse_identifier()?;
+        Ok((if_exists, identifier))
     }
 
     fn parse_drop_table_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the TABLE keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Table)?;
 
-        let (if_exists, schema_name, table_name) = self.parse_drop_statement_generic()?;
+        let (if_exists, identifier) = self.parse_drop_statement_generic()?;
 
         Ok(Statement::DropTable(DropTableStatement {
             if_exists,
-            schema_name,
-            table_name,
+            identifier,
         }))
     }
 
     fn parse_drop_view_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the VIEW keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::View)?;
 
-        let (if_exists, schema_name, view_name) = self.parse_drop_statement_generic()?;
+        let (if_exists, identifier) = self.parse_drop_statement_generic()?;
 
         Ok(Statement::DropView(DropViewStatement {
             if_exists,
-            schema_name,
-            view_name,
+            identifier,
         }))
     }
 
     fn parse_drop_index_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the INDEX keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Index)?;
 
-        let (if_exists, schema_name, index_name) = self.parse_drop_statement_generic()?;
+        let (if_exists, identifier) = self.parse_drop_statement_generic()?;
 
         Ok(Statement::DropIndex(DropIndexStatement {
             if_exists,
-            schema_name,
-            index_name,
+            identifier,
         }))
     }
 
     fn parse_drop_trigger_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the TRIGGER keyword
-        self.consume_token()?;
+        self.consume_keyword(Keyword::Trigger)?;
 
-        let (if_exists, schema_name, trigger_name) = self.parse_drop_statement_generic()?;
+        let (if_exists, identifier) = self.parse_drop_statement_generic()?;
 
         Ok(Statement::DropTrigger(DropTriggerStatement {
             if_exists,
-            schema_name,
-            trigger_name,
+            identifier,
         }))
     }
 }
@@ -141,7 +102,7 @@ impl<'a> DropStatementParser for Parser<'a> {
 mod drop_table_tests {
     use crate::ast::DropTableStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Identifier, Parser, ParsingError, Statement};
 
     #[test]
     fn test_drop_table_valid() {
@@ -159,8 +120,7 @@ mod drop_table_tests {
             sql,
             Statement::DropTable(DropTableStatement {
                 if_exists: true,
-                schema_name: None,
-                table_name: "my_table".to_string(),
+                identifier: Identifier::Single("my_table".to_string()),
             }),
         )
     }
@@ -172,8 +132,7 @@ mod drop_table_tests {
             sql,
             Statement::DropTable(DropTableStatement {
                 if_exists: false,
-                schema_name: Some("main".to_string()),
-                table_name: "my_table".to_string(),
+                identifier: Identifier::Compound(vec!["main".to_string(), "my_table".to_string()]),
             }),
         )
     }
@@ -181,7 +140,10 @@ mod drop_table_tests {
     #[test]
     fn test_drop_table_missing_table_name() {
         let sql = "DROP TABLE ;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
@@ -193,7 +155,10 @@ mod drop_table_tests {
     #[test]
     fn test_drop_table_invalid_syntax() {
         let sql = "DROP TABLE IF my_table;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_table".to_string()))
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected Exists keyword, got: my_table".to_string()),
+        )
     }
 
     #[test]
@@ -205,13 +170,19 @@ mod drop_table_tests {
     #[test]
     fn test_drop_table_invalid_name() {
         let sql = "DROP TABLE 123invalid;";
-        run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".to_string()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".to_string()),
+        );
     }
 
     #[test]
     fn test_drop_table_if_exists_missing_name() {
         let sql = "DROP TABLE IF EXISTS;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
@@ -219,11 +190,7 @@ mod drop_table_tests {
         let sql = "DROP TABLE my_table";
         run_sunny_day_test(
             sql,
-            Statement::DropTable(DropTableStatement {
-                if_exists: false,
-                schema_name: None,
-                table_name: "my_table".to_string(),
-            }),
+            Statement::DropTable(DropTableStatement::name("my_table".to_string())),
         );
     }
 
@@ -252,8 +219,10 @@ mod drop_table_tests {
 
         let secont_expected_statement = Statement::DropTable(DropTableStatement {
             if_exists: true,
-            schema_name: Some("schema".to_string()),
-            table_name: "my_second_table".to_string(),
+            identifier: Identifier::Compound(vec![
+                "schema".to_string(),
+                "my_second_table".to_string(),
+            ]),
         });
 
         // Verify that the statements are matches
@@ -269,18 +238,14 @@ mod drop_table_tests {
 mod drop_index_tests {
     use crate::ast::DropIndexStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Identifier, Parser, ParsingError, Statement};
 
     #[test]
     fn test_drop_index_valid() {
         let sql = "DROP INDEX my_index;";
         run_sunny_day_test(
             sql,
-            Statement::DropIndex(DropIndexStatement {
-                if_exists: false,
-                schema_name: None,
-                index_name: "my_index".to_string(),
-            }),
+            Statement::DropIndex(DropIndexStatement::name("my_index".to_string())),
         )
     }
 
@@ -291,8 +256,7 @@ mod drop_index_tests {
             sql,
             Statement::DropIndex(DropIndexStatement {
                 if_exists: true,
-                schema_name: None,
-                index_name: "my_index".to_string(),
+                identifier: Identifier::Single("my_index".to_string()),
             }),
         )
     }
@@ -304,8 +268,7 @@ mod drop_index_tests {
             sql,
             Statement::DropIndex(DropIndexStatement {
                 if_exists: false,
-                schema_name: Some("main".to_string()),
-                index_name: "my_index".to_string(),
+                identifier: Identifier::Compound(vec!["main".to_string(), "my_index".to_string()]),
             }),
         )
     }
@@ -313,10 +276,16 @@ mod drop_index_tests {
     #[test]
     fn test_drop_index_missing_index_name() {
         let sql = "DROP INDEX ;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
 
-        let sql = "DROP INDEX"; // TODO: Improve the error reporting
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        let sql = "DROP INDEX";
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
@@ -328,7 +297,10 @@ mod drop_index_tests {
     #[test]
     fn test_drop_index_invalid_syntax() {
         let sql = "DROP INDEX IF my_index;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_index".into()))
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected Exists keyword, got: my_index".into()),
+        )
     }
 
     #[test]
@@ -340,13 +312,19 @@ mod drop_index_tests {
     #[test]
     fn test_drop_index_invalid_name() {
         let sql = "DROP INDEX 123invalid;";
-        run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
     fn test_drop_index_if_exists_missing_name() {
         let sql = "DROP INDEX IF EXISTS;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
@@ -354,11 +332,7 @@ mod drop_index_tests {
         let sql = "DROP INDEX my_index";
         run_sunny_day_test(
             sql,
-            Statement::DropIndex(DropIndexStatement {
-                if_exists: false,
-                schema_name: None,
-                index_name: "my_index".to_string(),
-            }),
+            Statement::DropIndex(DropIndexStatement::name("my_index".to_string())),
         );
     }
 
@@ -373,8 +347,7 @@ mod drop_index_tests {
 
         let first_expected_statement = Statement::DropIndex(DropIndexStatement {
             if_exists: false,
-            schema_name: None,
-            index_name: "my_index".to_string(),
+            identifier: Identifier::Single("my_index".to_string()),
         });
 
         // Verify that the statements match
@@ -390,8 +363,10 @@ mod drop_index_tests {
 
         let second_expected_statement = Statement::DropIndex(DropIndexStatement {
             if_exists: true,
-            schema_name: Some("schema".to_string()),
-            index_name: "my_second_index".to_string(),
+            identifier: Identifier::Compound(vec![
+                "schema".to_string(),
+                "my_second_index".to_string(),
+            ]),
         });
 
         // Verify that the statements match
@@ -407,7 +382,7 @@ mod drop_index_tests {
 mod drop_view_tests {
     use crate::ast::DropViewStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Identifier, Parser, ParsingError, Statement};
 
     #[test]
     fn test_drop_view_valid() {
@@ -416,8 +391,7 @@ mod drop_view_tests {
             sql,
             Statement::DropView(DropViewStatement {
                 if_exists: false,
-                schema_name: None,
-                view_name: "my_view".to_string(),
+                identifier: Identifier::Single("my_view".to_string()),
             }),
         )
     }
@@ -429,8 +403,7 @@ mod drop_view_tests {
             sql,
             Statement::DropView(DropViewStatement {
                 if_exists: true,
-                schema_name: None,
-                view_name: "my_view".to_string(),
+                identifier: Identifier::Single("my_view".to_string()),
             }),
         )
     }
@@ -442,8 +415,7 @@ mod drop_view_tests {
             sql,
             Statement::DropView(DropViewStatement {
                 if_exists: false,
-                schema_name: Some("main".to_string()),
-                view_name: "my_view".to_string(),
+                identifier: Identifier::Compound(vec!["main".to_string(), "my_view".to_string()]),
             }),
         )
     }
@@ -451,10 +423,16 @@ mod drop_view_tests {
     #[test]
     fn test_drop_view_missing_view_name() {
         let sql = "DROP VIEW ;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
 
-        let sql = "DROP VIEW"; // TODO: Improve the error reporting
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        let sql = "DROP VIEW";
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
@@ -466,7 +444,10 @@ mod drop_view_tests {
     #[test]
     fn test_drop_view_invalid_syntax() {
         let sql = "DROP VIEW IF my_view;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_view".into()))
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected Exists keyword, got: my_view".into()),
+        )
     }
 
     #[test]
@@ -478,13 +459,19 @@ mod drop_view_tests {
     #[test]
     fn test_drop_view_invalid_name() {
         let sql = "DROP VIEW 123invalid;";
-        run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
     fn test_drop_view_if_exists_missing_name() {
         let sql = "DROP VIEW IF EXISTS;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
@@ -492,11 +479,7 @@ mod drop_view_tests {
         let sql = "DROP VIEW my_view";
         run_sunny_day_test(
             sql,
-            Statement::DropView(DropViewStatement {
-                if_exists: false,
-                schema_name: None,
-                view_name: "my_view".to_string(),
-            }),
+            Statement::DropView(DropViewStatement::name("my_view".to_string())),
         );
     }
 
@@ -509,11 +492,8 @@ mod drop_view_tests {
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        let first_expected_statement = Statement::DropView(DropViewStatement {
-            if_exists: false,
-            schema_name: None,
-            view_name: "my_view".to_string(),
-        });
+        let first_expected_statement =
+            Statement::DropView(DropViewStatement::name("my_view".to_string()));
 
         // Verify that the statements match
         assert_eq!(
@@ -528,8 +508,10 @@ mod drop_view_tests {
 
         let second_expected_statement = Statement::DropView(DropViewStatement {
             if_exists: true,
-            schema_name: Some("schema".to_string()),
-            view_name: "my_second_view".to_string(),
+            identifier: Identifier::Compound(vec![
+                "schema".to_string(),
+                "my_second_view".to_string(),
+            ]),
         });
 
         // Verify that the statements match
@@ -545,18 +527,14 @@ mod drop_view_tests {
 mod drop_trigger_tests {
     use crate::ast::DropTriggerStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Identifier, Parser, ParsingError, Statement};
 
     #[test]
     fn test_drop_trigger_valid() {
         let sql = "DROP TRIGGER my_trigger;";
         run_sunny_day_test(
             sql,
-            Statement::DropTrigger(DropTriggerStatement {
-                if_exists: false,
-                schema_name: None,
-                trigger_name: "my_trigger".to_string(),
-            }),
+            Statement::DropTrigger(DropTriggerStatement::name("my_trigger".to_string())),
         )
     }
 
@@ -567,8 +545,7 @@ mod drop_trigger_tests {
             sql,
             Statement::DropTrigger(DropTriggerStatement {
                 if_exists: true,
-                schema_name: None,
-                trigger_name: "my_trigger".to_string(),
+                identifier: Identifier::Single("my_trigger".to_string()),
             }),
         )
     }
@@ -580,8 +557,10 @@ mod drop_trigger_tests {
             sql,
             Statement::DropTrigger(DropTriggerStatement {
                 if_exists: false,
-                schema_name: Some("main".to_string()),
-                trigger_name: "my_trigger".to_string(),
+                identifier: Identifier::Compound(vec![
+                    "main".to_string(),
+                    "my_trigger".to_string(),
+                ]),
             }),
         )
     }
@@ -589,7 +568,10 @@ mod drop_trigger_tests {
     #[test]
     fn test_drop_trigger_missing_trigger_name() {
         let sql = "DROP TRIGGER ;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
@@ -601,7 +583,10 @@ mod drop_trigger_tests {
     #[test]
     fn test_drop_trigger_invalid_syntax() {
         let sql = "DROP TRIGGER IF my_trigger;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_trigger".into()))
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected Exists keyword, got: my_trigger".into()),
+        )
     }
 
     #[test]
@@ -613,13 +598,19 @@ mod drop_trigger_tests {
     #[test]
     fn test_drop_trigger_invalid_name() {
         let sql = "DROP TRIGGER 123invalid;";
-        run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
     fn test_drop_trigger_if_exists_missing_name() {
         let sql = "DROP TRIGGER IF EXISTS;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Expected identifier".into()),
+        );
     }
 
     #[test]
@@ -629,8 +620,7 @@ mod drop_trigger_tests {
             sql,
             Statement::DropTrigger(DropTriggerStatement {
                 if_exists: false,
-                schema_name: None,
-                trigger_name: "my_trigger".to_string(),
+                identifier: Identifier::Single("my_trigger".to_string()),
             }),
         );
     }
@@ -646,8 +636,7 @@ mod drop_trigger_tests {
 
         let first_expected_statement = Statement::DropTrigger(DropTriggerStatement {
             if_exists: false,
-            schema_name: None,
-            trigger_name: "my_trigger".to_string(),
+            identifier: Identifier::Single("my_trigger".to_string()),
         });
 
         // Verify that the statements match
@@ -663,8 +652,10 @@ mod drop_trigger_tests {
 
         let second_expected_statement = Statement::DropTrigger(DropTriggerStatement {
             if_exists: true,
-            schema_name: Some("schema".to_string()),
-            trigger_name: "my_second_trigger".to_string(),
+            identifier: Identifier::Compound(vec![
+                "schema".to_string(),
+                "my_second_trigger".to_string(),
+            ]),
         });
 
         // Verify that the statements match
