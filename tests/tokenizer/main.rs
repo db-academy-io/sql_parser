@@ -10,7 +10,7 @@ mod tokenizer_strings;
 mod tokenizer_variables;
 mod tokenizer_whitespaces;
 
-use sql_parser::{Token, TokenType, Tokenizer, TokenizerError};
+use db_academy_sql_parser::{Token, TokenType, Tokenizer, TokenizerError};
 
 pub fn run_sunny_day_test<'a>(sql: &'a str, expected_tokens: Vec<TokenType<'a>>) {
     let mut tokenizer = Tokenizer::from(sql);

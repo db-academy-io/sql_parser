@@ -11,7 +11,7 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::TokenType;
+use db_academy_sql_parser::TokenType;
 
 /// H41403  SQLite shall recognize the 1-character sequenence "-" (u002d) as
 /// token MINUS

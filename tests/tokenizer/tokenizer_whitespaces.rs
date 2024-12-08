@@ -11,7 +11,7 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, TokenType, TokenizerError};
+use db_academy_sql_parser::{Keyword, TokenType, TokenizerError};
 
 /// H41100: SQLite shall recognize a sequence of one or more MultiLineComment
 /// characters as a MultiLineComment token.

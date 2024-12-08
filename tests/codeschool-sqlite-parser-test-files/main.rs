@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use sql_parser::Parser;
+use db_academy_sql_parser::Parser;
 
 #[test]
 fn run_codeschool_sqlite_parser_test() {

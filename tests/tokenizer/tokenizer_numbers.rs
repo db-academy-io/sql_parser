@@ -11,13 +11,12 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, TokenType, TokenizerError};
+use db_academy_sql_parser::{Keyword::*, TokenType, TokenizerError};
 
 /// H41220: SQLite shall recognize as an INTEGER token any sequence of one or
 /// more NUMERIC characters.
 #[test]
 fn test_H41220() {
-    use Keyword::*;
     let valid_test_cases = vec![
         (
             "SELECT * FROM users WHERE age = 25;",
@@ -99,8 +98,6 @@ fn test_H41220_rainy_day() {
 /// by an exponentiation suffix.
 #[test]
 fn test_H41230() {
-    use Keyword::*;
-
     let valid_test_cases = vec![
         (
             "SELECT * FROM measurements WHERE value = 3.14e10;",
@@ -202,8 +199,6 @@ fn test_H41230_rainy_day() {
 /// NUMERIC characters that includes exactly one period (u002e) character.
 #[test]
 fn test_H41240() {
-    use Keyword::*;
-
     let valid_test_cases = vec![
         (
             "SELECT * FROM measurements WHERE value = 3.14;",

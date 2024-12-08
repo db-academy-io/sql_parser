@@ -11,7 +11,7 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{TokenType, TokenizerError};
+use db_academy_sql_parser::{TokenType, TokenizerError};
 
 /// H41210: SQLite shall recognize as a BLOB token an upper or lower-case "X"
 /// (u0058 or u0078) followed by a single-quote (u0027) followed by a number of

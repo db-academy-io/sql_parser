@@ -11,8 +11,7 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, TokenType, TokenizerError};
-use Keyword::*;
+use db_academy_sql_parser::{Keyword::*, TokenType, TokenizerError};
 
 /// H41010: SQLite shall divide input SQL text into tokens working from left
 /// to right
@@ -194,7 +193,7 @@ fn test_H41040() {
 fn test_H41050() {
     run_rainy_day_test(
         "SELECT @ FROM users;",
-        vec![TokenType::Keyword(Keyword::Select)],
+        vec![TokenType::Keyword(Select)],
         TokenizerError::BadVariableName,
     );
 }

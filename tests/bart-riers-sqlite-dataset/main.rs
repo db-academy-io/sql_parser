@@ -1,4 +1,4 @@
-use sql_parser::Parser;
+use db_academy_sql_parser::Parser;
 use std::fs;
 use std::path::{Path, PathBuf};
 

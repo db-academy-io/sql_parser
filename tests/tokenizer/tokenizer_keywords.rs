@@ -11,7 +11,7 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, TokenType};
+use db_academy_sql_parser::{Keyword, TokenType};
 
 /// H41503  SQLite shall recognize the 5-character sequenence "ABORT" in any
 /// combination of upper and lower case letters as the keyword token ABORT.

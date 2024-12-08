@@ -11,8 +11,7 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{Keyword, TokenType, TokenizerError};
-use Keyword::*;
+use db_academy_sql_parser::{Keyword::*, TokenType, TokenizerError};
 
 /// H41130: SQLite shall recognize as an ID token any sequence of characters
 /// that begins with an ALPHABETIC character and continues with zero or more

@@ -11,10 +11,7 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::Keyword::*;
-use sql_parser::TokenType;
-use sql_parser::TokenizerError;
-// todo!()
+use db_academy_sql_parser::{Keyword::*, TokenType, TokenizerError};
 
 /// H40310: SQLite shall recognize as a VARIABLE token the a question-mark
 /// (u003f) followed by zero or more NUMERIC characters.

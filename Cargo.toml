@@ -1,5 +1,5 @@
 [package]
-name = "sql_parser"
+name = "db_academy_sql_parser"
 authors = ["db-academy.io <admin@db-academy.io>"]
 edition = "2021"
 homepage = "https://db-academy.io/sql_parser"

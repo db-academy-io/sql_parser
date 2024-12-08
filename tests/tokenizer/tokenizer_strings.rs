@@ -11,7 +11,7 @@
 #![allow(non_snake_case)]
 
 use super::{run_rainy_day_test, run_sunny_day_test};
-use sql_parser::{TokenType, TokenizerError};
+use db_academy_sql_parser::{TokenType, TokenizerError};
 
 /// H41200: SQLite shall recognize as a STRING token a sequence of characters
 /// that begins with a single-quote (u0027), is followed by zero or more
