@@ -91,10 +91,7 @@ pub trait ExpressionParser {
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
-    /// Parse an expression
-    /// See details [sqlite-expression]
-    ///
-    /// [sqlite-expression]: https://www.sqlite.org/lang_expr.html#the_expr_list
+    /// Parse an SQLite3 [expr](https://www.sqlite.org/lang_expr.html#the_expr_list)
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
         // Check if it's one of the special expressions
         if let Ok(keyword) = self.peek_as_keyword() {
@@ -125,15 +122,14 @@ impl<'a> ExpressionParser for Parser<'a> {
             self.consume_as(TokenType::LeftParen)?;
 
             // TODO: Handle EXISTS (SELECT ...)
-            // if let Ok(Keyword::Select) = self.peek_as_keyword(){
-            //     return ExistsExpressionParser::parse_exists_expression(self, false);
-            // }
-
-            let expressions = self.parse_comma_separated_expressions()?;
-
+            let expression = if let Ok(Keyword::Select) = self.peek_as_keyword() {
+                ExistsExpressionParser::parse_exists_expression(self, false)?
+            } else {
+                Expression::ExpressionList(self.parse_comma_separated_expressions()?)
+            };
             // The right parenthesis must be in the last token in the expression list
             self.consume_as(TokenType::RightParen)?;
-            return Ok(Expression::ExpressionList(expressions));
+            return Ok(expression);
         }
 
         let expression = self.parse_expression_pratt(0)?;
