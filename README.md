@@ -46,8 +46,8 @@ The items were taken from the official SQLite documentation
 1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)&#9989;
 1. [raise-function](https://www.sqlite.org/lang_expr.html#raisefunc)&#9989;
 
-## Intermediate statements ![progress](https://progress-bar.xyz/0/?scale=7&suffix=%%%20(0%20of%207)&width=140)
-1. [attach-stmt](https://www.sqlite.org/lang_attach.html)
+## Intermediate statements ![progress](https://progress-bar.xyz/1/?scale=7&suffix=%%%20(1%20of%207)&width=140)
+1. [attach-stmt](https://www.sqlite.org/lang_attach.html) &#9989;
 1. [math-functions](https://www.sqlite.org/lang_mathfunc.html)
 1. [date-and-time-functions](https://www.sqlite.org/lang_datefunc.html)
 1. [json-functions](https://www.sqlite.org/json1.html)
