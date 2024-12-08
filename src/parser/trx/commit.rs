@@ -21,3 +21,107 @@ impl<'a> CommitStatementParser for Parser<'a> {
         Ok(Statement::CommitTransaction(CommitTransactionStatement))
     }
 }
+
+#[cfg(test)]
+mod commit_statements_tests {
+    use crate::ast::CommitTransactionStatement;
+    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
+    use crate::{Parser, ParsingError, Statement};
+
+    #[test]
+    fn test_commit_transaction_basic() {
+        run_sunny_day_test(
+            "COMMIT;",
+            Statement::CommitTransaction(CommitTransactionStatement {}),
+        );
+    }
+
+    #[test]
+    fn test_commit_transaction_with_transaction_keyword() {
+        run_sunny_day_test(
+            "COMMIT TRANSACTION;",
+            Statement::CommitTransaction(CommitTransactionStatement {}),
+        );
+    }
+
+    #[test]
+    fn test_commit_transaction_end_keyword() {
+        run_sunny_day_test(
+            "END;",
+            Statement::CommitTransaction(CommitTransactionStatement {}),
+        );
+    }
+
+    #[test]
+    fn test_commit_transaction_end_with_transaction_keyword() {
+        run_sunny_day_test(
+            "END TRANSACTION;",
+            Statement::CommitTransaction(CommitTransactionStatement {}),
+        );
+    }
+
+    #[test]
+    fn test_commit_transaction_missing_semicolon() {
+        run_sunny_day_test(
+            "COMMIT",
+            Statement::CommitTransaction(CommitTransactionStatement {}),
+        );
+    }
+
+    #[test]
+    fn test_commit_transaction_with_comment() {
+        let sql = "COMMIT -- end transaction\n;";
+        run_sunny_day_test(
+            sql,
+            Statement::CommitTransaction(CommitTransactionStatement {}),
+        );
+    }
+
+    #[test]
+    fn test_commit_transaction_with_unexpected_token() {
+        run_rainy_day_test(
+            "COMMIT EXTRA;",
+            ParsingError::UnexpectedToken("EXTRA".into()),
+        );
+    }
+
+    #[test]
+    fn test_commit_transaction_with_invalid_syntax() {
+        let sql = "COMMIT TRANSACT;";
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("TRANSACT".into()));
+    }
+
+    #[test]
+    fn test_commit_transaction_with_transaction_name() {
+        run_rainy_day_test(
+            "COMMIT TRANSACTION transaction_name;",
+            ParsingError::UnexpectedToken("transaction_name".into()),
+        );
+    }
+
+    #[test]
+    fn test_multiple_commit_transaction_commands() {
+        let sql = "COMMIT; END TRANSACTION;";
+        let mut parser = Parser::from(sql);
+
+        let first_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+        let first_expected_statement = Statement::CommitTransaction(CommitTransactionStatement {});
+        assert_eq!(
+            first_actual_statement, first_expected_statement,
+            "Expected statement {:?}, got {:?}",
+            first_expected_statement, first_actual_statement
+        );
+
+        let second_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+        let second_expected_statement = Statement::CommitTransaction(CommitTransactionStatement {});
+        assert_eq!(
+            second_actual_statement, second_expected_statement,
+            "Expected statement {:?}, got {:?}",
+            second_expected_statement, second_actual_statement
+        );
+    }
+}
