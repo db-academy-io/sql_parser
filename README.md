@@ -1,4 +1,4 @@
-# An SQL parser
+# An SQLite3 Compatible SQL parser
 
 [db-academy.io/sql_parser](https://db-academy.io/sql_parser) reference implementation in Rust
 
