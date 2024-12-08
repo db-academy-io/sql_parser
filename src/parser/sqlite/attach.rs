@@ -3,6 +3,8 @@ use crate::{
     Statement,
 };
 
+use crate::expression::IdentifierParser;
+
 use super::sqlite3_name::SQLite3NameParser;
 
 pub trait AttachStatementParser {

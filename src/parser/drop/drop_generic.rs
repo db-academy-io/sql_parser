@@ -1,4 +1,4 @@
-use crate::{expression::ExpressionParser, Identifier, Keyword, Parser, ParsingError};
+use crate::{expression::IdentifierParser, Identifier, Keyword, Parser, ParsingError};
 
 pub trait DropGenericStatementParser {
     fn parse_drop_statement_generic(&mut self) -> Result<(bool, Identifier), ParsingError>;
