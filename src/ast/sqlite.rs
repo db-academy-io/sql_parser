@@ -1,38 +1,26 @@
 use super::{Expression, Identifier};
 
-/// An AST for VACUUM SQL statement.
-/// See details [sqlite-vacuum-statement]
-///
-/// [sqlite-vacuum-statement]:https://www.sqlite.org/lang_vacuum.html
+/// An AST for [VACUUM](https://www.sqlite.org/lang_vacuum.html) SQL statement.
 #[derive(Debug, PartialEq, Default)]
 pub struct VacuumStatement {
     pub schema_name: Option<String>,
     pub file_name: Option<String>,
 }
 
-/// An AST for DETACH SQL statement.
-/// See details [sqlite-detach-statement]
-///
-/// [sqlite-detach-statement]:https://www.sqlite.org/lang_detach.html
+/// An AST for [DETACH](https://www.sqlite.org/lang_detach.html) SQL statement.
 #[derive(Debug, PartialEq)]
 pub struct DetachStatement {
     pub schema_name: String,
 }
 
-/// An AST for ANALYZE SQL statement.
-/// See details [sqlite-analyze-statement]
-///
-/// [sqlite-analyze-statement]:https://www.sqlite.org/lang_analyze.html
+/// An AST for [ANALYZE](https://www.sqlite.org/lang_analyze.html) SQL statement.
 #[derive(Debug, PartialEq, Default)]
 pub struct AnalyzeStatement {
     pub schema_name: Option<String>,
     pub table_or_index_name: Option<String>,
 }
 
-/// An AST for REINDEX SQL statement.
-/// See details [sqlite-reindex-statement]
-///
-/// [sqlite-reindex-statement]:https://www.sqlite.org/lang_reindex.html
+/// An AST for [REINDEX](https://www.sqlite.org/lang_reindex.html) SQL statement.
 #[derive(Debug, PartialEq, Default)]
 pub struct ReindexStatement {
     /// schema name
@@ -41,10 +29,7 @@ pub struct ReindexStatement {
     pub target_name: Option<String>,
 }
 
-/// An AST for PRAGMA SQL statement.
-/// See details [sqlite-pragma-statement]
-///
-/// [sqlite-pragma-statement]:https://www.sqlite.org/pragma.html
+/// An AST for [PRAGMA](https://www.sqlite.org/pragma.html) SQL statement.
 #[derive(Debug, PartialEq)]
 pub struct PragmaStatement {
     /// schema name
@@ -55,6 +40,7 @@ pub struct PragmaStatement {
     pub pragma_value: Option<String>,
 }
 
+/// An AST for [ATTACH](https://www.sqlite.org/lang_attach.html) SQL statement.
 #[derive(Debug, PartialEq)]
 pub struct AttachStatement {
     /// an attach expression

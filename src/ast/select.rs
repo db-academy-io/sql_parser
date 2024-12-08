@@ -1,9 +1,6 @@
 use super::Expression;
 
-/// An AST for SELECT SQL statement.
-/// See details [sqlite-select-statement]
-///
-/// [sqlite-select-statement]:https://www.sqlite.org/lang_select.html
+/// An AST for [SELECT](https://www.sqlite.org/lang_select.html) SQL statement.
 #[derive(Debug, PartialEq, Default, Clone)]
 pub struct SelectStatement {
     /// Whether the SELECT statement is distinct
@@ -39,6 +36,7 @@ pub enum SelectItem {
     TableNameWithWildcard(String),
 }
 
+/// An AST for representing a FROM clause
 #[derive(Debug, PartialEq, Clone)]
 pub enum SelectFrom {
     Table(SelectFromTable),
@@ -52,6 +50,7 @@ pub enum SelectFrom {
     Join(JoinClause),
 }
 
+/// A table in a FROM clause
 #[derive(Debug, PartialEq, Clone)]
 pub struct SelectFromTable {
     pub schema: Option<String>,
@@ -71,6 +70,7 @@ pub struct SelectFromFunction {
     pub alias: Option<String>,
 }
 
+/// A subquery in a FROM clause
 #[derive(Debug, PartialEq, Clone)]
 pub struct SelectFromSubquery {
     pub subquery: Box<SelectStatement>,

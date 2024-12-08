@@ -4,10 +4,7 @@ use crate::{ParsingError, TokenType};
 
 use super::SelectStatement;
 
-/// An SQL expression
-/// See details [sqlite-expression]
-///
-/// [sqlite-expression]: https://www.sqlite.org/lang_expr.html
+/// An SQLite3 [expr](https://www.sqlite.org/lang_expr.html) expression
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     /// A literal value
@@ -54,9 +51,6 @@ pub enum Expression {
 }
 
 /// A literal value
-/// See details [sqlite-literal]
-///
-/// [sqlite-literal]: https://www.sqlite.org/syntax/literal-value.html
 #[derive(Debug, PartialEq, Clone)]
 pub enum LiteralValue {
     /// A number

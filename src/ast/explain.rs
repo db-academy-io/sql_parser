@@ -1,5 +1,6 @@
 use super::Statement;
 
+/// An AST for [EXPLAIN](https://www.sqlite.org/lang_explain.html) SQL statement.
 #[derive(Debug, PartialEq)]
 pub struct ExplainStatement {
     /// The statement to explain

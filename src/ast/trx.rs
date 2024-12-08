@@ -1,16 +1,11 @@
-/// An AST for BEGIN TRANSACTION SQL statement.
-/// See details [sqlite-begin-statement]
-///
-/// [sqlite-begin-statement]:https://www.sqlite.org/lang_transaction.html
+/// An AST for [BEGIN TRANSACTION](https://www.sqlite.org/lang_transaction.html) SQL statement.
 #[derive(Debug, PartialEq, Default)]
 pub struct BeginTransactionStatement {
     pub transaction_type: Option<TransactionType>,
 }
 
-/// The type of transaction
-/// See details [sqlite-transaction-type]
-///
-/// [sqlite-transaction-type]: https://www.sqlite.org/lang_transaction.html
+/// The [type](https://www.sqlite.org/lang_transaction.html) of transaction,
+/// i.e. DEFERRED, IMMEDIATE, or EXCLUSIVE.
 #[derive(Debug, PartialEq)]
 pub enum TransactionType {
     /// DEFERRED means that the transaction does not actually start until the
@@ -51,35 +46,23 @@ impl Default for TransactionType {
     }
 }
 
-/// An AST for COMMIT TRANSACTION SQL statement.
-/// See details [sqlite-commit-statement]
-///
-/// [sqlite-commit-statement]:https://www.sqlite.org/lang_transaction.html
+/// An AST for [COMMIT TRANSACTION](https://www.sqlite.org/lang_transaction.html) SQL statement.
 #[derive(Debug, PartialEq)]
 pub struct CommitTransactionStatement;
 
-/// An AST for ROLLBACK TRANSACTION SQL statement.
-/// See details [sqlite-rollback-statement]
-///
-/// [sqlite-rollback-statement]:https://www.sqlite.org/lang_transaction.html
+/// An AST for [ROLLBACK TRANSACTION](https://www.sqlite.org/lang_transaction.html) SQL statement.
 #[derive(Debug, PartialEq, Default)]
 pub struct RollbackTransactionStatement {
     pub savepoint_name: Option<String>,
 }
 
-/// An AST for SAVEPOINT SQL statement.
-/// See details [sqlite-savepoint-statement]
-///
-/// [sqlite-savepoint-statement]:https://www.sqlite.org/lang_savepoint.html
+/// An AST for [SAVEPOINT](https://www.sqlite.org/lang_savepoint.html) SQL statement.
 #[derive(Debug, PartialEq)]
 pub struct SavepointStatement {
     pub savepoint_name: String,
 }
 
-/// An AST for RELEASE SQL statement.
-/// See details [sqlite-release-statement]
-///
-/// [sqlite-release-statement]:https://www.sqlite.org/lang_savepoint.html
+/// An AST for [RELEASE](https://www.sqlite.org/lang_savepoint.html) SQL statement.
 #[derive(Debug, PartialEq)]
 pub struct ReleaseStatement {
     pub savepoint_name: String,

@@ -16,6 +16,7 @@ use sqlite::SQLite3StatementParser;
 use std::iter::Peekable;
 use trx::TransactionStatementParser;
 
+/// A parser for SQLite SQL statements
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,
 }

@@ -94,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "sql_parser"
-version = "0.0.1-alpha"
+version = "0.0.1"
 dependencies = [
  "once_cell",
  "pre-commit-hooks",
