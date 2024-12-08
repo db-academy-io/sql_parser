@@ -8,13 +8,13 @@ pub trait RollbackStatementParser {
 
 impl<'a> RollbackStatementParser for Parser<'a> {
     fn parse_rollback_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Rollback)?;
+        self.consume_as_keyword(Keyword::Rollback)?;
 
         // Consume the optional TRANSACTION keyword
-        let _ = self.consume_keyword(Keyword::Transaction);
+        let _ = self.consume_as_keyword(Keyword::Transaction);
 
-        if self.consume_keyword(Keyword::To).is_ok() {
-            let _ = self.consume_keyword(Keyword::Savepoint);
+        if self.consume_as_keyword(Keyword::To).is_ok() {
+            let _ = self.consume_as_keyword(Keyword::Savepoint);
             let savepoint_name = self.parse_savepoint_name()?;
             self.finalize_statement_parsing()?;
             return Ok(Statement::RollbackTransaction(

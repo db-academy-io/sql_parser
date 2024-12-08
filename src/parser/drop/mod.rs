@@ -24,7 +24,7 @@ impl<'a> DropStatementParser for Parser<'a> {
     ///   - DROP INDEX statements
     ///   - DROP TRIGGER statements
     fn parse_drop_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Drop)?;
+        self.consume_as_keyword(Keyword::Drop)?;
         let keyword = self.peek_as_keyword()?;
 
         let drop_statement = match keyword {

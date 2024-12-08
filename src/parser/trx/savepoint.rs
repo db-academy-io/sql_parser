@@ -9,7 +9,7 @@ pub trait SavepointStatementParser {
 impl<'a> SavepointStatementParser for Parser<'a> {
     fn parse_savepoint_statement(&mut self) -> Result<Statement, ParsingError> {
         // Consume the SAVEPOINT keyword
-        self.consume_keyword(Keyword::Savepoint)?;
+        self.consume_as_keyword(Keyword::Savepoint)?;
 
         let savepoint_name = self.parse_savepoint_name()?;
 
@@ -20,13 +20,13 @@ impl<'a> SavepointStatementParser for Parser<'a> {
     fn parse_savepoint_name(&mut self) -> Result<String, ParsingError> {
         if let Ok(id) = self.peek_as_id() {
             // Consume the id token
-            self.consume_token()?;
+            self.consume_as_id()?;
             return Ok(id.to_string());
         }
 
         if let Ok(string) = self.peek_as_string() {
             // Consume the id token
-            self.consume_token()?;
+            self.consume_as_string()?;
             return Ok(string.to_string());
         }
 

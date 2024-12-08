@@ -7,8 +7,8 @@ pub trait DropGenericStatementParser {
 impl<'a> DropGenericStatementParser for Parser<'a> {
     fn parse_drop_statement_generic(&mut self) -> Result<(bool, Identifier), ParsingError> {
         // Parse optional [IF EXISTS] part of the statement
-        let if_exists = if self.consume_keyword(Keyword::If).is_ok() {
-            self.consume_keyword(Keyword::Exists)?;
+        let if_exists = if self.consume_as_keyword(Keyword::If).is_ok() {
+            self.consume_as_keyword(Keyword::Exists)?;
             true
         } else {
             false

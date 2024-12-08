@@ -8,7 +8,7 @@ pub trait DropIndexStatementParser {
 
 impl<'a> DropIndexStatementParser for Parser<'a> {
     fn parse_drop_index_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Index)?;
+        self.consume_as_keyword(Keyword::Index)?;
 
         let (if_exists, identifier) = self.parse_drop_statement_generic()?;
 

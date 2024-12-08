@@ -8,7 +8,7 @@ pub trait DropTableStatementParser {
 
 impl<'a> DropTableStatementParser for Parser<'a> {
     fn parse_drop_table_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Table)?;
+        self.consume_as_keyword(Keyword::Table)?;
 
         let (if_exists, identifier) = self.parse_drop_statement_generic()?;
 

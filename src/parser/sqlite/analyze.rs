@@ -9,7 +9,7 @@ pub trait AnalyzeStatementParser {
 
 impl<'a> AnalyzeStatementParser for Parser<'a> {
     fn parse_analyze_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Analyze)?;
+        self.consume_as_keyword(Keyword::Analyze)?;
 
         // Check if we've got only 'ANALYZE;' command
         if self.finalize_statement_parsing().is_ok() {
@@ -28,8 +28,7 @@ impl<'a> AnalyzeStatementParser for Parser<'a> {
 
         let mut table_or_index_name: Option<String> = None;
         if self.peek_as(TokenType::Dot).is_ok() {
-            // Consume the '.' token
-            self.consume_token()?;
+            self.consume_as(TokenType::Dot)?;
 
             table_or_index_name = Some(self.parse_sqlite3_name()?);
         }

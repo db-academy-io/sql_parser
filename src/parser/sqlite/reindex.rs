@@ -9,7 +9,7 @@ pub trait ReindexStatementParser {
 
 impl<'a> ReindexStatementParser for Parser<'a> {
     fn parse_reindex_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Reindex)?;
+        self.consume_as_keyword(Keyword::Reindex)?;
 
         // Check if we've got only 'REINDEX;' command
         if self.finalize_statement_parsing().is_ok() {
@@ -30,8 +30,7 @@ impl<'a> ReindexStatementParser for Parser<'a> {
 
         let mut target_name: Option<String> = None;
         if self.peek_as(TokenType::Dot).is_ok() {
-            // Consume the '.' token
-            self.consume_token()?;
+            self.consume_as(TokenType::Dot)?;
 
             target_name = Some(self.parse_sqlite3_name()?);
         }

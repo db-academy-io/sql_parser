@@ -8,7 +8,7 @@ pub trait DropTriggerStatementParser {
 
 impl<'a> DropTriggerStatementParser for Parser<'a> {
     fn parse_drop_trigger_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Trigger)?;
+        self.consume_as_keyword(Keyword::Trigger)?;
 
         let (if_exists, identifier) = self.parse_drop_statement_generic()?;
 

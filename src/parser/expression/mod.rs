@@ -131,7 +131,7 @@ impl<'a> ExpressionParser for Parser<'a> {
                 Keyword::Case => return self.parse_case_expression(),
                 Keyword::Cast => return self.parse_cast_expression(),
                 Keyword::Not => {
-                    self.consume_token()?;
+                    self.consume_as_keyword(Keyword::Not)?;
                     return self.parse_exist_expression(true);
                 }
                 Keyword::Exists => return self.parse_exist_expression(false),
@@ -160,13 +160,12 @@ impl<'a> ExpressionParser for Parser<'a> {
 
         if self.peek_as(TokenType::LeftParen).is_ok() {
             // Consume the left parenthesis
-            self.consume_token()?;
+            self.consume_as(TokenType::LeftParen)?;
 
             let expressions = self.parse_comma_separated_expressions()?;
 
-            self.peek_as(TokenType::RightParen)?;
-            // Consume the right parenthesis
-            self.consume_token()?;
+            // The right parenthesis must be in the last token in the expression list
+            self.consume_as(TokenType::RightParen)?;
             return Ok(Expression::ExpressionList(expressions));
         }
 
@@ -176,7 +175,7 @@ impl<'a> ExpressionParser for Parser<'a> {
         if let Ok(keyword) = self.peek_as_keyword() {
             match keyword {
                 Keyword::Collate => {
-                    self.consume_keyword(Keyword::Collate)?;
+                    self.consume_as_keyword(Keyword::Collate)?;
 
                     let name = self.peek_as_string()?;
                     self.consume_token()?;
@@ -187,26 +186,26 @@ impl<'a> ExpressionParser for Parser<'a> {
                     ));
                 }
                 Keyword::Isnull => {
-                    self.consume_keyword(Keyword::Isnull)?;
+                    self.consume_as_keyword(Keyword::Isnull)?;
                     return Ok(Expression::UnaryMatchingExpression(
                         Box::new(expression),
                         UnaryMatchingExpression::IsNull,
                     ));
                 }
                 Keyword::Notnull => {
-                    self.consume_keyword(Keyword::Notnull)?;
+                    self.consume_as_keyword(Keyword::Notnull)?;
                     return Ok(Expression::UnaryMatchingExpression(
                         Box::new(expression),
                         UnaryMatchingExpression::IsNotNull,
                     ));
                 }
                 Keyword::Not => {
-                    self.consume_keyword(Keyword::Not)?;
+                    self.consume_as_keyword(Keyword::Not)?;
 
                     if let Ok(nested_keyword) = self.peek_as_keyword() {
                         match nested_keyword {
                             Keyword::Null => {
-                                self.consume_keyword(Keyword::Null)?;
+                                self.consume_as_keyword(Keyword::Null)?;
                                 return Ok(Expression::UnaryMatchingExpression(
                                     Box::new(expression),
                                     UnaryMatchingExpression::IsNotNull,
@@ -273,7 +272,7 @@ impl<'a> ExpressionParser for Parser<'a> {
             expressions.push(self.parse_expression()?);
 
             if self.peek_as(TokenType::Comma).is_ok() {
-                self.consume_token()?;
+                self.consume_as(TokenType::Comma)?;
             } else {
                 break;
             }
@@ -288,11 +287,11 @@ impl<'a> ExpressionParser for Parser<'a> {
         while let Ok(identifier) = self.peek_as_id() {
             components.push(identifier.to_string());
             // Consume the identifier token
-            self.consume_token()?;
+            self.consume_as_id()?;
 
             if self.peek_as(TokenType::Dot).is_ok() {
                 // Consume the dot token
-                self.consume_token()?;
+                self.consume_as(TokenType::Dot)?;
             } else {
                 break;
             }
@@ -333,7 +332,7 @@ impl<'a> ExpressionParser for Parser<'a> {
         let token = self.peek_token()?;
         let operator = BinaryOp::try_from(&token.token_type)?;
         // Consume the operator token
-        self.consume_token()?;
+        self.consume_as(token.token_type)?;
 
         let right = self.parse_expression_pratt(precedence)?;
         Ok(Expression::BinaryOp(
@@ -352,7 +351,7 @@ impl<'a> ExpressionParser for Parser<'a> {
                 || keyword == Keyword::CurrentDate
                 || keyword == Keyword::CurrentTimestamp
             {
-                self.consume_token()?;
+                self.consume_as_keyword(keyword)?;
 
                 match keyword {
                     Keyword::Null => return Ok(Expression::LiteralValue(LiteralValue::Null)),
@@ -377,24 +376,25 @@ impl<'a> ExpressionParser for Parser<'a> {
                 let id = self.parse_identifier()?;
 
                 if self.peek_as(TokenType::LeftParen).is_ok() {
-                    return self.parse_function(id);
+                    self.parse_function(id)
+                } else {
+                    Ok(Expression::Identifier(id))
                 }
-                Ok(Expression::Identifier(id))
             }
             TokenType::Integer(value) => {
-                self.consume_token()?;
+                self.consume_as_number()?;
                 Ok(Expression::LiteralValue(LiteralValue::Number(
                     value.to_string(),
                 )))
             }
             TokenType::Float(value) => {
-                self.consume_token()?;
+                self.consume_as_number()?;
                 Ok(Expression::LiteralValue(LiteralValue::Number(
                     value.to_string(),
                 )))
             }
             TokenType::String(value) => {
-                self.consume_token()?;
+                self.consume_as_string()?;
                 Ok(Expression::LiteralValue(LiteralValue::String(
                     value.to_string(),
                 )))
@@ -404,8 +404,7 @@ impl<'a> ExpressionParser for Parser<'a> {
                 Ok(Expression::BindParameter(value.to_string()))
             }
             TokenType::LeftParen => {
-                // Consume the left parenthesis
-                self.consume_token()?;
+                self.consume_as(TokenType::LeftParen)?;
                 let expression = self.parse_expression_pratt(0)?;
                 let token = self.peek_token()?;
                 if token.token_type != TokenType::RightParen {
@@ -414,20 +413,17 @@ impl<'a> ExpressionParser for Parser<'a> {
                         token.token_type
                     )));
                 }
-                // Consume the right parenthesis
-                self.consume_token()?;
+                self.consume_as(TokenType::RightParen)?;
                 Ok(expression)
             }
             TokenType::Minus => {
-                // Consume the minus token
-                self.consume_token()?;
+                self.consume_as(TokenType::Minus)?;
                 let pr = self.get_precedence(&TokenType::Minus);
                 let expression = self.parse_expression_pratt(pr)?;
                 Ok(Expression::UnaryOp(UnaryOp::Minus, Box::new(expression)))
             }
             TokenType::Plus => {
-                // Consume the plus token
-                self.consume_token()?;
+                self.consume_as(TokenType::Plus)?;
                 let pr = self.get_precedence(&TokenType::Plus);
                 let expression = self.parse_expression_pratt(pr)?;
                 Ok(Expression::UnaryOp(UnaryOp::Plus, Box::new(expression)))
@@ -439,11 +435,11 @@ impl<'a> ExpressionParser for Parser<'a> {
                 )))
             }
             TokenType::True => {
-                self.consume_token()?;
+                self.consume_as(TokenType::True)?;
                 Ok(Expression::LiteralValue(LiteralValue::Boolean(true)))
             }
             TokenType::False => {
-                self.consume_token()?;
+                self.consume_as(TokenType::False)?;
                 Ok(Expression::LiteralValue(LiteralValue::Boolean(false)))
             }
 
@@ -464,7 +460,7 @@ impl<'a> ExpressionParser for Parser<'a> {
     }
 
     fn parse_case_expression(&mut self) -> Result<Expression, ParsingError> {
-        self.consume_keyword(Keyword::Case)?;
+        self.consume_as_keyword(Keyword::Case)?;
 
         // the main expression is optional, so we have to try to parse it first
         let expression = self
@@ -476,12 +472,12 @@ impl<'a> ExpressionParser for Parser<'a> {
 
         while let Ok(Keyword::When) = self.peek_as_keyword() {
             // the when expression must start with the WHEN keyword
-            self.consume_keyword(Keyword::When)?;
+            self.consume_as_keyword(Keyword::When)?;
 
             let expression = self.parse_expression()?;
 
             // The THEN keyword is required after the WHEN expression
-            self.consume_keyword(Keyword::Then)?;
+            self.consume_as_keyword(Keyword::Then)?;
 
             let then_expression = self.parse_expression()?;
 
@@ -493,11 +489,11 @@ impl<'a> ExpressionParser for Parser<'a> {
 
         let mut else_expression = None;
         if let Ok(Keyword::Else) = self.peek_as_keyword() {
-            self.consume_keyword(Keyword::Else)?;
+            self.consume_as_keyword(Keyword::Else)?;
             else_expression = Some(Box::new(self.parse_expression()?));
         }
 
-        self.consume_keyword(Keyword::End)?;
+        self.consume_as_keyword(Keyword::End)?;
         Ok(Expression::CaseExpression(CaseExpression {
             expression,
             when_expressions,
@@ -506,35 +502,34 @@ impl<'a> ExpressionParser for Parser<'a> {
     }
 
     fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError> {
-        self.consume_keyword(Keyword::Cast)?;
+        self.consume_as_keyword(Keyword::Cast)?;
 
         self.peek_as(TokenType::LeftParen)?;
-        self.consume_token()?;
+        self.consume_as(TokenType::LeftParen)?;
 
         let expression = self.parse_expression()?;
-        self.consume_keyword(Keyword::As)?;
+        self.consume_as_keyword(Keyword::As)?;
 
         let data_type = {
             let name = self.peek_as_id()?;
-            self.consume_token()?;
+            self.consume_as_id()?;
 
             if self.peek_as(TokenType::LeftParen).is_ok() {
-                self.consume_token()?;
+                self.consume_as(TokenType::LeftParen)?;
                 let lower_bound = self.peek_as_number()?;
-                self.consume_token()?;
+                self.consume_as_number()?;
 
                 if self.peek_as(TokenType::Comma).is_ok() {
-                    self.consume_token()?;
+                    self.consume_as(TokenType::Comma)?;
                     let upper_bound = self.peek_as_number()?;
-                    self.consume_token()?;
+                    self.consume_as_number()?;
 
-                    self.peek_as(TokenType::RightParen)?;
-                    self.consume_token()?;
+                    // The right parenthesis must be in the last token in the cast expression
+                    self.consume_as(TokenType::RightParen)?;
 
                     DataType::BoundedDataType(name.to_string(), lower_bound, upper_bound)
                 } else {
-                    self.peek_as(TokenType::RightParen)?;
-                    self.consume_token()?;
+                    self.consume_as(TokenType::RightParen)?;
                     DataType::SizedDataType(name.to_string(), lower_bound)
                 }
             } else {
@@ -542,8 +537,7 @@ impl<'a> ExpressionParser for Parser<'a> {
             }
         };
 
-        self.peek_as(TokenType::RightParen)?;
-        self.consume_token()?;
+        self.consume_as(TokenType::RightParen)?;
 
         Ok(Expression::Cast(Box::new(expression), data_type))
     }
@@ -551,16 +545,15 @@ impl<'a> ExpressionParser for Parser<'a> {
     fn parse_exist_expression(&mut self, is_inverted: bool) -> Result<Expression, ParsingError> {
         // Consume the EXISTS keyword, if it's present. The result is ignored, because
         // the EXISTS keyword is an optional keyword
-        let _ = self.consume_keyword(Keyword::Exists);
+        let _ = self.consume_as_keyword(Keyword::Exists);
 
         // Check if it's a left parenthesis, which indicates the start of a subquery
-        self.peek_as(TokenType::LeftParen)?;
-        self.consume_token()?;
+        self.consume_as(TokenType::LeftParen)?;
 
         let select_statement = self.parse_select_statement()?;
 
-        self.peek_as(TokenType::RightParen)?;
-        self.consume_token()?;
+        // Consume the enclosing right parenthesis
+        self.consume_as(TokenType::RightParen)?;
 
         if is_inverted {
             Ok(Expression::ExistsStatement(ExistsStatement::NotExists(
@@ -575,21 +568,18 @@ impl<'a> ExpressionParser for Parser<'a> {
 
     fn parse_raise_expression(&mut self) -> Result<Expression, ParsingError> {
         // Consume the RAISE keyword
-        self.consume_keyword(Keyword::Raise)?;
+        self.consume_as_keyword(Keyword::Raise)?;
 
-        self.peek_as(TokenType::LeftParen)?;
-        self.consume_token()?;
+        self.consume_as(TokenType::LeftParen)?;
 
         let raise = match self.peek_as_keyword()? {
             Keyword::Ignore => {
-                self.consume_keyword(Keyword::Ignore)?;
+                self.consume_as_keyword(Keyword::Ignore)?;
                 RaiseFunction::Ignore
             }
             Keyword::Rollback => {
-                self.consume_keyword(Keyword::Rollback)?;
-                self.peek_as(TokenType::Comma)?;
-                // Consume the comma token
-                self.consume_token()?;
+                self.consume_as_keyword(Keyword::Rollback)?;
+                self.consume_as(TokenType::Comma)?;
 
                 let message = self.peek_as_string()?;
                 // Consume the message string
@@ -598,10 +588,8 @@ impl<'a> ExpressionParser for Parser<'a> {
                 RaiseFunction::Rollback(message)
             }
             Keyword::Abort => {
-                self.consume_keyword(Keyword::Abort)?;
-                self.peek_as(TokenType::Comma)?;
-                // Consume the comma token
-                self.consume_token()?;
+                self.consume_as_keyword(Keyword::Abort)?;
+                self.consume_as(TokenType::Comma)?;
 
                 let message = self.peek_as_string()?;
                 // Consume the message string
@@ -610,10 +598,8 @@ impl<'a> ExpressionParser for Parser<'a> {
                 RaiseFunction::Abort(message)
             }
             Keyword::Fail => {
-                self.consume_keyword(Keyword::Fail)?;
-                self.peek_as(TokenType::Comma)?;
-                // Consume the comma token
-                self.consume_token()?;
+                self.consume_as_keyword(Keyword::Fail)?;
+                self.consume_as(TokenType::Comma)?;
 
                 let message = self.peek_as_string()?;
                 // Consume the message string
@@ -624,8 +610,8 @@ impl<'a> ExpressionParser for Parser<'a> {
             keyword => return Err(ParsingError::UnexpectedKeyword(keyword)),
         };
 
-        self.peek_as(TokenType::RightParen)?;
-        self.consume_token()?;
+        // Consume the enclosing right parenthesis
+        self.consume_as(TokenType::RightParen)?;
 
         Ok(Expression::RaiseFunction(raise))
     }
@@ -636,11 +622,11 @@ impl<'a> ExpressionParser for Parser<'a> {
         inverted: bool,
     ) -> Result<Expression, ParsingError> {
         // Consume the BETWEEN keyword
-        self.consume_keyword(Keyword::Between)?;
+        self.consume_as_keyword(Keyword::Between)?;
 
         let lower_bound = self.parse_expression()?;
 
-        self.consume_keyword(Keyword::And)?;
+        self.consume_as_keyword(Keyword::And)?;
 
         let upper_bound = self.parse_expression()?;
 
@@ -670,13 +656,13 @@ impl<'a> ExpressionParser for Parser<'a> {
         expression: Expression,
         is_not: bool,
     ) -> Result<Expression, ParsingError> {
-        self.consume_keyword(Keyword::Like)?;
+        self.consume_as_keyword(Keyword::Like)?;
 
         let pattern = self.parse_expression()?;
 
         let mut escape_expression = None;
         if let Ok(Keyword::Escape) = self.peek_as_keyword() {
-            self.consume_keyword(Keyword::Escape)?;
+            self.consume_as_keyword(Keyword::Escape)?;
             escape_expression = Some(Box::new(self.parse_expression()?));
         }
 
@@ -718,7 +704,7 @@ impl<'a> ExpressionParser for Parser<'a> {
             return Err(ParsingError::UnexpectedKeyword(match_type));
         }
 
-        self.consume_keyword(match_type)?;
+        self.consume_as_keyword(match_type)?;
 
         let pattern = self.parse_expression()?;
 
@@ -743,17 +729,17 @@ impl<'a> ExpressionParser for Parser<'a> {
     }
 
     fn parse_is_expression(&mut self, expression: Expression) -> Result<Expression, ParsingError> {
-        self.consume_keyword(Keyword::Is)?;
+        self.consume_as_keyword(Keyword::Is)?;
 
-        let is_not = self.consume_keyword(Keyword::Not).is_ok();
+        let is_not = self.consume_as_keyword(Keyword::Not).is_ok();
         let mut distinct = false;
 
         if let Ok(Keyword::Distinct) = self.peek_as_keyword() {
-            self.consume_keyword(Keyword::Distinct)?;
+            self.consume_as_keyword(Keyword::Distinct)?;
             distinct = true;
 
             // The FROM keyword is mandatory after the DISTINCT keyword
-            self.consume_keyword(Keyword::From)?;
+            self.consume_as_keyword(Keyword::From)?;
         }
 
         let is_expression = BinaryMatchingExpression::Is(AnIsExpression {
@@ -778,11 +764,11 @@ impl<'a> ExpressionParser for Parser<'a> {
         expression: Expression,
         is_not: bool,
     ) -> Result<Expression, ParsingError> {
-        self.consume_keyword(Keyword::In)?;
+        self.consume_as_keyword(Keyword::In)?;
 
         let in_expression = if self.peek_as(TokenType::LeftParen).is_ok() {
             // Consume the left parenthesis
-            self.consume_token()?;
+            self.consume_as(TokenType::LeftParen)?;
 
             let result = if self.peek_as(TokenType::RightParen).is_ok() {
                 BinaryMatchingExpression::In(InExpression::Empty)
@@ -795,40 +781,35 @@ impl<'a> ExpressionParser for Parser<'a> {
                 BinaryMatchingExpression::In(InExpression::Expression(expressions))
             };
 
-            self.peek_as(TokenType::RightParen)?;
-            // Consume the right parenthesis
-            self.consume_token()?;
+            // Consume the enclosing right parenthesis
+            self.consume_as(TokenType::RightParen)?;
             result
         } else {
             // Parse expressions like $expr IN $schema.table or schema.function(*args)
             let id1 = self.peek_as_id()?;
-            self.consume_token()?;
+            self.consume_as_id()?;
 
             let identifier = if self.peek_as(TokenType::Dot).is_ok() {
                 // Consume the dot token
-                self.consume_token()?;
+                self.consume_as(TokenType::Dot)?;
 
                 let id2 = self.peek_as_id()?;
-                self.consume_token()?;
+                self.consume_as_id()?;
                 Identifier::Compound(vec![id1.to_string(), id2.to_string()])
             } else {
                 Identifier::Single(id1.to_string())
             };
 
-            dbg!("identifier: {:?}", &identifier);
-            dbg!("token: {:?}", &self.peek_token());
-
             if self.peek_as(TokenType::LeftParen).is_ok() {
-                self.consume_token()?;
+                self.consume_as(TokenType::LeftParen)?;
 
                 if self.peek_as(TokenType::RightParen).is_ok() {
-                    self.consume_token()?;
+                    self.consume_as(TokenType::RightParen)?;
                     BinaryMatchingExpression::In(InExpression::TableFunction(identifier, vec![]))
                 } else {
                     let args = self.parse_comma_separated_expressions()?;
 
-                    self.peek_as(TokenType::RightParen)?;
-                    self.consume_token()?;
+                    self.consume_as(TokenType::RightParen)?;
 
                     BinaryMatchingExpression::In(InExpression::TableFunction(identifier, args))
                 }
@@ -836,8 +817,6 @@ impl<'a> ExpressionParser for Parser<'a> {
                 BinaryMatchingExpression::In(InExpression::Identity(identifier))
             }
         };
-
-        dbg!("in_expression: {:?}", &in_expression);
 
         if is_not {
             Ok(Expression::BinaryMatchingExpression(

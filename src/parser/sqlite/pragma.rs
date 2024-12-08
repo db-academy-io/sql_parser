@@ -1,4 +1,4 @@
-use crate::{Parser, ParsingError, PragmaStatement, Statement, TokenType};
+use crate::{Keyword, Parser, ParsingError, PragmaStatement, Statement, TokenType};
 
 pub trait PragmaStatementParser {
     /// Parses a PRAGMA statement
@@ -10,8 +10,7 @@ pub trait PragmaStatementParser {
 
 impl<'a> PragmaStatementParser for Parser<'a> {
     fn parse_pragma_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the PRAGMA keyword
-        self.consume_token()?;
+        self.consume_as_keyword(Keyword::Pragma)?;
 
         let mut pragma_name: String = self.peek_as_string()?;
         // Consume the pragma name token
@@ -20,8 +19,7 @@ impl<'a> PragmaStatementParser for Parser<'a> {
         let mut schema_name = None;
 
         if self.peek_as(TokenType::Dot).is_ok() {
-            // Consume the '.' token
-            self.consume_token()?;
+            self.consume_as(TokenType::Dot)?;
 
             // The pragma name is the next name after the '.' token
             schema_name = Some(pragma_name);
@@ -43,8 +41,7 @@ impl<'a> PragmaStatementParser for Parser<'a> {
         let token = self.peek_token()?;
         match token.token_type {
             TokenType::Equals => {
-                // Consume the '=' token
-                self.consume_token()?;
+                self.consume_as(TokenType::Equals)?;
 
                 let pragma_value = Some(self.parse_pragma_value()?);
 
@@ -56,8 +53,7 @@ impl<'a> PragmaStatementParser for Parser<'a> {
                 }))
             }
             TokenType::LeftParen => {
-                // Consume the '(' token
-                self.consume_token()?;
+                self.consume_as(TokenType::LeftParen)?;
 
                 let pragma_value = Some(self.parse_pragma_value()?);
                 let statement = Ok(Statement::Pragma(PragmaStatement {
@@ -66,8 +62,7 @@ impl<'a> PragmaStatementParser for Parser<'a> {
                     pragma_value,
                 }));
                 if self.peek_as(TokenType::RightParen).is_ok() {
-                    // Consume the ')' token
-                    self.consume_token()?;
+                    self.consume_as(TokenType::RightParen)?;
                 }
                 self.finalize_statement_parsing()?;
 
@@ -79,36 +74,30 @@ impl<'a> PragmaStatementParser for Parser<'a> {
 
     fn parse_pragma_value(&mut self) -> Result<String, ParsingError> {
         if self.peek_as(TokenType::Plus).is_ok() {
-            // Consume the '+' token
-            self.consume_token()?;
+            self.consume_as(TokenType::Plus)?;
 
             let value = self.peek_as_number()?;
-            // Consume the number token
-            self.consume_token()?;
+            self.consume_as_number()?;
 
             return Ok(value);
         }
 
         if self.peek_as(TokenType::Minus).is_ok() {
-            // Consume the '-' token
-            self.consume_token()?;
+            self.consume_as(TokenType::Minus)?;
 
             let value = self.peek_as_number()?;
-            // Consume the number token
-            self.consume_token()?;
+            self.consume_as_number()?;
 
             return Ok(format!("-{}", value));
         }
 
         if let Ok(value) = self.peek_as_number() {
-            // Consume the number token
-            self.consume_token()?;
+            self.consume_as_number()?;
 
             return Ok(value.to_string());
         }
 
         let value = self.peek_as_string()?;
-        // Consume the string token
         self.consume_token()?;
 
         Ok(value)

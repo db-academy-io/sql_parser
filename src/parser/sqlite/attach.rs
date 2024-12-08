@@ -15,14 +15,14 @@ pub trait AttachStatementParser {
 
 impl<'a> AttachStatementParser for Parser<'a> {
     fn parse_attach_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Attach)?;
+        self.consume_as_keyword(Keyword::Attach)?;
 
         // Consume the optional DATABASE keyword
-        let _ = self.consume_keyword(Keyword::Database);
+        let _ = self.consume_as_keyword(Keyword::Database);
 
         let expression = self.parse_expression()?;
 
-        self.consume_keyword(Keyword::As)?;
+        self.consume_as_keyword(Keyword::As)?;
         let schema_name = self.parse_identifier()?;
 
         Ok(Statement::Attach(AttachStatement {
@@ -32,10 +32,10 @@ impl<'a> AttachStatementParser for Parser<'a> {
     }
 
     fn parse_detach_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Detach)?;
+        self.consume_as_keyword(Keyword::Detach)?;
 
         // Consume the optional DATABASE keyword
-        let _ = self.consume_keyword(Keyword::Database);
+        let _ = self.consume_as_keyword(Keyword::Database);
 
         let schema_name = self.parse_sqlite3_name()?;
 

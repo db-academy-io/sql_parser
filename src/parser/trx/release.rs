@@ -8,9 +8,9 @@ pub trait ReleaseStatementParser {
 
 impl<'a> ReleaseStatementParser for Parser<'a> {
     fn parse_release_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Release)?;
+        self.consume_as_keyword(Keyword::Release)?;
 
-        let _ = self.consume_keyword(Keyword::Savepoint);
+        let _ = self.consume_as_keyword(Keyword::Savepoint);
 
         let savepoint_name = self.parse_savepoint_name()?;
         self.finalize_statement_parsing()?;

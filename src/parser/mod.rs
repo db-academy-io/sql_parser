@@ -29,6 +29,70 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Consume the current token if it matches the specified `token_type`.
+    /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
+    fn consume_as(&mut self, token_type: TokenType) -> Result<(), ParsingError> {
+        let token = self.peek_token()?;
+        if token.token_type == token_type {
+            self.consume_token()?;
+            Ok(())
+        } else {
+            Err(ParsingError::UnexpectedToken(token.to_string()))
+        }
+    }
+
+    /// Consume the current token if it matches the specified `keyword`.
+    /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
+    fn consume_as_keyword(&mut self, keyword: Keyword) -> Result<(), ParsingError> {
+        let token = self.peek_token()?;
+        if token.token_type == TokenType::Keyword(keyword) {
+            self.consume_token()?;
+            Ok(())
+        } else {
+            Err(ParsingError::UnexpectedToken(format!(
+                "Expected {} keyword, got: {}",
+                keyword, token
+            )))
+        }
+    }
+
+    /// Consume the current token if it matches the [TokenType::Id]
+    /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
+    fn consume_as_id(&mut self) -> Result<(), ParsingError> {
+        let token = self.peek_token()?;
+        if let TokenType::Id(_) = token.token_type {
+            self.consume_token()?;
+            Ok(())
+        } else {
+            Err(ParsingError::UnexpectedToken(token.to_string()))
+        }
+    }
+
+    /// Consume the current token if it matches the [TokenType::String]
+    /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
+    fn consume_as_string(&mut self) -> Result<(), ParsingError> {
+        let token = self.peek_token()?;
+        dbg!(&token);
+        if let TokenType::String(_) = token.token_type {
+            self.consume_token()?;
+            Ok(())
+        } else {
+            Err(ParsingError::UnexpectedToken(token.to_string()))
+        }
+    }
+
+    /// Consume the current token if it matches the [TokenType::Integer] or [TokenType::Float]
+    /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
+    fn consume_as_number(&mut self) -> Result<(), ParsingError> {
+        let token = self.peek_token()?;
+        if let TokenType::Integer(_) | TokenType::Float(_) = token.token_type {
+            self.consume_token()?;
+            Ok(())
+        } else {
+            Err(ParsingError::UnexpectedToken(token.to_string()))
+        }
+    }
+
     /// Peek the current token if it's not a [TokenType::SingleLineComment] or
     /// [TokenType::MultiLineComment], without advancing the underlaying iterator
     ///
@@ -71,21 +135,6 @@ impl<'a> Parser<'a> {
     fn peek_as_keyword(&mut self) -> Result<Keyword, ParsingError> {
         let token = self.peek_token()?;
         token.try_into()
-    }
-
-    /// Consume the current token if it matches the specified `keyword`.
-    /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
-    fn consume_keyword(&mut self, keyword: Keyword) -> Result<(), ParsingError> {
-        let token = self.peek_token()?;
-        if token.token_type == TokenType::Keyword(keyword) {
-            self.consume_token()?;
-            Ok(())
-        } else {
-            Err(ParsingError::UnexpectedToken(format!(
-                "Expected {} keyword, got: {}",
-                keyword, token
-            )))
-        }
     }
 
     /// Peek the current token as a [TokenType::Id] without advancing the underlaying

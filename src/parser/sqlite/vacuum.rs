@@ -7,7 +7,7 @@ pub trait VacuumStatementParser {
 
 impl<'a> VacuumStatementParser for Parser<'a> {
     fn parse_vacuum_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Vacuum)?;
+        self.consume_as_keyword(Keyword::Vacuum)?;
 
         // Check if we've got only 'VACUUM;' command
         if self.finalize_statement_parsing().is_ok() {
@@ -17,13 +17,13 @@ impl<'a> VacuumStatementParser for Parser<'a> {
         let schema: Option<String> = if let Ok(id) = self.peek_as_id() {
             let schema = Some(id.to_string());
             // Consume the schema token
-            self.consume_token()?;
+            self.consume_as_id()?;
             schema
         } else {
             None
         };
 
-        let vacuum_statement = if self.consume_keyword(Keyword::Into).is_ok() {
+        let vacuum_statement = if self.consume_as_keyword(Keyword::Into).is_ok() {
             let value = self.peek_as_string()?;
             // Consume the schema token
             self.consume_token()?;
@@ -37,7 +37,7 @@ impl<'a> VacuumStatementParser for Parser<'a> {
                 file_name: None,
             }
         };
-
+        dbg!(&self.peek_token()?);
         self.finalize_statement_parsing()?;
         Ok(Statement::Vacuum(vacuum_statement))
     }

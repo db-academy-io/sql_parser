@@ -34,7 +34,6 @@ pub trait FunctionParser {
 impl<'a> FunctionParser for Parser<'a> {
     /// Parse a function
     fn parse_function(&mut self, name: Identifier) -> Result<Expression, ParsingError> {
-        dbg!("parse_function: name: {:?}", &name);
         let mut function = Function {
             name,
             arg: FunctionArg::default(),
@@ -42,30 +41,21 @@ impl<'a> FunctionParser for Parser<'a> {
             over_clause: None,
         };
 
-        if self.peek_as(TokenType::LeftParen).is_ok() {
-            // consume the left parenthesis
-            self.consume_token()?;
-        } else {
-            return Err(ParsingError::UnexpectedToken(format!(
-                "Expected left parenthesis, got: {}",
-                self.peek_token()?.token_type
-            )));
-        }
+        // Consume the opening left parenthesis
+        self.consume_as(TokenType::LeftParen)?;
 
         function.arg = self.parse_function_arg()?;
 
-        if self.peek_as(TokenType::RightParen).is_ok() {
-            // consume the right parenthesis
-            self.consume_token()?;
-        }
+        // Consume the closing right parenthesis
+        self.consume_as(TokenType::RightParen)?;
 
         if let Ok(Keyword::Filter) = self.peek_as_keyword() {
-            self.consume_token()?;
+            self.consume_as_keyword(Keyword::Filter)?;
             function.filter_clause = Some(Box::new(self.parse_function_filter_clause()?));
         }
 
         if let Ok(Keyword::Over) = self.peek_as_keyword() {
-            self.consume_token()?;
+            self.consume_as_keyword(Keyword::Over)?;
             function.over_clause = Some(self.parse_function_over_clause()?);
         }
 
@@ -77,8 +67,7 @@ impl<'a> FunctionParser for Parser<'a> {
         match self.peek_token()?.token_type {
             // A wildcard argument, e.g. `abc(*)`
             TokenType::Star => {
-                // Consume the star token
-                self.consume_token()?;
+                self.consume_as(TokenType::Star)?;
                 Ok(FunctionArg {
                     distinct: false,
                     arguments: vec![FunctionArgType::Wildcard],
@@ -86,44 +75,37 @@ impl<'a> FunctionParser for Parser<'a> {
             }
             // No argument, e.g. `abc()`
             TokenType::RightParen => {
-                // Consume the right parenthesis
-                self.consume_token()?;
+                // Do not consume the right parenthesis, as it will be consumed in the upper level
                 Ok(FunctionArg {
                     distinct: false,
                     arguments: vec![],
                 })
             }
             _ => {
-                let mut function_argument = FunctionArg::default();
-                if let Ok(Keyword::Distinct) = self.peek_as_keyword() {
-                    function_argument.distinct = true;
-                    self.consume_token()?;
-                }
+                let mut function_argument = FunctionArg {
+                    distinct: self.consume_as_keyword(Keyword::Distinct).is_ok(),
+                    arguments: vec![],
+                };
+
                 while let Ok(expression) = self.parse_expression() {
                     function_argument
                         .arguments
                         .push(FunctionArgType::Expression(expression));
 
-                    if self.peek_as(TokenType::Comma).is_ok() {
-                        // Consume the comma
-                        self.consume_token()?;
-                    } else {
+                    if self.consume_as(TokenType::Comma).is_err() {
                         break;
                     }
                 }
 
                 if let Ok(Keyword::Order) = self.peek_as_keyword() {
-                    // Consume the order keyword
-                    self.consume_token()?;
+                    self.consume_as_keyword(Keyword::Order)?;
+                    // Consume the mandatory BY keyword
+                    self.consume_as_keyword(Keyword::By)?;
 
-                    if let Ok(Keyword::By) = self.peek_as_keyword() {
-                        // Consume the by keyword
-                        self.consume_token()?;
-                    } else {
-                        return Err(ParsingError::UnexpectedToken(format!(
-                            "Expected BY keyword, got: {}",
-                            self.peek_token()?.token_type
-                        )));
+                    if function_argument.arguments.is_empty() {
+                        return Err(ParsingError::UnexpectedParsingState(
+                            "Expected at least one argument".to_string(),
+                        ));
                     }
 
                     let last_expression = function_argument
@@ -170,29 +152,32 @@ impl<'a> FunctionParser for Parser<'a> {
 
             if let Ok(Keyword::Asc) = self.peek_as_keyword() {
                 ordering_term.ordering = Some(Ordering::Asc);
-                self.consume_token()?;
+                self.consume_as_keyword(Keyword::Asc)?;
             } else if let Ok(Keyword::Desc) = self.peek_as_keyword() {
                 ordering_term.ordering = Some(Ordering::Desc);
-                self.consume_token()?;
+                self.consume_as_keyword(Keyword::Desc)?;
             }
 
             if let Ok(Keyword::Nulls) = self.peek_as_keyword() {
-                self.consume_token()?;
+                self.consume_as_keyword(Keyword::Nulls)?;
 
                 if let Ok(Keyword::First) = self.peek_as_keyword() {
                     ordering_term.nulls_ordering = Some(NullsOrdering::First);
-                    self.consume_token()?;
+                    self.consume_as_keyword(Keyword::First)?;
                 } else if let Ok(Keyword::Last) = self.peek_as_keyword() {
                     ordering_term.nulls_ordering = Some(NullsOrdering::Last);
-                    self.consume_token()?;
+                    self.consume_as_keyword(Keyword::Last)?;
+                } else {
+                    return Err(ParsingError::UnexpectedToken(format!(
+                        "Expected FIRST or LAST keyword, got: {}",
+                        self.peek_token()?.token_type
+                    )));
                 }
             }
 
             ordering_terms.push(ordering_term);
 
-            if self.peek_as(TokenType::Comma).is_ok() {
-                self.consume_token()?;
-            } else {
+            if self.consume_as(TokenType::Comma).is_err() {
                 break;
             }
         }
@@ -202,25 +187,15 @@ impl<'a> FunctionParser for Parser<'a> {
 
     /// Parse a function filter clause
     fn parse_function_filter_clause(&mut self) -> Result<Expression, ParsingError> {
-        self.peek_as(TokenType::LeftParen)?;
-        // consume the left parenthesis
-        self.consume_token()?;
+        // Consume the opening left parenthesis
+        self.consume_as(TokenType::LeftParen)?;
 
-        if let Ok(Keyword::Where) = self.peek_as_keyword() {
-            self.consume_token()?;
-        } else {
-            return Err(ParsingError::UnexpectedToken(format!(
-                "Expected WHERE keyword, got: {}",
-                self.peek_token()?.token_type
-            )));
-        }
+        // Consume the mandatory WHERE keyword
+        self.consume_as_keyword(Keyword::Where)?;
 
         let expression = self.parse_expression()?;
 
-        self.peek_as(TokenType::RightParen)?;
-        // consume the right parenthesis
-        self.consume_token()?;
-
+        self.consume_as(TokenType::RightParen)?;
         Ok(expression)
     }
 
@@ -231,24 +206,22 @@ impl<'a> FunctionParser for Parser<'a> {
                 window_name: Some(identifier.to_string()),
                 ..Default::default()
             };
-            self.consume_token()?;
+            self.consume_as_id()?;
             return Ok(over_clause);
         }
 
-        self.peek_as(TokenType::LeftParen)?;
-        // consume the left parenthesis
-        self.consume_token()?;
+        self.consume_as(TokenType::LeftParen)?;
 
         let mut over_clause = OverClause::default();
         if let Ok(base_window_name) = self.peek_as_id() {
             over_clause.window_name = Some(base_window_name.to_string());
-            self.consume_token()?;
+            self.consume_as_id()?;
         }
 
         if let Ok(Keyword::Partition) = self.peek_as_keyword() {
-            self.consume_token()?;
+            self.consume_as_keyword(Keyword::Partition)?;
 
-            self.consume_keyword(Keyword::By)?;
+            self.consume_as_keyword(Keyword::By)?;
 
             while let Ok(expression) = self.parse_expression() {
                 match over_clause.partition_by.as_mut() {
@@ -264,16 +237,11 @@ impl<'a> FunctionParser for Parser<'a> {
         }
 
         if let Ok(Keyword::Order) = self.peek_as_keyword() {
-            self.consume_token()?;
+            self.consume_as_keyword(Keyword::Order)?;
 
-            self.consume_keyword(Keyword::By)?;
+            self.consume_as_keyword(Keyword::By)?;
             let ordering_terms = self.parse_function_ordering_terms()?;
             over_clause.order_by = Some(ordering_terms);
-        }
-
-        if self.peek_as(TokenType::RightParen).is_ok() {
-            // consume the right parenthesis
-            self.consume_token()?;
         }
 
         // frame spec
@@ -281,6 +249,8 @@ impl<'a> FunctionParser for Parser<'a> {
             // do not consume the keyword, as it will be used in the frame spec parsing
             over_clause.frame_spec = Some(self.parse_function_over_clause_frame_spec()?);
         }
+
+        self.consume_as(TokenType::RightParen)?;
 
         Ok(over_clause)
     }
@@ -298,66 +268,42 @@ impl<'a> FunctionParser for Parser<'a> {
             }
         };
 
+        dbg!(&frame_type);
+        dbg!(&self.peek_token());
+
         // consume the frame type token
         self.consume_token()?;
 
-        #[allow(unused_assignments)]
-        let mut frame_spec_type: Option<FrameSpecType> = None;
-
-        if let Ok(Keyword::Between) = self.peek_as_keyword() {
-            // consume the BETWEEN keyword
-            self.consume_token()?;
-
-            frame_spec_type = Some(self.parse_function_over_clause_frame_spec_between()?);
-        } else if let Ok(Keyword::Unbounded) = self.peek_as_keyword() {
-            // consume the UNBOUNDED keyword
-            self.consume_token()?;
-
-            self.consume_keyword(Keyword::Preceding)?;
-            frame_spec_type = Some(FrameSpecType::UnboundedPreceding);
-        } else if let Ok(Keyword::Current) = self.peek_as_keyword() {
-            // consume the CURRENT keyword
-            self.consume_token()?;
-
-            self.consume_keyword(Keyword::Row)?;
-            frame_spec_type = Some(FrameSpecType::CurrentRow);
+        let frame_spec_type: FrameSpecType = if self.consume_as_keyword(Keyword::Between).is_ok() {
+            self.parse_function_over_clause_frame_spec_between()?
+        } else if self.consume_as_keyword(Keyword::Unbounded).is_ok() {
+            self.consume_as_keyword(Keyword::Preceding)?;
+            FrameSpecType::UnboundedPreceding
+        } else if self.consume_as_keyword(Keyword::Current).is_ok() {
+            self.consume_as_keyword(Keyword::Row)?;
+            FrameSpecType::CurrentRow
         } else {
             let expression = self.parse_expression()?;
-            self.consume_keyword(Keyword::Preceding)?;
-            frame_spec_type = Some(FrameSpecType::Preceding(Box::new(expression)));
-        }
-
-        if frame_spec_type.is_none() {
-            return Err(ParsingError::UnexpectedToken(format!(
-                "Expected frame spec type, got: {}",
-                self.peek_token()?.token_type
-            )));
-        }
-
-        let frame_spec_type = frame_spec_type.unwrap();
+            self.consume_as_keyword(Keyword::Preceding)?;
+            FrameSpecType::Preceding(Box::new(expression))
+        };
 
         let mut exclude = None;
 
-        if let Ok(Keyword::Exclude) = self.peek_as_keyword() {
-            self.consume_token()?;
-
-            if let Ok(Keyword::No) = self.peek_as_keyword() {
-                self.consume_token()?;
-                self.consume_keyword(Keyword::Others)?;
+        if self.consume_as_keyword(Keyword::Exclude).is_ok() {
+            if self.consume_as_keyword(Keyword::No).is_ok() {
+                self.consume_as_keyword(Keyword::Others)?;
                 exclude = Some(FrameSpecExclude::NoOthers);
-            } else if let Ok(Keyword::Current) = self.peek_as_keyword() {
-                self.consume_token()?;
-                self.consume_keyword(Keyword::Row)?;
+            } else if self.consume_as_keyword(Keyword::Current).is_ok() {
+                self.consume_as_keyword(Keyword::Row)?;
                 exclude = Some(FrameSpecExclude::CurrentRow);
-            } else if let Ok(Keyword::Group) = self.peek_as_keyword() {
-                self.consume_token()?;
+            } else if self.consume_as_keyword(Keyword::Group).is_ok() {
                 exclude = Some(FrameSpecExclude::Group);
-            } else if let Ok(Keyword::Ties) = self.peek_as_keyword() {
-                self.consume_token()?;
+            } else if self.consume_as_keyword(Keyword::Ties).is_ok() {
                 exclude = Some(FrameSpecExclude::Ties);
             } else {
                 return Err(ParsingError::UnexpectedToken(format!(
-                    "Expected exclude type, got: {}",
+                    "Expected Exclude type, got: {}",
                     self.peek_token()?.token_type
                 )));
             }
@@ -373,23 +319,21 @@ impl<'a> FunctionParser for Parser<'a> {
     fn parse_function_over_clause_frame_spec_between(
         &mut self,
     ) -> Result<FrameSpecType, ParsingError> {
-        let start = if let Ok(Keyword::Unbounded) = self.peek_as_keyword() {
-            self.consume_token()?;
-            self.consume_keyword(Keyword::Preceding)?;
+        let start = if self.consume_as_keyword(Keyword::Unbounded).is_ok() {
+            self.consume_as_keyword(Keyword::Preceding)?;
             BetweenFrameSpecType::UnboundedPreceding
-        } else if let Ok(Keyword::Current) = self.peek_as_keyword() {
-            self.consume_token()?;
-            self.consume_keyword(Keyword::Row)?;
+        } else if self.consume_as_keyword(Keyword::Current).is_ok() {
+            self.consume_as_keyword(Keyword::Row)?;
             BetweenFrameSpecType::CurrentRow
         } else {
             let expression = self.parse_expression()?;
             match self.peek_as_keyword()? {
                 Keyword::Preceding => {
-                    self.consume_keyword(Keyword::Preceding)?;
+                    self.consume_as_keyword(Keyword::Preceding)?;
                     BetweenFrameSpecType::Preceding(Box::new(expression))
                 }
                 Keyword::Following => {
-                    self.consume_keyword(Keyword::Following)?;
+                    self.consume_as_keyword(Keyword::Following)?;
                     BetweenFrameSpecType::Following(Box::new(expression))
                 }
                 _ => {
@@ -401,33 +345,26 @@ impl<'a> FunctionParser for Parser<'a> {
             }
         };
 
-        self.consume_keyword(Keyword::And)?;
+        self.consume_as_keyword(Keyword::And)?;
 
-        let end = if let Ok(Keyword::Unbounded) = self.peek_as_keyword() {
-            self.consume_token()?;
-            self.consume_keyword(Keyword::Following)?;
+        let end = if self.consume_as_keyword(Keyword::Unbounded).is_ok() {
+            self.consume_as_keyword(Keyword::Following)?;
             BetweenFrameSpecType::UnboundedFollowing
-        } else if let Ok(Keyword::Current) = self.peek_as_keyword() {
-            self.consume_token()?;
-            self.consume_keyword(Keyword::Row)?;
+        } else if self.consume_as_keyword(Keyword::Current).is_ok() {
+            self.consume_as_keyword(Keyword::Row)?;
             BetweenFrameSpecType::CurrentRow
         } else {
             let expression = self.parse_expression()?;
-            match self.peek_as_keyword()? {
-                Keyword::Preceding => {
-                    self.consume_keyword(Keyword::Preceding)?;
-                    BetweenFrameSpecType::Preceding(Box::new(expression))
-                }
-                Keyword::Following => {
-                    self.consume_keyword(Keyword::Following)?;
-                    BetweenFrameSpecType::Following(Box::new(expression))
-                }
-                _ => {
-                    return Err(ParsingError::UnexpectedToken(format!(
-                        "Expected PRECEDING or FOLLOWING keyword, got: {}",
-                        self.peek_token()?.token_type
-                    )));
-                }
+
+            if self.consume_as_keyword(Keyword::Preceding).is_ok() {
+                BetweenFrameSpecType::Preceding(Box::new(expression))
+            } else if self.consume_as_keyword(Keyword::Following).is_ok() {
+                BetweenFrameSpecType::Following(Box::new(expression))
+            } else {
+                return Err(ParsingError::UnexpectedToken(format!(
+                    "Expected PRECEDING or FOLLOWING keyword, got: {}",
+                    self.peek_token()?.token_type
+                )));
             }
         };
         Ok(FrameSpecType::Between(BetweenFrameSpec { start, end }))

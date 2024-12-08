@@ -12,10 +12,6 @@ pub trait SelectStatementParser {
 
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError>;
 
-    fn parse_select_distinct(&mut self) -> Result<bool, ParsingError>;
-
-    fn parse_select_all(&mut self) -> Result<bool, ParsingError>;
-
     #[allow(dead_code)]
     fn parser_select_from_part(&mut self) -> Result<(), ParsingError>;
 }
@@ -23,11 +19,11 @@ pub trait SelectStatementParser {
 impl<'a> SelectStatementParser for Parser<'a> {
     fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError> {
         // Consume the SELECT keyword
-        self.consume_keyword(Keyword::Select)?;
+        self.consume_as_keyword(Keyword::Select)?;
 
         let select_statement = SelectStatement {
-            distinct: self.parse_select_distinct()?,
-            all: self.parse_select_all()?,
+            distinct: self.consume_as_keyword(Keyword::Distinct).is_ok(),
+            all: self.consume_as_keyword(Keyword::All).is_ok(),
             columns: self.parse_select_columns()?,
             ..Default::default()
         };
@@ -46,30 +42,12 @@ impl<'a> SelectStatementParser for Parser<'a> {
             select_items.push(SelectItem::Expression(expression));
 
             if self.peek_as(TokenType::Comma).is_ok() {
-                self.consume_token()?;
+                self.consume_as(TokenType::Comma)?;
             } else {
                 break;
             }
         }
         Ok(select_items)
-    }
-
-    fn parse_select_distinct(&mut self) -> Result<bool, ParsingError> {
-        if let Ok(Keyword::Distinct) = self.peek_as_keyword() {
-            self.consume_token()?;
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
-    fn parse_select_all(&mut self) -> Result<bool, ParsingError> {
-        if let Ok(Keyword::All) = self.peek_as_keyword() {
-            self.consume_token()?;
-            Ok(true)
-        } else {
-            Ok(false)
-        }
     }
 
     fn parser_select_from_part(&mut self) -> Result<(), ParsingError> {

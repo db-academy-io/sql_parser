@@ -8,7 +8,7 @@ pub trait DropViewStatementParser {
 
 impl<'a> DropViewStatementParser for Parser<'a> {
     fn parse_drop_view_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::View)?;
+        self.consume_as_keyword(Keyword::View)?;
 
         let (if_exists, identifier) = self.parse_drop_statement_generic()?;
 
