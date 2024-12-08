@@ -1,8 +1,17 @@
+mod begin;
+mod commit;
+mod release;
+mod rollback;
+mod savepoint;
+
+use begin::BeginStatementParser;
+use commit::CommitStatementParser;
+use release::ReleaseStatementParser;
+use rollback::RollbackStatementParser;
+use savepoint::SavepointStatementParser;
+
 use super::Parser;
-use crate::{
-    BeginTransactionStatement, CommitTransactionStatement, Keyword, ParsingError, ReleaseStatement,
-    RollbackTransactionStatement, SavepointStatement, Statement, TransactionType,
-};
+use crate::{ParsingError, Statement};
 
 /// Defines the interface for parsing SQL transaction statements
 pub trait TransactionStatementParser {
@@ -20,110 +29,27 @@ pub trait TransactionStatementParser {
 
     /// Parses a SAVEPOINT statement
     fn parse_savepoint_statement(&mut self) -> Result<Statement, ParsingError>;
-
-    fn parse_savepoint_name(&mut self) -> Result<String, ParsingError>;
 }
 
 impl<'a> TransactionStatementParser for Parser<'a> {
     fn parse_begin_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Begin)?;
-
-        let mut statement = BeginTransactionStatement::default();
-
-        // Check if we've got only 'BEGIN;' command
-        if self.finalize_statement_parsing().is_ok() {
-            return Ok(Statement::BeginTransaction(statement));
-        }
-
-        if self.consume_keyword(Keyword::Deferred).is_ok() {
-            statement.transaction_type = Some(TransactionType::Deferred);
-        } else if self.consume_keyword(Keyword::Immediate).is_ok() {
-            statement.transaction_type = Some(TransactionType::Immediate);
-        } else if self.consume_keyword(Keyword::Exclusive).is_ok() {
-            statement.transaction_type = Some(TransactionType::Exclusive);
-        }
-
-        // Consume the optional TRANSACTION keyword
-        let _ = self.consume_keyword(Keyword::Transaction);
-
-        self.finalize_statement_parsing()?;
-        Ok(Statement::BeginTransaction(statement))
+        BeginStatementParser::parse_begin_statement(self)
     }
 
     fn parse_commit_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the COMMIT OR END keyword
-        let _ = self.consume_keyword(Keyword::Commit);
-        let _ = self.consume_keyword(Keyword::End);
-
-        // Check if we've got only 'COMMIT;' command
-        if self.finalize_statement_parsing().is_ok() {
-            return Ok(Statement::CommitTransaction(CommitTransactionStatement));
-        }
-
-        let _ = self.consume_keyword(Keyword::Transaction);
-
-        self.finalize_statement_parsing()?;
-        Ok(Statement::CommitTransaction(CommitTransactionStatement))
+        CommitStatementParser::parse_commit_statement(self)
     }
 
     fn parse_rollback_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Rollback)?;
-
-        // Consume the optional TRANSACTION keyword
-        let _ = self.consume_keyword(Keyword::Transaction);
-
-        if self.consume_keyword(Keyword::To).is_ok() {
-            let _ = self.consume_keyword(Keyword::Savepoint);
-            let savepoint_name = self.parse_savepoint_name()?;
-            self.finalize_statement_parsing()?;
-            return Ok(Statement::RollbackTransaction(
-                RollbackTransactionStatement {
-                    savepoint_name: Some(savepoint_name.to_string()),
-                },
-            ));
-        }
-
-        self.finalize_statement_parsing()?;
-        Ok(Statement::RollbackTransaction(
-            RollbackTransactionStatement::default(),
-        ))
+        RollbackStatementParser::parse_rollback_statement(self)
     }
 
     fn parse_release_statement(&mut self) -> Result<Statement, ParsingError> {
-        self.consume_keyword(Keyword::Release)?;
-
-        let _ = self.consume_keyword(Keyword::Savepoint);
-
-        let savepoint_name = self.parse_savepoint_name()?;
-        self.finalize_statement_parsing()?;
-        Ok(Statement::Release(ReleaseStatement { savepoint_name }))
+        ReleaseStatementParser::parse_release_statement(self)
     }
 
     fn parse_savepoint_statement(&mut self) -> Result<Statement, ParsingError> {
-        // Consume the SAVEPOINT keyword
-        self.consume_keyword(Keyword::Savepoint)?;
-
-        let savepoint_name = self.parse_savepoint_name()?;
-
-        self.finalize_statement_parsing()?;
-        Ok(Statement::Savepoint(SavepointStatement { savepoint_name }))
-    }
-
-    fn parse_savepoint_name(&mut self) -> Result<String, ParsingError> {
-        if let Ok(id) = self.peek_as_id() {
-            // Consume the id token
-            self.consume_token()?;
-            return Ok(id.to_string());
-        }
-
-        if let Ok(string) = self.peek_as_string() {
-            // Consume the id token
-            self.consume_token()?;
-            return Ok(string.to_string());
-        }
-
-        let token = self.peek_token()?;
-        Err(ParsingError::UnexpectedToken(token.to_string()))
+        SavepointStatementParser::parse_savepoint_statement(self)
     }
 }
 
