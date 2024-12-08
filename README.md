@@ -27,7 +27,9 @@ The items were taken from the official SQLite documentation
 1. [rollback-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
 1. [pragma-stmt](https://www.sqlite.org/pragma.html) &#9989;
 
-## Parsing sql expr ![progress](https://progress-bar.xyz/17/?scale=17&suffix=%%%20(17%20of%2017)&width=140)
+## Intermediate statements
+
+### Parsing sql expr ![progress](https://progress-bar.xyz/17/?scale=17&suffix=%%%20(17%20of%2017)&width=140)
 1. [literal-value](https://www.sqlite.org/lang_expr.html#literalvalue) &#9989;
 1. [bind-parameter](https://www.sqlite.org/lang_expr.html#bindvar)&#9989;
 1. [identifiers](https://www.sqlite.org/lang_expr.html#columnname)&#9989;
@@ -46,13 +48,8 @@ The items were taken from the official SQLite documentation
 1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)&#9989;
 1. [raise-function](https://www.sqlite.org/lang_expr.html#raisefunc)&#9989;
 
-## Intermediate statements ![progress](https://progress-bar.xyz/1/?scale=7&suffix=%%%20(1%20of%207)&width=140)
+### Parsing sql statements ![progress](https://progress-bar.xyz/1/?scale=2&suffix=%%%20(1%20of%202)&width=140)
 1. [attach-stmt](https://www.sqlite.org/lang_attach.html) &#9989;
-1. [math-functions](https://www.sqlite.org/lang_mathfunc.html)
-1. [date-and-time-functions](https://www.sqlite.org/lang_datefunc.html)
-1. [json-functions](https://www.sqlite.org/json1.html)
-1. [core-functions](https://www.sqlite.org/lang_corefunc.html)
-1. [aggregate-functions](https://www.sqlite.org/lang_aggfunc.html)
 1. [alter-table-stmt](https://www.sqlite.org/lang_altertable.html)
 
 ## Advanced statements ![progress](https://progress-bar.xyz/0/?scale=19&suffix=%%%20(0%20of%2019)&width=140)
@@ -87,3 +84,10 @@ The items were taken from the official SQLite documentation
 
 ### EXPLAIN Statements ![progress](https://progress-bar.xyz/0/?scale=1&suffix=%%%20(0%20of%201)&width=140)
 1. explain-stmt 
+
+## Optional statements ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%205)&width=140)
+1. [math-functions](https://www.sqlite.org/lang_mathfunc.html)
+1. [date-and-time-functions](https://www.sqlite.org/lang_datefunc.html)
+1. [json-functions](https://www.sqlite.org/json1.html)
+1. [core-functions](https://www.sqlite.org/lang_corefunc.html)
+1. [aggregate-functions](https://www.sqlite.org/lang_aggfunc.html)
