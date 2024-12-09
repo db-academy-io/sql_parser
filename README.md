@@ -48,9 +48,9 @@ The items were taken from the official SQLite documentation
 1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)&#9989;
 1. [raise-function](https://www.sqlite.org/lang_expr.html#raisefunc)&#9989;
 
-### Parsing sql statements ![progress](https://progress-bar.xyz/1/?scale=2&suffix=%%%20(1%20of%202)&width=140)
+### Parsing sql statements ![progress](https://progress-bar.xyz/2/?scale=2&suffix=%%%20(2%20of%202)&width=140)
 1. [attach-stmt](https://www.sqlite.org/lang_attach.html) &#9989;
-1. [alter-table-stmt](https://www.sqlite.org/lang_altertable.html)
+1. [alter-table-stmt](https://www.sqlite.org/lang_altertable.html) &#9989;
 
 ## Advanced statements ![progress](https://progress-bar.xyz/0/?scale=19&suffix=%%%20(0%20of%2019)&width=140)
 
