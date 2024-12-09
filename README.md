@@ -1,6 +1,10 @@
-# An SQLite3 Compatible SQL parser
+# An SQL query parser
+
+<br />
 
 [db-academy.io/sql_parser](https://db-academy.io/sql_parser) reference implementation in Rust
+
+<br />
 
 The following list of statements is ordered not only by difficulty but also by
 the time required for implementation, from easier and quicker to harder and 
@@ -11,7 +15,7 @@ intentional, made solely for grouping related statements together.
 The items were taken from the official SQLite documentation 
 [here](https://www.sqlite.org/lang.html)
 
-## Simple statements ![progress](https://progress-bar.xyz/14/?scale=14&suffix=%%%20(14%20of%2014)&width=140)
+### Simple statements ![progress](https://progress-bar.xyz/14/?scale=14&suffix=%%%20(14%20of%2014)&width=140)
 1. [drop-table-stmt](https://www.sqlite.org/lang_droptable.html) &#9989;
 1. [drop-index-stmt](https://www.sqlite.org/lang_dropindex.html) &#9989;
 1. [drop-trigger-stmt](https://www.sqlite.org/lang_droptrigger.html) &#9989;
@@ -27,9 +31,9 @@ The items were taken from the official SQLite documentation
 1. [rollback-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
 1. [pragma-stmt](https://www.sqlite.org/pragma.html) &#9989;
 
-## Intermediate statements
+### Intermediate statements
 
-### Parsing sql expr ![progress](https://progress-bar.xyz/17/?scale=17&suffix=%%%20(17%20of%2017)&width=140)
+#### Parsing sql expr ![progress](https://progress-bar.xyz/17/?scale=17&suffix=%%%20(17%20of%2017)&width=140)
 1. [literal-value](https://www.sqlite.org/lang_expr.html#literalvalue) &#9989;
 1. [bind-parameter](https://www.sqlite.org/lang_expr.html#bindvar)&#9989;
 1. [identifiers](https://www.sqlite.org/lang_expr.html#columnname)&#9989;
@@ -48,44 +52,44 @@ The items were taken from the official SQLite documentation
 1. [case-expression](https://www.sqlite.org/lang_expr.html#caseexp)&#9989;
 1. [raise-function](https://www.sqlite.org/lang_expr.html#raisefunc)&#9989;
 
-### Parsing sql statements ![progress](https://progress-bar.xyz/2/?scale=2&suffix=%%%20(2%20of%202)&width=140)
+#### Parsing sql statements ![progress](https://progress-bar.xyz/2/?scale=2&suffix=%%%20(2%20of%202)&width=140)
 1. [attach-stmt](https://www.sqlite.org/lang_attach.html) &#9989;
 1. [alter-table-stmt](https://www.sqlite.org/lang_altertable.html) &#9989;
 
-## Advanced statements ![progress](https://progress-bar.xyz/0/?scale=19&suffix=%%%20(0%20of%2019)&width=140)
+### Advanced statements ![progress](https://progress-bar.xyz/0/?scale=19&suffix=%%%20(0%20of%2019)&width=140)
 
-### SELECT Statement ![progress](https://progress-bar.xyz/0/?scale=4&suffix=%%%20(0%20of%204)&width=140)
+#### SELECT Statement ![progress](https://progress-bar.xyz/0/?scale=4&suffix=%%%20(0%20of%204)&width=140)
 1. indexed-by-part
 1. window-functions-part
 1. select-stmt
 1. with-clause-part (CTE)
 
-### INSERT Statement ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%205)&width=140)
+#### INSERT Statement ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%205)&width=140)
 1. on-conflict-clause-part
 1. returning-clause-part
 1. upsert-part
 1. insert-stmt
 1. replace-stmt
 
-### CREATE Statements ![progress](https://progress-bar.xyz/0/?scale=45&suffix=%%%20(0%20of%205)&width=140)
+#### CREATE Statements ![progress](https://progress-bar.xyz/0/?scale=45&suffix=%%%20(0%20of%205)&width=140)
 1. create-virtual-table-stmt
 1. create-index-stmt
 1. create-view-stmt
 1. create-table-stmt
 1. create-trigger-stmt
 
-### DELETE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
+#### DELETE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
 1. delete-stmt
 1. delete-stmt-limited
 
-### UPDATE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
+#### UPDATE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
 1. update-stmt
 1. update-stmt-limited
 
-### EXPLAIN Statements ![progress](https://progress-bar.xyz/0/?scale=1&suffix=%%%20(0%20of%201)&width=140)
+#### EXPLAIN Statements ![progress](https://progress-bar.xyz/0/?scale=1&suffix=%%%20(0%20of%201)&width=140)
 1. explain-stmt 
 
-## Optional statements ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%205)&width=140)
+#### Optional statements ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%205)&width=140)
 1. [math-functions](https://www.sqlite.org/lang_mathfunc.html)
 1. [date-and-time-functions](https://www.sqlite.org/lang_datefunc.html)
 1. [json-functions](https://www.sqlite.org/json1.html)
