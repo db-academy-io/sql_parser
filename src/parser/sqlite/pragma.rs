@@ -73,28 +73,8 @@ impl<'a> PragmaStatementParser for Parser<'a> {
     }
 
     fn parse_pragma_value(&mut self) -> Result<String, ParsingError> {
-        if self.peek_as(TokenType::Plus).is_ok() {
-            self.consume_as(TokenType::Plus)?;
-
-            let value = self.peek_as_number()?;
-            self.consume_as_number()?;
-
+        if let Ok(value) = self.parse_signed_number() {
             return Ok(value);
-        }
-
-        if self.peek_as(TokenType::Minus).is_ok() {
-            self.consume_as(TokenType::Minus)?;
-
-            let value = self.peek_as_number()?;
-            self.consume_as_number()?;
-
-            return Ok(format!("-{}", value));
-        }
-
-        if let Ok(value) = self.peek_as_number() {
-            self.consume_as_number()?;
-
-            return Ok(value.to_string());
         }
 
         let value = self.peek_as_string()?;
@@ -379,6 +359,32 @@ mod pragma_statements_tests {
                 schema_name: None,
                 pragma_name: "cache_size".to_string(),
                 pragma_value: Some("123".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_pragma_with_positive_numeric_value() {
+        let sql = "PRAGMA cache_size = +123;";
+        run_sunny_day_test(
+            sql,
+            Statement::Pragma(PragmaStatement {
+                schema_name: None,
+                pragma_name: "cache_size".to_string(),
+                pragma_value: Some("123".to_string()),
+            }),
+        );
+    }
+
+    #[test]
+    fn test_pragma_with_negative_numeric_value() {
+        let sql = "PRAGMA cache_size = -123;";
+        run_sunny_day_test(
+            sql,
+            Statement::Pragma(PragmaStatement {
+                schema_name: None,
+                pragma_name: "cache_size".to_string(),
+                pragma_value: Some("-123".to_string()),
             }),
         );
     }

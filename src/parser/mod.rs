@@ -1,6 +1,7 @@
 use std::iter::Peekable;
 
 mod alter;
+mod column_definition;
 mod drop;
 pub(crate) mod expression;
 mod select;
@@ -63,11 +64,11 @@ impl<'a> Parser<'a> {
 
     /// Consume the current token if it matches the [TokenType::Id]
     /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
-    fn consume_as_id(&mut self) -> Result<(), ParsingError> {
+    fn consume_as_id(&mut self) -> Result<String, ParsingError> {
         let token = self.peek_token()?;
-        if let TokenType::Id(_) = token.token_type {
+        if let TokenType::Id(id) = token.token_type {
             self.consume_token()?;
-            Ok(())
+            Ok(id.to_string())
         } else {
             Err(ParsingError::UnexpectedToken(token.to_string()))
         }
@@ -88,11 +89,11 @@ impl<'a> Parser<'a> {
 
     /// Consume the current token if it matches the [TokenType::Integer] or [TokenType::Float]
     /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
-    fn consume_as_number(&mut self) -> Result<(), ParsingError> {
+    fn consume_as_number(&mut self) -> Result<String, ParsingError> {
         let token = self.peek_token()?;
-        if let TokenType::Integer(_) | TokenType::Float(_) = token.token_type {
+        if let TokenType::Integer(value) | TokenType::Float(value) = token.token_type {
             self.consume_token()?;
-            Ok(())
+            Ok(value.to_string())
         } else {
             Err(ParsingError::UnexpectedToken(token.to_string()))
         }
@@ -192,6 +193,15 @@ impl<'a> Parser<'a> {
             }
             _ => Err(ParsingError::UnexpectedToken(token.to_string())),
         }
+    }
+
+    /// Parse a signed number
+    fn parse_signed_number(&mut self) -> Result<String, ParsingError> {
+        // ignore the leading '+'
+        let _ = self.consume_as(TokenType::Plus);
+        let minus_sign = self.consume_as(TokenType::Minus).map(|_| "-").unwrap_or("");
+        let number = self.consume_as_number()?;
+        Ok(format!("{}{}", minus_sign, number))
     }
 
     /// Parse a single statement from the tokenizer [Tokenizer]

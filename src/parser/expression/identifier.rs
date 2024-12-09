@@ -15,10 +15,7 @@ impl<'a> IdentifierParser for Parser<'a> {
             // Consume the identifier token
             self.consume_as_id()?;
 
-            if self.peek_as(TokenType::Dot).is_ok() {
-                // Consume the dot token
-                self.consume_as(TokenType::Dot)?;
-            } else {
+            if self.consume_as(TokenType::Dot).is_err() {
                 break;
             }
         }

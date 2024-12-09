@@ -258,6 +258,8 @@ pub enum Keyword {
     Select,
     /// H41797: SQLite shall recognize the 3-character sequenence "SET" in any combination of upper and lower case letters as the keyword token SET.
     Set,
+    /// TODO
+    Stored,
     /// H41800: SQLite shall recognize the 5-character sequenence "TABLE" in any combination of upper and lower case letters as the keyword token TABLE.
     Table,
     /// H41803: SQLite shall recognize the 4-character sequenence "TEMP" in any combination of upper and lower case letters as the keyword token TEMP.
@@ -316,7 +318,7 @@ impl TryFrom<&str> for Keyword {
     }
 }
 
-static KEYWORD_MAP: Lazy<HashMap<&'static str, Keyword>> = Lazy::new(|| {
+pub static KEYWORD_MAP: Lazy<HashMap<&'static str, Keyword>> = Lazy::new(|| {
     use Keyword::*;
 
     let pairs = [
@@ -445,6 +447,7 @@ static KEYWORD_MAP: Lazy<HashMap<&'static str, Keyword>> = Lazy::new(|| {
         ("SAVEPOINT", Savepoint),
         ("SELECT", Select),
         ("SET", Set),
+        ("STORED", Stored),
         ("TABLE", Table),
         ("TEMP", Temp),
         ("TEMPORARY", Temporary),
@@ -599,6 +602,7 @@ impl Display for Keyword {
             Keyword::Savepoint => write!(f, "Savepoint"),
             Keyword::Select => write!(f, "Select"),
             Keyword::Set => write!(f, "Set"),
+            Keyword::Stored => write!(f, "Stored"),
             Keyword::Table => write!(f, "Table"),
             Keyword::Temp => write!(f, "Temp"),
             Keyword::Temporary => write!(f, "Temporary"),

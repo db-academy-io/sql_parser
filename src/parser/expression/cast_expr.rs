@@ -1,6 +1,6 @@
-use crate::{DataType, Expression, Keyword, Parser, ParsingError, TokenType};
+use crate::{Expression, Keyword, Parser, ParsingError, TokenType};
 
-use super::ExpressionParser;
+use super::{data_type::DataTypeParser, ExpressionParser};
 
 pub trait CastExpressionParser {
     fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError>;
@@ -15,30 +15,7 @@ impl<'a> CastExpressionParser for Parser<'a> {
         let expression = self.parse_expression()?;
         self.consume_as_keyword(Keyword::As)?;
 
-        let data_type = {
-            let name = self.peek_as_id()?;
-            self.consume_as_id()?;
-
-            if self.consume_as(TokenType::LeftParen).is_ok() {
-                let lower_bound = self.peek_as_number()?;
-                self.consume_as_number()?;
-
-                if self.consume_as(TokenType::Comma).is_ok() {
-                    let upper_bound = self.peek_as_number()?;
-                    self.consume_as_number()?;
-
-                    // The right parenthesis must be in the last token in the cast expression
-                    self.consume_as(TokenType::RightParen)?;
-
-                    DataType::BoundedDataType(name.to_string(), lower_bound, upper_bound)
-                } else {
-                    self.consume_as(TokenType::RightParen)?;
-                    DataType::SizedDataType(name.to_string(), lower_bound)
-                }
-            } else {
-                DataType::PlainDataType(name.to_string())
-            }
-        };
+        let data_type = self.parse_data_type()?;
 
         self.consume_as(TokenType::RightParen)?;
 

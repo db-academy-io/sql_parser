@@ -10,7 +10,11 @@ mod sqlite;
 mod trx;
 mod update;
 
-pub use alter::AlterTableStatement;
+pub use alter::{
+    AlterTableStatement, AlterTableStatementType, ColumnConstraint, ColumnConstraintType,
+    ColumnDefinition, ConflictClause, FKAction, FKConstraintAction, FKDeferrableType,
+    ForeignKeyClause, GeneratedColumnConstraint, GeneratedColumnType, PrimaryKeyConstraint,
+};
 pub use create::{
     CreateIndexStatement, CreateTableStatement, CreateTriggerStatement, CreateViewStatement,
     CreateVirtualTableStatement,

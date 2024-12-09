@@ -2,6 +2,7 @@ mod between_expr;
 mod case_expr;
 mod cast_expr;
 mod collate_expr;
+mod data_type;
 mod exists_expr;
 mod function_expr;
 mod identifier;
@@ -15,6 +16,7 @@ use between_expr::BetweenExpressionParser;
 use case_expr::CaseExpressionParser;
 use cast_expr::CastExpressionParser;
 use collate_expr::CollateExpressionParser;
+pub use data_type::DataTypeParser;
 use exists_expr::ExistsExpressionParser;
 use function_expr::FunctionParser;
 pub use identifier::IdentifierParser;
@@ -437,7 +439,7 @@ pub(crate) mod test_utils {
     }
 
     pub fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
-        run_sunny_day_test_with_multiple_expressions(sql, &vec![expected_expression]);
+        run_sunny_day_test_with_multiple_expressions(sql, &[expected_expression]);
     }
 
     pub fn numeric_literal_expression(value: &str) -> Expression {

@@ -4,50 +4,31 @@ use super::{DataType, Expression, Identifier, Ordering};
 #[derive(Debug, PartialEq)]
 pub struct AlterTableStatement {
     pub table_name: Identifier,
-    pub action: AlterTableAction,
+
+    pub statement_type: AlterTableStatementType,
 }
 
-/// An ALTER TABLE statement action
+/// An ALTER TABLE statement type
 #[derive(Debug, PartialEq)]
-pub enum AlterTableAction {
+pub enum AlterTableStatementType {
     /// Rename a table statement
-    RenameTable(RenameTableAction),
+    RenameTable(Identifier),
 
     /// Rename a column statement
-    RenameColumn(RenameColumnAction),
+    RenameColumn(Identifier, Identifier),
 
     /// Add a column statement
-    AddColumn(AddColumnAction),
+    AddColumn(ColumnDefinition),
 
     /// Drop a column statement
-    DropColumn(DropColumnAction),
-}
-
-/// A RenameTable action
-#[derive(Debug, PartialEq)]
-pub struct RenameTableAction {
-    pub new_name: Identifier,
-}
-
-/// A RenameColumn action
-#[derive(Debug, PartialEq)]
-pub struct RenameColumnAction {
-    pub old_name: Identifier,
-    pub new_name: Identifier,
-}
-
-/// An AddColumn action
-#[derive(Debug, PartialEq)]
-pub struct AddColumnAction {
-    pub column_name: Identifier,
-    pub column_definition: ColumnDefinition,
+    DropColumn(Identifier),
 }
 
 /// A ColumnDefinition, used in ALTER TABLE ADD COLUMN statement
 #[derive(Debug, PartialEq)]
 pub struct ColumnDefinition {
     pub column_name: Identifier,
-    pub column_type: DataType,
+    pub column_type: Option<DataType>,
     pub column_constraints: Vec<ColumnConstraint>,
 }
 
@@ -55,7 +36,7 @@ pub struct ColumnDefinition {
 #[derive(Debug, PartialEq)]
 pub struct ColumnConstraint {
     /// An optional name for the constraint
-    pub name: Option<String>,
+    pub name: Option<Identifier>,
 
     /// A constraint type
     pub constraint_type: ColumnConstraintType,
@@ -69,15 +50,16 @@ pub enum ColumnConstraintType {
     Unique(ConflictClause),
     Check(Expression),
     Default(Expression),
-    Collate(String),
+    Collate(Identifier),
     ForeignKey(ForeignKeyClause),
+    GeneratedAs(GeneratedColumnConstraint),
 }
 
 /// A PrimaryKeyConstraint, used in ALTER TABLE ADD COLUMN statement
 #[derive(Debug, PartialEq)]
 pub struct PrimaryKeyConstraint {
     pub ordering: Option<Ordering>,
-    pub conflict_clause: Option<ConflictClause>,
+    pub conflict_clause: ConflictClause,
     pub auto_increment: bool,
 }
 
@@ -89,6 +71,9 @@ pub struct PrimaryKeyConstraint {
 /// but they are different.
 #[derive(Debug, PartialEq)]
 pub enum ConflictClause {
+    /// No conflict clause
+    None,
+
     /// When an applicable constraint violation occurs, the ROLLBACK resolution
     /// algorithm aborts the current SQL statement with an SQLITE_CONSTRAINT
     /// error and rolls back the current transaction.
@@ -186,13 +171,22 @@ pub enum FKAction {
 /// clause in a ForeignKeyConstraint
 #[derive(Debug, PartialEq)]
 pub enum FKDeferrableType {
+    Deferrable,
     InitiallyImmediate,
     InitiallyDeferred,
     Not(Box<FKDeferrableType>),
 }
 
-/// A DropColumn action
+/// A GeneratedColumnConstraint, used in ALTER TABLE ADD COLUMN statement
 #[derive(Debug, PartialEq)]
-pub struct DropColumnAction {
-    pub column_name: Identifier,
+pub struct GeneratedColumnConstraint {
+    pub expression: Expression,
+    pub generated_type: Option<GeneratedColumnType>,
+}
+
+/// A GeneratedColumnType, used in ALTER TABLE ADD COLUMN statement
+#[derive(Debug, PartialEq)]
+pub enum GeneratedColumnType {
+    Virtual,
+    Stored,
 }

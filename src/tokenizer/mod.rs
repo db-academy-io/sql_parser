@@ -997,6 +997,7 @@ impl<'input> From<Tokenizer<'input>> for Result<Vec<Token<'input>>, TokenizerErr
 #[cfg(test)]
 mod tests {
     use super::TokenizerError;
+    use crate::keywords::KEYWORD_MAP;
     use crate::tokenizer::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Keyword, TokenType};
 
@@ -1007,9 +1008,11 @@ mod tests {
 
     #[test]
     fn test_single_keyword() {
-        let sql = "SELECT;";
-        let expected_tokens = vec![TokenType::Keyword(Keyword::Select), TokenType::Semi];
-        run_sunny_day_test(sql, expected_tokens);
+        KEYWORD_MAP.iter().for_each(|(k, v)| {
+            let sql = k.to_string();
+            let expected_tokens = vec![TokenType::Keyword(*v), TokenType::Semi];
+            run_sunny_day_test(&sql, expected_tokens);
+        });
     }
 
     #[test]

@@ -45,7 +45,7 @@ fn run_bart_riers_sqlite_dataset_test() {
 /// Run a single test and return true if the test passes, false otherwise
 fn run_test(path: &PathBuf) -> bool {
     let sql_content =
-        fs::read_to_string(path).expect(&format!("Failed to read SQL file: {:?}", path));
+        fs::read_to_string(path).unwrap_or_else(|_| panic!("Failed to read SQL file: {:?}", path));
     let mut parser = Parser::from(sql_content.as_str());
     let statement = parser.parse_statement();
 
