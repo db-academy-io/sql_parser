@@ -23,9 +23,5 @@ overflow-checks = false
 panic = 'unwind'
 rpath = false
 
-[package.metadata.precommit]
-fmt = "cargo fmt --check"
-clippy = "cargo clippy"
-
 [profile.bench]
 debug = true
