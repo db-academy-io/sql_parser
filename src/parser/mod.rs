@@ -1,6 +1,6 @@
-#[cfg(test)]
-mod test_utils;
+use std::iter::Peekable;
 
+mod alter;
 mod drop;
 pub(crate) mod expression;
 mod select;
@@ -8,12 +8,16 @@ mod sqlite;
 mod trx;
 
 mod errors;
+
+#[cfg(test)]
+mod test_utils;
+
 use crate::{Keyword, Statement, Token, TokenType, Tokenizer};
+use alter::AlterTableStatementParser;
 use drop::DropStatementParser;
 pub use errors::*;
 use select::SelectStatementParser;
 use sqlite::SQLite3StatementParser;
-use std::iter::Peekable;
 use trx::TransactionStatementParser;
 
 /// A parser for SQLite SQL statements
@@ -193,19 +197,26 @@ impl<'a> Parser<'a> {
     /// Parse a single statement from the tokenizer [Tokenizer]
     pub fn parse_statement(&mut self) -> Result<Statement, ParsingError> {
         match self.peek_as_keyword()? {
-            Keyword::Drop => self.parse_drop_statement(),
-            Keyword::Vacuum => self.parse_vacuum_statement(),
-            Keyword::Attach => self.parse_attach_statement(),
-            Keyword::Detach => self.parse_detach_statement(),
-            Keyword::Analyze => self.parse_analyze_statement(),
-            Keyword::Reindex => self.parse_reindex_statement(),
-            Keyword::Begin => self.parse_begin_statement(),
-            Keyword::Commit | Keyword::End => self.parse_commit_statement(),
-            Keyword::Rollback => self.parse_rollback_statement(),
-            Keyword::Release => self.parse_release_statement(),
-            Keyword::Savepoint => self.parse_savepoint_statement(),
-            Keyword::Pragma => self.parse_pragma_statement(),
-            Keyword::Select => self.parse_select_statement().map(Statement::Select),
+            Keyword::Drop => DropStatementParser::parse_drop_statement(self),
+            Keyword::Vacuum => SQLite3StatementParser::parse_vacuum_statement(self),
+            Keyword::Attach => SQLite3StatementParser::parse_attach_statement(self),
+            Keyword::Detach => SQLite3StatementParser::parse_detach_statement(self),
+            Keyword::Analyze => SQLite3StatementParser::parse_analyze_statement(self),
+            Keyword::Reindex => SQLite3StatementParser::parse_reindex_statement(self),
+            Keyword::Pragma => SQLite3StatementParser::parse_pragma_statement(self),
+
+            Keyword::Begin => TransactionStatementParser::parse_begin_statement(self),
+            Keyword::Commit | Keyword::End => {
+                TransactionStatementParser::parse_commit_statement(self)
+            }
+            Keyword::Rollback => TransactionStatementParser::parse_rollback_statement(self),
+            Keyword::Release => TransactionStatementParser::parse_release_statement(self),
+            Keyword::Savepoint => TransactionStatementParser::parse_savepoint_statement(self),
+            Keyword::Select => {
+                SelectStatementParser::parse_select_statement(self).map(Statement::Select)
+            }
+            Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
+                .map(Statement::AlterTable),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),
         }
     }

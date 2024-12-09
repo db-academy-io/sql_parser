@@ -92,3 +92,12 @@ pub enum Statement {
     /// EXPLAIN statement (can wrap another statement), see [ExplainStatement]
     Explain(ExplainStatement),
 }
+
+/// An ordering
+#[derive(Debug, PartialEq, Clone)]
+pub enum Ordering {
+    /// Ascending
+    Asc,
+    /// Descending
+    Desc,
+}

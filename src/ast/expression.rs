@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{ParsingError, TokenType};
 
-use super::SelectStatement;
+use super::{Ordering, SelectStatement};
 
 /// An SQLite3 [expr](https://www.sqlite.org/lang_expr.html) expression
 #[derive(Debug, PartialEq, Clone)]
@@ -82,17 +82,6 @@ pub enum LiteralValue {
 
     /// Current timestamp
     CurrentTimestamp,
-}
-
-/// A column identifier
-#[derive(Debug, PartialEq, Clone)]
-pub struct ColumnIdentifier {
-    /// The schema name
-    pub schema: Option<String>,
-    /// The table name
-    pub table: Option<String>,
-    /// The column name
-    pub column: String,
 }
 
 /// An identifier
@@ -264,15 +253,6 @@ pub struct OrderingTerm {
     pub ordering: Option<Ordering>,
     /// The nulls ordering
     pub nulls_ordering: Option<NullsOrdering>,
-}
-
-/// An ordering
-#[derive(Debug, PartialEq, Clone)]
-pub enum Ordering {
-    /// Ascending
-    Asc,
-    /// Descending
-    Desc,
 }
 
 /// Nulls ordering
