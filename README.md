@@ -56,20 +56,36 @@ The items were taken from the official SQLite documentation
 1. [attach-stmt](https://www.sqlite.org/lang_attach.html) &#9989;
 1. [alter-table-stmt](https://www.sqlite.org/lang_altertable.html) &#9989;
 
-### Advanced statements ![progress](https://progress-bar.xyz/0/?scale=19&suffix=%%%20(0%20of%2019)&width=140)
+### Advanced statements
 
-#### SELECT Statement ![progress](https://progress-bar.xyz/0/?scale=4&suffix=%%%20(0%20of%204)&width=140)
-1. indexed-by-part
-1. window-functions-part
-1. select-stmt
-1. with-clause-part (CTE)
+#### SELECT Statement ![progress](https://progress-bar.xyz/0/?scale=8&suffix=%%%20(0%20of%208)&width=140)
 
-#### INSERT Statement ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%205)&width=140)
-1. on-conflict-clause-part
-1. returning-clause-part
-1. upsert-part
-1. insert-stmt
+1. [result-columns](https://www.sqlite.org/syntax/result-column.html)
+1. [table-or-subquery](https://www.sqlite.org/lang_select.html#tablename)
+1. [join-clauses](https://www.sqlite.org/syntax/join-clause.html)
+1. [where-group-by-having-clause](https://www.sqlite.org/lang_select.html#where)
+1. [window-functions-part](https://www.sqlite.org/syntax/window-defn.html)
+1. [order-by-and-limit-clause](https://www.sqlite.org/lang_select.html#orderby)
+1. [common-table-expressions](https://www.sqlite.org/syntax/common-table-expression.html)
+1. [select-stmt](https://www.sqlite.org/syntax/select-stmt.html)
+
+#### DELETE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
+1. [delete-stmt](https://www.sqlite.org/syntax/delete-stmt.html)
+1. [delete-stmt-limited](https://www.sqlite.org/syntax/delete-stmt-limited.html)
+
+#### UPDATE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
+1. [update-stmt](https://www.sqlite.org/syntax/update-stmt.html)
+1. [update-stmt-limited](https://www.sqlite.org/syntax/update-stmt-limited.html)
+
+#### INSERT Statement ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%208)&width=140)
+1. insert-with-values
+1. insert-with-select
+1. insert-with-upsert
+1. insert-with-returning
+1. insert-with-default
+1. insert-with-cte
 1. replace-stmt
+1. common-table-expressions
 
 #### CREATE Statements ![progress](https://progress-bar.xyz/0/?scale=45&suffix=%%%20(0%20of%205)&width=140)
 1. create-virtual-table-stmt
@@ -77,14 +93,6 @@ The items were taken from the official SQLite documentation
 1. create-view-stmt
 1. create-table-stmt
 1. create-trigger-stmt
-
-#### DELETE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
-1. delete-stmt
-1. delete-stmt-limited
-
-#### UPDATE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
-1. update-stmt
-1. update-stmt-limited
 
 #### EXPLAIN Statements ![progress](https://progress-bar.xyz/0/?scale=1&suffix=%%%20(0%20of%201)&width=140)
 1. explain-stmt 
