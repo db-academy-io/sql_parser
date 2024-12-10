@@ -77,7 +77,7 @@ mod case_expression_tests {
         }];
         let else_expression = Some(Box::new(numeric_literal_expression("3")));
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CASE WHEN 1 THEN 2 ELSE 3 END;",
             &case_expression(expression, when_expressions, else_expression),
         );
@@ -98,7 +98,7 @@ mod case_expression_tests {
         ];
         let else_expression = Some(Box::new(numeric_literal_expression("5")));
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CASE WHEN 1 THEN 2 WHEN 3 THEN 4 ELSE 5 END;",
             &case_expression(expression, when_expressions, else_expression),
         );
@@ -117,7 +117,7 @@ mod case_expression_tests {
         }];
         let else_expression = Some(Box::new(numeric_literal_expression("2")));
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CASE 1 == 1 WHEN TRUE THEN 1 ELSE 2 END;",
             &case_expression(expression, when_expressions, else_expression),
         );

@@ -95,6 +95,7 @@ pub trait ExpressionParser {
 impl<'a> ExpressionParser for Parser<'a> {
     /// Parse an SQLite3 [expr](https://www.sqlite.org/lang_expr.html#the_expr_list)
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
+        dbg!("Parsing expression");
         // Check if it's one of the special expressions
         if let Ok(keyword) = self.peek_as_keyword() {
             match keyword {
@@ -219,6 +220,7 @@ impl<'a> ExpressionParser for Parser<'a> {
             }
         }
 
+        dbg!("Parsed expression: {:?}", &expression);
         Ok(expression)
     }
 
@@ -438,7 +440,7 @@ pub(crate) mod test_utils {
         }
     }
 
-    pub fn run_sunny_day_test(sql: &str, expected_expression: &Expression) {
+    pub fn run_sunny_day_expression_test(sql: &str, expected_expression: &Expression) {
         run_sunny_day_test_with_multiple_expressions(sql, &[expected_expression]);
     }
 
@@ -524,42 +526,42 @@ mod literal_value_expression_tests {
 
     #[test]
     fn test_expression_literal_value_valid() {
-        run_sunny_day_test("SELECT 1;", &numeric_literal_expression("1"));
+        run_sunny_day_expression_test("SELECT 1;", &numeric_literal_expression("1"));
 
-        run_sunny_day_test("SELECT 1.2;", &numeric_literal_expression("1.2"));
+        run_sunny_day_expression_test("SELECT 1.2;", &numeric_literal_expression("1.2"));
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1.234567890;",
             &numeric_literal_expression("1.234567890"),
         );
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 'Hello, world!';",
             &string_literal_expression("'Hello, world!'"),
         );
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT X'DEADBEEF';",
             &blob_literal_expression("X'DEADBEEF'"),
         );
 
-        run_sunny_day_test("SELECT TRUE;", &boolean_literal_expression(true));
+        run_sunny_day_expression_test("SELECT TRUE;", &boolean_literal_expression(true));
 
-        run_sunny_day_test("SELECT FALSE;", &boolean_literal_expression(false));
+        run_sunny_day_expression_test("SELECT FALSE;", &boolean_literal_expression(false));
 
-        run_sunny_day_test("SELECT NULL;", &null_literal_expression());
+        run_sunny_day_expression_test("SELECT NULL;", &null_literal_expression());
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CURRENT_TIME;",
             &Expression::LiteralValue(LiteralValue::CurrentTime),
         );
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CURRENT_DATE;",
             &Expression::LiteralValue(LiteralValue::CurrentDate),
         );
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CURRENT_TIMESTAMP;",
             &Expression::LiteralValue(LiteralValue::CurrentTimestamp),
         );
@@ -572,12 +574,12 @@ mod bind_parameter_expression_tests {
 
     #[test]
     fn test_expression_bind_parameter_valid() {
-        run_sunny_day_test("SELECT ?;", &bind_parameter_expression("?"));
-        run_sunny_day_test("SELECT ?1;", &bind_parameter_expression("?1"));
-        run_sunny_day_test("SELECT :name;", &bind_parameter_expression(":name"));
-        run_sunny_day_test("SELECT @var;", &bind_parameter_expression("@var"));
-        run_sunny_day_test("SELECT $value;", &bind_parameter_expression("$value"));
-        run_sunny_day_test("SELECT #param;", &bind_parameter_expression("#param"));
+        run_sunny_day_expression_test("SELECT ?;", &bind_parameter_expression("?"));
+        run_sunny_day_expression_test("SELECT ?1;", &bind_parameter_expression("?1"));
+        run_sunny_day_expression_test("SELECT :name;", &bind_parameter_expression(":name"));
+        run_sunny_day_expression_test("SELECT @var;", &bind_parameter_expression("@var"));
+        run_sunny_day_expression_test("SELECT $value;", &bind_parameter_expression("$value"));
+        run_sunny_day_expression_test("SELECT #param;", &bind_parameter_expression("#param"));
 
         // TODO: Add tests for invalid bind parameters
     }
@@ -591,31 +593,31 @@ mod unary_op_expression_tests {
 
     #[test]
     fn test_expression_unary_op_valid() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT +1;",
             &unary_op_expression(UnaryOp::Plus, numeric_literal_expression("1")),
         );
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT -1;",
             &unary_op_expression(UnaryOp::Minus, numeric_literal_expression("1")),
         );
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT -abc;",
             &unary_op_expression(UnaryOp::Minus, identifier_expression(&["abc"])),
         );
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT +abc;",
             &unary_op_expression(UnaryOp::Plus, identifier_expression(&["abc"])),
         );
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT -+1;",
             &unary_op_expression(
                 UnaryOp::Minus,
                 unary_op_expression(UnaryOp::Plus, numeric_literal_expression("1")),
             ),
         );
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT ++1;",
             &unary_op_expression(
                 UnaryOp::Plus,
@@ -654,7 +656,7 @@ mod binary_op_expression_tests {
         ];
 
         for op in operators {
-            run_sunny_day_test(
+            run_sunny_day_expression_test(
                 &format!("SELECT 1 {} 2;", op),
                 &binary_op_expression(
                     op,
@@ -667,7 +669,7 @@ mod binary_op_expression_tests {
 
     #[test]
     fn test_expression_binary_operation() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT col1 + col2;",
             &binary_op_expression(
                 BinaryOp::Plus,
@@ -679,7 +681,7 @@ mod binary_op_expression_tests {
 
     #[test]
     fn test_expression_binary_with_prefix() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 ++ 2;",
             &binary_op_expression(
                 BinaryOp::Plus,
@@ -691,7 +693,7 @@ mod binary_op_expression_tests {
 
     #[test]
     fn test_expression_binary_operation_the_same_precedence() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 + 2 + 3;",
             &binary_op_expression(
                 BinaryOp::Plus,
@@ -707,7 +709,7 @@ mod binary_op_expression_tests {
 
     #[test]
     fn test_expression_binary_operation_the_same_precedence2() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 * 2 / 3;",
             &binary_op_expression(
                 BinaryOp::Div,
@@ -723,7 +725,7 @@ mod binary_op_expression_tests {
 
     #[test]
     fn test_expression_binary_operation_precedence() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 + 2 * 3;",
             &binary_op_expression(
                 BinaryOp::Plus,
@@ -739,7 +741,7 @@ mod binary_op_expression_tests {
 
     #[test]
     fn test_expression_binary_operation_precedence2() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 + 2 * 3 - 4",
             &binary_op_expression(
                 BinaryOp::Minus,
@@ -759,7 +761,7 @@ mod binary_op_expression_tests {
 
     #[test]
     fn test_expression_binary_operation_precedence3() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT col1 + col2 * 3;",
             &binary_op_expression(
                 BinaryOp::Plus,
@@ -775,7 +777,7 @@ mod binary_op_expression_tests {
 
     #[test]
     fn test_expression_binary_operation_precedence_with_function() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT col1 + col2 * max(1, 3, 4);",
             &binary_op_expression(
                 BinaryOp::Plus,
@@ -817,7 +819,7 @@ mod unary_matching_expression_tests {
 
     #[test]
     fn test_expression_matching_isnull() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 ISNULL;",
             &unary_matching_expression(
                 numeric_literal_expression("1"),
@@ -828,14 +830,14 @@ mod unary_matching_expression_tests {
 
     #[test]
     fn test_expression_matching_notnull() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT NULL;",
             &unary_matching_expression(
                 numeric_literal_expression("1"),
                 UnaryMatchingExpression::IsNotNull,
             ),
         );
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOTNULL;",
             &unary_matching_expression(
                 numeric_literal_expression("1"),
@@ -853,7 +855,7 @@ mod parenthesized_expression_tests {
 
     #[test]
     fn test_parenthesized_expression() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT (1 + 2 * 3)",
             &Expression::ExpressionList(vec![binary_op_expression(
                 BinaryOp::Plus,
@@ -869,7 +871,7 @@ mod parenthesized_expression_tests {
 
     #[test]
     fn test_parenthesized_two_expressions() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT (1 + 2, 3 / 4);",
             &Expression::ExpressionList(vec![
                 binary_op_expression(
@@ -888,7 +890,7 @@ mod parenthesized_expression_tests {
 
     #[test]
     fn test_parenthesized_multiple_expressions() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT (1 + 2, 3 / 4, cast(5 as int), -5, raise (ignore));",
             &Expression::ExpressionList(vec![
                 binary_op_expression(

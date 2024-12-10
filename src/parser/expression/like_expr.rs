@@ -81,7 +81,7 @@ mod like_expression_tests {
 
     #[test]
     fn test_expression_like_basic() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 LIKE 'a%';",
             &like_expression(
                 numeric_literal_expression("1"),
@@ -93,7 +93,7 @@ mod like_expression_tests {
 
     #[test]
     fn test_expression_not_like_basic() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT LIKE 'a%';",
             &like_expression(
                 numeric_literal_expression("1"),
@@ -105,7 +105,7 @@ mod like_expression_tests {
 
     #[test]
     fn test_expression_like_with_escape_basic() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 LIKE 'a%' ESCAPE 'b';",
             &like_expression(
                 numeric_literal_expression("1"),

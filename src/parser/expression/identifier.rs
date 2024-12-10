@@ -10,21 +10,47 @@ impl<'a> IdentifierParser for Parser<'a> {
     fn parse_identifier(&mut self) -> Result<Identifier, ParsingError> {
         let mut components = Vec::new();
 
-        while let Ok(identifier) = self.peek_as_id() {
+        let mut expected_next_identifier = false;
+        while let Ok(identifier) = self.peek_as_id_or_star() {
             components.push(identifier.to_string());
             // Consume the identifier token
-            self.consume_as_id()?;
+            self.consume_token()?;
+            expected_next_identifier = false;
 
-            if self.consume_as(TokenType::Dot).is_err() {
+            if self.consume_as(TokenType::Dot).is_ok() {
+                expected_next_identifier = true;
+            } else {
                 break;
             }
         }
 
+        dbg!("Expected next identifier: {}", expected_next_identifier);
+        if expected_next_identifier {
+            return Err(ParsingError::UnexpectedToken(
+                "Expected identifier".to_string(),
+            ));
+        }
+
+        dbg!("Parsed components: {:?}", &components);
         match components.len() {
             0 => Err(ParsingError::UnexpectedToken(
                 "Expected identifier".to_string(),
             )),
-            1 => Ok(Identifier::Single(components[0].to_string())),
+            1 => {
+                if components[0] == "*" {
+                    Ok(Identifier::Wildcard)
+                } else {
+                    Ok(Identifier::Single(components[0].to_string()))
+                }
+            }
+            2 => {
+                if components[1] == "*" {
+                    dbg!("Parsed table name with wildcard {}", &components[0]);
+                    Ok(Identifier::NameWithWildcard(components[0].to_string()))
+                } else {
+                    Ok(Identifier::Compound(components))
+                }
+            }
             _ => Ok(Identifier::Compound(components)),
         }
     }
@@ -36,12 +62,12 @@ mod identifier_expression_tests {
 
     #[test]
     fn test_expression_identifier_valid() {
-        run_sunny_day_test("SELECT id;", &identifier_expression(&["id"]));
-        run_sunny_day_test(
+        run_sunny_day_expression_test("SELECT id;", &identifier_expression(&["id"]));
+        run_sunny_day_expression_test(
             "SELECT table1.column1;",
             &identifier_expression(&["table1", "column1"]),
         );
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT schema1.table1.column1;",
             &identifier_expression(&["schema1", "table1", "column1"]),
         );

@@ -87,7 +87,7 @@ mod regexp_match_expression_tests {
         let keywords = vec![Keyword::Glob, Keyword::Regexp, Keyword::Match];
 
         for keyword in keywords {
-            run_sunny_day_test(
+            run_sunny_day_expression_test(
                 &format!("SELECT 1 {} 'a*';", keyword),
                 &regexp_match_expression(
                     numeric_literal_expression("1"),
@@ -104,7 +104,7 @@ mod regexp_match_expression_tests {
         let keywords = vec![Keyword::Glob, Keyword::Regexp, Keyword::Match];
 
         for keyword in keywords {
-            run_sunny_day_test(
+            run_sunny_day_expression_test(
                 &format!("SELECT 1 NOT {} 'a*';", keyword),
                 &regexp_match_expression(
                     numeric_literal_expression("1"),

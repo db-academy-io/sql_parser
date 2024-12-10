@@ -381,7 +381,7 @@ mod function_expression_tests {
 
     #[test]
     fn test_expression_function_basic_empty_args() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc();",
             &function_expression("abc", FunctionArg::default(), None, None),
         );
@@ -393,7 +393,7 @@ mod function_expression_tests {
             distinct: false,
             arguments: vec![FunctionArgType::Wildcard],
         };
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(*);",
             &function_expression("abc", expected_arg, None, None),
         );
@@ -405,7 +405,7 @@ mod function_expression_tests {
             distinct: false,
             arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
         };
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1);",
             &function_expression("abc", expected_arg, None, None),
         );
@@ -417,7 +417,7 @@ mod function_expression_tests {
             distinct: true,
             arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
         };
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(distinct 1);",
             &function_expression("abc", expected_arg, None, None),
         );
@@ -432,7 +432,7 @@ mod function_expression_tests {
                 FunctionArgType::Expression(numeric_literal_expression("2")),
             ],
         };
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1, 2);",
             &function_expression("abc", expected_arg, None, None),
         );
@@ -459,7 +459,7 @@ mod function_expression_tests {
                 )),
             ],
         };
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1 + 2, 4 + 5 / 6);",
             &function_expression("abc", expected_arg, None, None),
         );
@@ -478,7 +478,7 @@ mod function_expression_tests {
                 }],
             )],
         };
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1 order by 2);",
             &function_expression("abc", expected_arg, None, None),
         );
@@ -514,7 +514,7 @@ mod function_expression_tests {
                 ],
             )],
         };
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1 order by 2 asc, 3 desc, 4 nulls first, 5 desc nulls last);",
             &function_expression("abc", expected_arg, None, None),
         );
@@ -533,7 +533,7 @@ mod function_expression_tests {
             numeric_literal_expression("3"),
         );
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1) filter (where 2 > 3);",
             &function_expression("abc", expected_arg, Some(Box::new(filter_clause)), None),
         );
@@ -553,7 +553,7 @@ mod function_expression_tests {
             frame_spec: None,
         };
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1) over a;",
             &function_expression("abc", expected_arg, None, Some(over_clause)),
         );
@@ -573,7 +573,7 @@ mod function_expression_tests {
             frame_spec: None,
         };
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1) over (partition by 1);",
             &function_expression("abc", expected_arg, None, Some(over_clause)),
         );
@@ -597,7 +597,7 @@ mod function_expression_tests {
             frame_spec: None,
         };
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1) over (order by 1 asc nulls last);",
             &function_expression("abc", expected_arg, None, Some(over_clause)),
         );
@@ -626,7 +626,7 @@ mod function_expression_tests {
             }),
         };
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT abc(1) over (a groups between 1 preceding and current row exclude current row);",
             &function_expression("abc", expected_arg, None, Some(over_clause)),
         );

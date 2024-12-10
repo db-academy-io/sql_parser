@@ -77,7 +77,7 @@ mod between_expression_tests {
 
     #[test]
     fn test_expression_between_basic() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 BETWEEN 2 AND 3;",
             &between_expression(
                 numeric_literal_expression("1"),
@@ -90,7 +90,7 @@ mod between_expression_tests {
 
     #[test]
     fn test_expression_between_with_expression() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 + 2 BETWEEN 3 AND 4;",
             &between_expression(
                 binary_op_expression(
@@ -107,7 +107,7 @@ mod between_expression_tests {
 
     #[test]
     fn test_expression_not_between_with_expression() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 + 2 NOT BETWEEN 3 AND 4;",
             &between_expression(
                 binary_op_expression(

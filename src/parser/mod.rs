@@ -144,13 +144,28 @@ impl<'a> Parser<'a> {
     }
 
     /// Peek the current token as a [TokenType::Id] without advancing the underlaying
-    /// iterator. If there is a token which is not a [Keyword], it will
+    /// iterator. If there is a token which is not a [TokenType::Id], it will
     /// throw an [ParsingError]  
     fn peek_as_id(&mut self) -> Result<&'a str, ParsingError> {
         let token = self.peek_token()?;
 
         if let TokenType::Id(id) = token.token_type {
             Ok(id)
+        } else {
+            Err(ParsingError::UnexpectedToken(token.to_string()))
+        }
+    }
+
+    /// Peek the current token as a [TokenType::Id] or [TokenType::Star] without advancing the underlaying
+    /// iterator. If there is a token which is not a [TokenType::Id] or [TokenType::Star], it will
+    /// throw an [ParsingError]  
+    fn peek_as_id_or_star(&mut self) -> Result<&'a str, ParsingError> {
+        let token = self.peek_token()?;
+
+        if let TokenType::Id(id) = token.token_type {
+            Ok(id)
+        } else if token.token_type == TokenType::Star {
+            Ok("*")
         } else {
             Err(ParsingError::UnexpectedToken(token.to_string()))
         }

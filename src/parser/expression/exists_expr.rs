@@ -39,8 +39,6 @@ mod exists_expression_tests {
 
     fn select_statement(columns: Vec<SelectItem>) -> SelectStatementType {
         SelectStatementType::Select(SelectStatement {
-            distinct: false,
-            all: false,
             columns,
             ..Default::default()
         })
@@ -48,7 +46,7 @@ mod exists_expression_tests {
 
     #[test]
     fn test_expression_exists() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT EXISTS (SELECT 1);",
             &exist_expression(
                 false,
@@ -61,7 +59,7 @@ mod exists_expression_tests {
 
     #[test]
     fn test_expression_not_exists() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT NOT EXISTS (SELECT 1);",
             &exist_expression(
                 true,
@@ -74,7 +72,7 @@ mod exists_expression_tests {
 
     #[test]
     fn test_expression_not_exists_without_exists_keyword() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT NOT (SELECT 21);",
             &exist_expression(
                 true,

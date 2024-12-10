@@ -69,7 +69,7 @@ mod is_expression_tests {
 
     #[test]
     fn test_expression_is_another_expression() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 IS 1;",
             &expression_from_expression(
                 numeric_literal_expression("1"),
@@ -82,7 +82,7 @@ mod is_expression_tests {
 
     #[test]
     fn test_expression_is_not_another_expression() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 IS NOT 1;",
             &expression_from_expression(
                 numeric_literal_expression("1"),
@@ -95,7 +95,7 @@ mod is_expression_tests {
 
     #[test]
     fn test_expression_is_distinct_another_expression() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 IS DISTINCT FROM 1;",
             &expression_from_expression(
                 numeric_literal_expression("1"),

@@ -89,8 +89,15 @@ pub enum LiteralValue {
 pub enum Identifier {
     /// A single identifier
     Single(String),
+
     /// A compound identifier
     Compound(Vec<String>),
+
+    /// A wildcard
+    Wildcard,
+
+    /// A table or column name with wildcard
+    NameWithWildcard(String),
 }
 
 /// A binary operation

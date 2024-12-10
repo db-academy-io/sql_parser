@@ -31,7 +31,7 @@ mod cast_expression_tests {
 
     #[test]
     fn test_expression_cast_basic() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CAST(1 AS INTEGER);",
             &cast_expression(
                 numeric_literal_expression("1"),
@@ -42,7 +42,7 @@ mod cast_expression_tests {
 
     #[test]
     fn test_expression_cast_expression() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CAST(1 + 2 AS INTEGER);",
             &cast_expression(
                 binary_op_expression(
@@ -57,7 +57,7 @@ mod cast_expression_tests {
 
     #[test]
     fn test_expression_cast_with_null() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CAST(NULL AS INTEGER);",
             &cast_expression(
                 null_literal_expression(),
@@ -68,7 +68,7 @@ mod cast_expression_tests {
 
     #[test]
     fn test_expression_cast_with_complex_type() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CAST(1 AS VARCHAR(10));",
             &cast_expression(
                 numeric_literal_expression("1"),
@@ -79,7 +79,7 @@ mod cast_expression_tests {
 
     #[test]
     fn test_expression_cast_with_complex_type2() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT CAST(1 AS VARCHAR(1, 10));",
             &cast_expression(
                 numeric_literal_expression("1"),

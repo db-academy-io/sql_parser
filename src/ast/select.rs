@@ -12,14 +12,8 @@ pub enum SelectStatementType {
 /// An AST for [SELECT](https://www.sqlite.org/lang_select.html) SQL statement.
 #[derive(Debug, PartialEq, Default, Clone)]
 pub struct SelectStatement {
-    /// Whether the SELECT statement is a VALUES statement
-    pub values: bool,
-
     /// Whether the SELECT statement is distinct
-    pub distinct: bool,
-
-    /// Whether the SELECT statement is all
-    pub all: bool,
+    pub distinct_type: DistinctType,
 
     /// The list of columns to select
     pub columns: Vec<SelectItem>,
@@ -46,6 +40,15 @@ pub struct SelectStatement {
     pub limit: Option<LimitClause>,
 }
 
+/// An enum representing the possible distinct types
+#[derive(Debug, PartialEq, Clone, Default)]
+pub enum DistinctType {
+    Distinct,
+    All,
+    #[default]
+    None,
+}
+
 /// An enum representing the possible items in a SELECT statement
 #[derive(Debug, PartialEq, Clone)]
 pub enum SelectItem {
@@ -54,12 +57,6 @@ pub enum SelectItem {
 
     /// An expression with an alias
     ExpressionWithAlias(Expression, String),
-
-    /// A wildcard (*), which matches all columns
-    Wildcard,
-
-    /// A table name with a wildcard
-    TableNameWithWildcard(String),
 }
 
 /// An AST for representing a FROM clause

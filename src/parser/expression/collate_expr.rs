@@ -37,7 +37,7 @@ mod collate_expression_tests {
 
     #[test]
     fn test_expression_collate_basic() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 COLLATE 'utf8';",
             &collate_expression(numeric_literal_expression("1"), "'utf8'".to_string()),
         );
@@ -45,7 +45,7 @@ mod collate_expression_tests {
 
     #[test]
     fn test_expression_collate_with_expression() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 + 2 COLLATE 'utf8';",
             &collate_expression(
                 binary_op_expression(

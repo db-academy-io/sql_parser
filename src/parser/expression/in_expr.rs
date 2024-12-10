@@ -113,7 +113,7 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_empty_select_statement() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 IN ();",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -122,7 +122,7 @@ mod expression_with_in_statement_tests {
             ),
         );
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT IN ();",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -137,7 +137,7 @@ mod expression_with_in_statement_tests {
         let mut select_statement = SelectStatement::default();
         select_statement.columns = vec![SelectItem::Expression(numeric_literal_expression("2"))];
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 IN (SELECT 2);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -149,7 +149,7 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_multiple_expressions() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 IN (2, 3, 4 + 5);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -172,7 +172,7 @@ mod expression_with_in_statement_tests {
         let mut select_statement = SelectStatement::default();
         select_statement.columns = vec![SelectItem::Expression(numeric_literal_expression("2"))];
 
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT IN (SELECT 2);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -184,7 +184,7 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_table_name() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT IN table_name;",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -196,7 +196,7 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_schema_and_table_names() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT IN schema_name.table_name;",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -211,7 +211,7 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_schema_and_table_function_without_arguments() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT IN schema_name.table_function();",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -229,7 +229,7 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_schema_and_table_function_with_arguments() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT IN schema_name.table_function(1, 2, 3);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
@@ -251,7 +251,7 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_table_function_with_arguments() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT 1 NOT IN table_function(1+2, 3*4);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),

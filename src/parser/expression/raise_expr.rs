@@ -64,7 +64,7 @@ mod raise_expression_tests {
 
     #[test]
     fn test_expression_raise_ignore() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT RAISE(IGNORE);",
             &raise_expression(RaiseFunction::Ignore),
         );
@@ -72,7 +72,7 @@ mod raise_expression_tests {
 
     #[test]
     fn test_expression_raise_rollback() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT RAISE(ROLLBACK, 'Error');",
             &raise_expression(RaiseFunction::Rollback("'Error'".to_string())),
         );
@@ -80,7 +80,7 @@ mod raise_expression_tests {
 
     #[test]
     fn test_expression_raise_abort() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT RAISE(ABORT, 'Error');",
             &raise_expression(RaiseFunction::Abort("'Error'".to_string())),
         );
@@ -88,7 +88,7 @@ mod raise_expression_tests {
 
     #[test]
     fn test_expression_raise_fail() {
-        run_sunny_day_test(
+        run_sunny_day_expression_test(
             "SELECT RAISE(FAIL, 'Error');",
             &raise_expression(RaiseFunction::Fail("'Error'".to_string())),
         );
