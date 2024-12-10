@@ -20,9 +20,8 @@ fn run_codeschool_sqlite_parser_test() {
 
             if file.extension().and_then(|ext| ext.to_str()) == Some("sql") {
                 let sql_content = fs::read_to_string(file).expect("Failed to read file");
-                let parsing_result = std::panic::catch_unwind(|| run_test(&sql_content));
-
-                if parsing_result.is_ok() && parsing_result.unwrap() {
+                let parsing_result = run_test(&sql_content);
+                if parsing_result {
                     passed_test += 1;
                 }
                 total_tests += 1;

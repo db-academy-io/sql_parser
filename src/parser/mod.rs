@@ -78,7 +78,6 @@ impl<'a> Parser<'a> {
     /// If the current token's type does not match, a [ParsingError::UnexpectedToken] is thrown.
     fn consume_as_string(&mut self) -> Result<(), ParsingError> {
         let token = self.peek_token()?;
-        dbg!(&token);
         if let TokenType::String(_) = token.token_type {
             self.consume_token()?;
             Ok(())

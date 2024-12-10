@@ -19,9 +19,8 @@ fn run_bart_riers_sqlite_dataset_test() {
         let path = entry.path();
 
         if path.extension().and_then(|ext| ext.to_str()) == Some("sql") {
-            let parsing_result = std::panic::catch_unwind(|| run_test(&path));
-
-            if parsing_result.is_ok() && parsing_result.unwrap() {
+            let parsing_result = run_test(&path);
+            if parsing_result {
                 passed_test += 1;
             }
         }
@@ -38,8 +37,6 @@ fn run_bart_riers_sqlite_dataset_test() {
         "Passed {:.2}% of the tests",
         (passed_test as f64 / total_tests as f64) * 100.0
     );
-
-    // assert_eq!(passed_test, total_tests);
 }
 
 /// Run a single test and return true if the test passes, false otherwise
