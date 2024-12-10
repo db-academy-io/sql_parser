@@ -58,10 +58,10 @@ The items were taken from the official SQLite documentation
 
 ### Advanced statements
 
-#### SELECT Statement ![progress](https://progress-bar.xyz/1/?scale=9&suffix=%%%20(1%20of%209)&width=140)
+#### SELECT Statement ![progress](https://progress-bar.xyz/2/?scale=9&suffix=%%%20(2%20of%209)&width=140)
 
 1. [values-stmt](https://www.sqlite.org/syntax/select-core.html) &#9989;
-1. [result-columns](https://www.sqlite.org/syntax/result-column.html)
+1. [result-columns](https://www.sqlite.org/syntax/result-column.html) &#9989;
 1. [table-or-subquery](https://www.sqlite.org/lang_select.html#tablename)
 1. [join-clauses](https://www.sqlite.org/syntax/join-clause.html)
 1. [where-group-by-having-clause](https://www.sqlite.org/lang_select.html#where)
