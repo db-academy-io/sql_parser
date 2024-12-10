@@ -37,7 +37,6 @@ impl<'a> VacuumStatementParser for Parser<'a> {
                 file_name: None,
             }
         };
-        dbg!(&self.peek_token()?);
         self.finalize_statement_parsing()?;
         Ok(Statement::Vacuum(vacuum_statement))
     }

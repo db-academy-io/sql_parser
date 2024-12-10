@@ -268,9 +268,6 @@ impl<'a> FunctionParser for Parser<'a> {
             }
         };
 
-        dbg!(&frame_type);
-        dbg!(&self.peek_token());
-
         // consume the frame type token
         self.consume_token()?;
 

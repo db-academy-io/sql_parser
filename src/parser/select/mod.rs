@@ -45,7 +45,6 @@ impl<'a> SelectStatementParser for Parser<'a> {
     }
 
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError> {
-        dbg!("Parsing select columns");
         let mut select_items = Vec::new();
 
         loop {
@@ -56,24 +55,17 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 break;
             }
         }
-
-        dbg!("Parsed select columns");
-        dbg!(&select_items);
         Ok(select_items)
     }
 
     fn parse_select_column(&mut self) -> Result<SelectItem, ParsingError> {
-        dbg!("Parsing select column");
         if self.consume_as(TokenType::Star).is_ok() {
             return Ok(SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
             )));
         }
 
-        dbg!("Parsing select column as expression");
         if let Ok(expression) = self.parse_expression() {
-            dbg!("Parsed select column as expression, {:?}", &expression);
-
             // Consume the AS keyword if it exists
             let _ = self.consume_as_keyword(Keyword::As);
             if let Ok(alias) = self.consume_as_id() {
@@ -83,10 +75,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             return Ok(SelectItem::Expression(expression));
         }
 
-        dbg!("Parsing select column as table name with wildcard");
         if let Ok(table_name) = self.peek_as_string() {
-            dbg!("Parsing select column as table name with wildcard");
-            dbg!(&table_name);
             self.consume_token()?;
             self.consume_as(TokenType::Dot)?;
             self.consume_as(TokenType::Star)?;

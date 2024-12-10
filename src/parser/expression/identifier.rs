@@ -24,14 +24,12 @@ impl<'a> IdentifierParser for Parser<'a> {
             }
         }
 
-        dbg!("Expected next identifier: {}", expected_next_identifier);
         if expected_next_identifier {
             return Err(ParsingError::UnexpectedToken(
                 "Expected identifier".to_string(),
             ));
         }
 
-        dbg!("Parsed components: {:?}", &components);
         match components.len() {
             0 => Err(ParsingError::UnexpectedToken(
                 "Expected identifier".to_string(),
@@ -45,7 +43,6 @@ impl<'a> IdentifierParser for Parser<'a> {
             }
             2 => {
                 if components[1] == "*" {
-                    dbg!("Parsed table name with wildcard {}", &components[0]);
                     Ok(Identifier::NameWithWildcard(components[0].to_string()))
                 } else {
                     Ok(Identifier::Compound(components))

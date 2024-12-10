@@ -95,7 +95,6 @@ pub trait ExpressionParser {
 impl<'a> ExpressionParser for Parser<'a> {
     /// Parse an SQLite3 [expr](https://www.sqlite.org/lang_expr.html#the_expr_list)
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
-        dbg!("Parsing expression");
         // Check if it's one of the special expressions
         if let Ok(keyword) = self.peek_as_keyword() {
             match keyword {
@@ -220,7 +219,6 @@ impl<'a> ExpressionParser for Parser<'a> {
             }
         }
 
-        dbg!("Parsed expression: {:?}", &expression);
         Ok(expression)
     }
 
