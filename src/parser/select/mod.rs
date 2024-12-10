@@ -1,14 +1,17 @@
+mod values;
+
 use crate::{Keyword, TokenType};
 
 use super::expression::ExpressionParser;
 use super::{Parser, ParsingError};
-use crate::ast::{SelectItem, SelectStatement};
+use crate::ast::{SelectItem, SelectStatement, SelectStatementType};
+pub use values::ValuesStatementParser;
 
 /// Trait for parsing SELECT statements
 /// The SELECT statement documentation can be found here:
 /// https://www.sqlite.org/lang_select.html
 pub trait SelectStatementParser {
-    fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError>;
+    fn parse_select_statement(&mut self) -> Result<SelectStatementType, ParsingError>;
 
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError>;
 
@@ -17,7 +20,11 @@ pub trait SelectStatementParser {
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
-    fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError> {
+    fn parse_select_statement(&mut self) -> Result<SelectStatementType, ParsingError> {
+        if let Ok(Keyword::Values) = self.peek_as_keyword() {
+            return Ok(SelectStatementType::Values(self.parse_values_statement()?));
+        }
+
         // Consume the SELECT keyword
         self.consume_as_keyword(Keyword::Select)?;
 
@@ -28,10 +35,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             ..Default::default()
         };
 
-        // TODO:
-        // self.parser_select_from_part()?;
-
-        Ok(select_statement)
+        Ok(SelectStatementType::Select(select_statement))
     }
 
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError> {
@@ -57,20 +61,27 @@ impl<'a> SelectStatementParser for Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Expression, Identifier, LiteralValue, SelectItem, SelectStatement, Statement};
+    use crate::{
+        Expression, Identifier, LiteralValue, SelectItem, SelectStatement, SelectStatementType,
+        Statement,
+    };
 
     use super::super::test_utils::*;
+
+    fn create_select_statement(columns: Vec<SelectItem>) -> Statement {
+        Statement::Select(SelectStatementType::Select(SelectStatement {
+            columns,
+            ..Default::default()
+        }))
+    }
 
     #[test]
     fn test_select_statement_parser_with_single_literal_value() {
         run_sunny_day_test(
             "SELECT 1",
-            Statement::Select(SelectStatement {
-                columns: vec![SelectItem::Expression(Expression::LiteralValue(
-                    LiteralValue::Number("1".to_string()),
-                ))],
-                ..Default::default()
-            }),
+            create_select_statement(vec![SelectItem::Expression(Expression::LiteralValue(
+                LiteralValue::Number("1".to_string()),
+            ))]),
         );
     }
 
@@ -78,12 +89,9 @@ mod tests {
     fn test_select_statement_parser_with_single_identifier() {
         run_sunny_day_test(
             "SELECT id",
-            Statement::Select(SelectStatement {
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Single("id".to_string()),
-                ))],
-                ..Default::default()
-            }),
+            create_select_statement(vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Single("id".to_string()),
+            ))]),
         );
     }
 }

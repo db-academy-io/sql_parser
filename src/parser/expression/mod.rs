@@ -397,7 +397,8 @@ pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
         BinaryOp, DataType, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue,
-        OverClause, Parser, RaiseFunction, SelectStatement, Statement, UnaryOp,
+        Parser, RaiseFunction, SelectStatement, SelectStatementType, Statement, UnaryOp,
+        WindowDefinition,
     };
 
     pub fn run_sunny_day_test_with_multiple_expressions(
@@ -412,7 +413,7 @@ pub(crate) mod test_utils {
         dbg!("actual_expression: {:?}", &actual_statement);
 
         match actual_statement {
-            Statement::Select(select_statement) => {
+            Statement::Select(SelectStatementType::Select(select_statement)) => {
                 assert_eq!(
                     expected_expressions.len(),
                     select_statement.columns.len(),
@@ -488,7 +489,7 @@ pub(crate) mod test_utils {
         name: &str,
         arg: FunctionArg,
         filter: Option<Box<Expression>>,
-        over: Option<OverClause>,
+        over: Option<WindowDefinition>,
     ) -> Expression {
         let function = Function {
             name: Identifier::Single(name.to_string()),
@@ -500,7 +501,7 @@ pub(crate) mod test_utils {
         Expression::Function(function)
     }
 
-    pub fn exist_expression(is_inverted: bool, statement: SelectStatement) -> Expression {
+    pub fn exist_expression(is_inverted: bool, statement: SelectStatementType) -> Expression {
         Expression::ExistsStatement(if is_inverted {
             ExistsStatement::NotExists(statement)
         } else {

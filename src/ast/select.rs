@@ -1,8 +1,20 @@
-use super::Expression;
+use super::{Expression, Identifier, OrderingTerm, WindowDefinition};
+
+/// An enum representing the possible types of SELECT statements
+#[derive(Debug, PartialEq, Clone)]
+pub enum SelectStatementType {
+    /// A normal SELECT statement
+    Select(SelectStatement),
+    /// A VALUES statement
+    Values(ValuesStatement),
+}
 
 /// An AST for [SELECT](https://www.sqlite.org/lang_select.html) SQL statement.
 #[derive(Debug, PartialEq, Default, Clone)]
 pub struct SelectStatement {
+    /// Whether the SELECT statement is a VALUES statement
+    pub values: bool,
+
     /// Whether the SELECT statement is distinct
     pub distinct: bool,
 
@@ -14,10 +26,24 @@ pub struct SelectStatement {
 
     /// The FROM clause
     pub from: Option<SelectFrom>,
-    // pub where_clause: Option<Expression>,
-    // pub order_by: Option<OrderBy>,
-    // pub limit: Option<Expression>,
-    // pub offset: Option<Expression>,
+
+    /// The WHERE clause
+    pub where_clause: Option<Box<Expression>>,
+
+    /// The GROUP BY clause
+    pub group_by: Option<Vec<Box<Expression>>>,
+
+    /// The HAVING clause
+    pub having: Option<Box<Expression>>,
+
+    /// The WINDOW clause
+    pub window: Option<Vec<WindowDefinition>>,
+
+    /// The ORDER BY clause
+    pub order_by: Option<OrderingTerm>,
+
+    /// The LIMIT clause
+    pub limit: Option<LimitClause>,
 }
 
 /// An enum representing the possible items in a SELECT statement
@@ -53,19 +79,26 @@ pub enum SelectFrom {
 /// A table in a FROM clause
 #[derive(Debug, PartialEq, Clone)]
 pub struct SelectFromTable {
-    pub schema: Option<String>,
-    pub table_name: String,
+    pub table_id: Identifier,
+
     pub alias: Option<String>,
 
-    pub indexed_by: Option<String>,
-    pub not_indexed: Option<bool>,
+    pub indexed_type: Option<IndexedType>,
+}
+
+/// An enum representing the possible indexed types
+#[derive(Debug, PartialEq, Clone)]
+pub enum IndexedType {
+    /// Indexed by a specific index
+    Indexed(String),
+    /// Not indexed
+    NotIndexed,
 }
 
 /// A function in a FROM clause
 #[derive(Debug, PartialEq, Clone)]
 pub struct SelectFromFunction {
-    pub schema: Option<String>,
-    pub function_name: String,
+    pub function_name: Identifier,
     pub arguments: Vec<Expression>,
     pub alias: Option<String>,
 }
@@ -81,24 +114,32 @@ pub struct SelectFromSubquery {
 #[derive(Debug, PartialEq, Clone)]
 pub struct JoinClause {
     pub lhs_table: Box<SelectFrom>,
-    pub join_type: JoinType,
-    pub rhs_table: Box<SelectFrom>,
-    pub join_constraints: Vec<JoinConstraint>,
+
+    pub join_tables: Vec<JoinTable>,
 }
+
+/// A table in a JOIN clause
+#[derive(Debug, PartialEq, Clone)]
+pub struct JoinTable {
+    pub join_type: JoinType,
+    pub table: Box<SelectFrom>,
+    pub constraints: JoinConstraint,
+}
+
+/// A type alias for the `NATURAL` keyword in a JOIN clause
+pub type IsNaturalJoin = bool;
 
 /// A type of JOIN clause
 #[derive(Debug, PartialEq, Clone)]
 pub enum JoinType {
-    /// INNER JOIN
-    Inner,
     /// LEFT JOIN
-    Left,
+    Left(IsNaturalJoin),
     /// RIGHT JOIN
-    Right,
-    /// NATURAL JOIN
-    Natural(Box<JoinType>),
-    /// OUTER JOIN (LEFT OUTER JOIN, RIGHT OUTER JOIN, FULL OUTER JOIN)
-    Outer(Box<JoinType>),
+    Right(IsNaturalJoin),
+    /// FULL JOIN
+    Full(IsNaturalJoin),
+    /// INNER JOIN
+    Inner(IsNaturalJoin),
     /// CROSS JOIN
     Cross,
 }
@@ -110,4 +151,19 @@ pub enum JoinConstraint {
     On(Expression),
     /// USING clause
     Using(Vec<String>),
+}
+
+/// A clause for a LIMIT statement
+#[derive(Debug, PartialEq, Clone)]
+pub struct LimitClause {
+    pub limit: Box<Expression>,
+    pub offset: Option<Box<Expression>>,
+    pub additional_limit: Option<Box<Expression>>,
+}
+
+/// A VALUES statement
+#[derive(Debug, PartialEq, Clone)]
+pub struct ValuesStatement {
+    /// The list of values in a VALUES statement grouped by parenthesis
+    pub values: Vec<Vec<Expression>>,
 }

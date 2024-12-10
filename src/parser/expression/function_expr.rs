@@ -1,7 +1,7 @@
 use crate::{
     BetweenFrameSpec, BetweenFrameSpecType, Expression, FrameSpec, FrameSpecExclude, FrameSpecType,
     FrameType, Function, FunctionArg, FunctionArgType, Identifier, Keyword, NullsOrdering,
-    Ordering, OrderingTerm, OverClause, Parser, ParsingError, TokenType,
+    Ordering, OrderingTerm, Parser, ParsingError, TokenType, WindowDefinition,
 };
 
 use super::ExpressionParser;
@@ -20,7 +20,7 @@ pub trait FunctionParser {
     fn parse_function_filter_clause(&mut self) -> Result<Expression, ParsingError>;
 
     /// Parse a function over clause
-    fn parse_function_over_clause(&mut self) -> Result<OverClause, ParsingError>;
+    fn parse_function_over_clause(&mut self) -> Result<WindowDefinition, ParsingError>;
 
     /// Parse a frame spec
     fn parse_function_over_clause_frame_spec(&mut self) -> Result<FrameSpec, ParsingError>;
@@ -200,9 +200,9 @@ impl<'a> FunctionParser for Parser<'a> {
     }
 
     /// Parse a function over clause
-    fn parse_function_over_clause(&mut self) -> Result<OverClause, ParsingError> {
+    fn parse_function_over_clause(&mut self) -> Result<WindowDefinition, ParsingError> {
         if let Ok(identifier) = self.peek_as_id() {
-            let over_clause = OverClause {
+            let over_clause = WindowDefinition {
                 window_name: Some(identifier.to_string()),
                 ..Default::default()
             };
@@ -212,7 +212,7 @@ impl<'a> FunctionParser for Parser<'a> {
 
         self.consume_as(TokenType::LeftParen)?;
 
-        let mut over_clause = OverClause::default();
+        let mut over_clause = WindowDefinition::default();
         if let Ok(base_window_name) = self.peek_as_id() {
             over_clause.window_name = Some(base_window_name.to_string());
             self.consume_as_id()?;
@@ -376,7 +376,7 @@ mod function_expression_tests {
     use crate::{
         expression::test_utils::*, BetweenFrameSpec, BetweenFrameSpecType, BinaryOp, FrameSpec,
         FrameSpecExclude, FrameSpecType, FrameType, FunctionArg, FunctionArgType, NullsOrdering,
-        Ordering, OrderingTerm, OverClause,
+        Ordering, OrderingTerm, WindowDefinition,
     };
 
     #[test]
@@ -546,7 +546,7 @@ mod function_expression_tests {
             arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
         };
 
-        let over_clause = OverClause {
+        let over_clause = WindowDefinition {
             window_name: Some("a".to_string()),
             partition_by: None,
             order_by: None,
@@ -566,7 +566,7 @@ mod function_expression_tests {
             arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
         };
 
-        let over_clause = OverClause {
+        let over_clause = WindowDefinition {
             window_name: None,
             partition_by: Some(vec![numeric_literal_expression("1")]),
             order_by: None,
@@ -586,7 +586,7 @@ mod function_expression_tests {
             arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
         };
 
-        let over_clause = OverClause {
+        let over_clause = WindowDefinition {
             window_name: None,
             partition_by: None,
             order_by: Some(vec![OrderingTerm {
@@ -610,7 +610,7 @@ mod function_expression_tests {
             arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
         };
 
-        let over_clause = OverClause {
+        let over_clause = WindowDefinition {
             window_name: Some("a".to_string()),
             partition_by: None,
             order_by: None,
@@ -632,3 +632,54 @@ mod function_expression_tests {
         );
     }
 }
+
+// #[cfg(test)]
+// mod math_functions {
+//     use crate::{expression::test_utils::*, FunctionArg, FunctionArgType};
+//     // acos(X)
+//     // acosh(X)
+//     // asin(X)
+//     // asinh(X)
+//     // atan(X)
+//     // atan2(Y,X)
+//     // atanh(X)
+//     // ceil(X)
+//     // ceiling(X)
+//     // cos(X)
+//     // cosh(X)
+//     // degrees(X)
+//     // exp(X)
+//     // floor(X)
+//     // ln(X)
+//     // log(B,X)
+//     // log(X)
+//     // log10(X)
+//     // log2(X)
+//     // mod(X,Y)
+//     // pi()
+//     // pow(X,Y)
+//     // power(X,Y)
+//     // radians(X)
+//     // sin(X)
+//     // sinh(X)
+//     // sqrt(X)
+//     // tan(X)
+//     // tanh(X)
+//     // trunc(X)
+
+//     #[test]
+//     fn test_expression_function_abs() {
+//         run_sunny_day_test(
+//             "SELECT abs(-1);",
+//             &function_expression(
+//                 "abs",
+//                 FunctionArg {
+//                     distinct: false,
+//                     arguments: vec![FunctionArgType::Expression(numeric_literal_expression("-1"))],
+//                 },
+//                 None,
+//                 None,
+//             ),
+//         );
+//     }
+// }

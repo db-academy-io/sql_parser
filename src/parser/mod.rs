@@ -13,12 +13,13 @@ mod errors;
 #[cfg(test)]
 mod test_utils;
 
-use crate::{Keyword, Statement, Token, TokenType, Tokenizer};
+use crate::{Keyword, SelectStatementType, Statement, Token, TokenType, Tokenizer};
 use alter::AlterTableStatementParser;
 use drop::DropStatementParser;
 pub use errors::*;
-use select::SelectStatementParser;
+use select::{SelectStatementParser, ValuesStatementParser};
 use sqlite::SQLite3StatementParser;
+
 use trx::TransactionStatementParser;
 
 /// A parser for SQLite SQL statements
@@ -213,7 +214,6 @@ impl<'a> Parser<'a> {
             Keyword::Analyze => SQLite3StatementParser::parse_analyze_statement(self),
             Keyword::Reindex => SQLite3StatementParser::parse_reindex_statement(self),
             Keyword::Pragma => SQLite3StatementParser::parse_pragma_statement(self),
-
             Keyword::Begin => TransactionStatementParser::parse_begin_statement(self),
             Keyword::Commit | Keyword::End => {
                 TransactionStatementParser::parse_commit_statement(self)
@@ -224,6 +224,9 @@ impl<'a> Parser<'a> {
             Keyword::Select => {
                 SelectStatementParser::parse_select_statement(self).map(Statement::Select)
             }
+            Keyword::Values => ValuesStatementParser::parse_values_statement(self)
+                .map(|stmt| Statement::Select(SelectStatementType::Values(stmt))),
+
             Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
                 .map(Statement::AlterTable),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),

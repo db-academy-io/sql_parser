@@ -92,7 +92,7 @@ impl<'a> InExpressionParser for Parser<'a> {
 mod expression_with_in_statement_tests {
     use crate::{
         BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression, SelectItem,
-        SelectStatement,
+        SelectStatement, SelectStatementType,
     };
 
     use crate::parser::expression::test_utils::*;
@@ -141,7 +141,7 @@ mod expression_with_in_statement_tests {
             "SELECT 1 IN (SELECT 2);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
-                InExpression::Select(select_statement),
+                InExpression::Select(SelectStatementType::Select(select_statement)),
                 false,
             ),
         );
@@ -176,7 +176,7 @@ mod expression_with_in_statement_tests {
             "SELECT 1 NOT IN (SELECT 2);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
-                InExpression::Select(select_statement),
+                InExpression::Select(SelectStatementType::Select(select_statement)),
                 true,
             ),
         );

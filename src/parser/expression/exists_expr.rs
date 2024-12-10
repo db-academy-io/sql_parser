@@ -33,9 +33,18 @@ impl<'a> ExistsExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 mod exists_expression_tests {
-    use crate::{SelectItem, SelectStatement};
+    use crate::{SelectItem, SelectStatement, SelectStatementType};
 
     use crate::parser::expression::test_utils::*;
+
+    fn select_statement(columns: Vec<SelectItem>) -> SelectStatementType {
+        SelectStatementType::Select(SelectStatement {
+            distinct: false,
+            all: false,
+            columns,
+            ..Default::default()
+        })
+    }
 
     #[test]
     fn test_expression_exists() {
@@ -43,12 +52,9 @@ mod exists_expression_tests {
             "SELECT EXISTS (SELECT 1);",
             &exist_expression(
                 false,
-                SelectStatement {
-                    distinct: false,
-                    all: false,
-                    columns: vec![SelectItem::Expression(numeric_literal_expression("1"))],
-                    from: None,
-                },
+                select_statement(vec![SelectItem::Expression(numeric_literal_expression(
+                    "1",
+                ))]),
             ),
         );
     }
@@ -59,12 +65,9 @@ mod exists_expression_tests {
             "SELECT NOT EXISTS (SELECT 1);",
             &exist_expression(
                 true,
-                SelectStatement {
-                    distinct: false,
-                    all: false,
-                    columns: vec![SelectItem::Expression(numeric_literal_expression("1"))],
-                    from: None,
-                },
+                select_statement(vec![SelectItem::Expression(numeric_literal_expression(
+                    "1",
+                ))]),
             ),
         );
     }
@@ -75,12 +78,9 @@ mod exists_expression_tests {
             "SELECT NOT (SELECT 21);",
             &exist_expression(
                 true,
-                SelectStatement {
-                    distinct: false,
-                    all: false,
-                    columns: vec![SelectItem::Expression(numeric_literal_expression("21"))],
-                    from: None,
-                },
+                select_statement(vec![SelectItem::Expression(numeric_literal_expression(
+                    "21",
+                ))]),
             ),
         );
     }

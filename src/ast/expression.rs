@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{ParsingError, TokenType};
 
-use super::{Ordering, SelectStatement};
+use super::{OrderingTerm, SelectStatementType};
 
 /// An SQLite3 [expr](https://www.sqlite.org/lang_expr.html) expression
 #[derive(Debug, PartialEq, Clone)]
@@ -206,7 +206,7 @@ pub struct Function {
     /// The filter clause of the function
     pub filter_clause: Option<Box<Expression>>,
     /// The over clause of the function
-    pub over_clause: Option<OverClause>,
+    pub over_clause: Option<WindowDefinition>,
 }
 
 /// A function argument
@@ -231,7 +231,7 @@ pub enum FunctionArgType {
 
 /// An over clause
 #[derive(Debug, PartialEq, Clone, Default)]
-pub struct OverClause {
+pub struct WindowDefinition {
     /// The window name
     pub window_name: Option<String>,
     /// The partition by clause
@@ -240,19 +240,6 @@ pub struct OverClause {
     pub order_by: Option<Vec<OrderingTerm>>,
     /// The frame spec
     pub frame_spec: Option<FrameSpec>,
-}
-
-/// An ordering term
-/// Possible collation name will be parsed, and will be stored in the
-/// expression field
-#[derive(Debug, PartialEq, Clone)]
-pub struct OrderingTerm {
-    /// The expression to order by
-    pub expression: Box<Expression>,
-    /// The ordering
-    pub ordering: Option<Ordering>,
-    /// The nulls ordering
-    pub nulls_ordering: Option<NullsOrdering>,
 }
 
 /// Nulls ordering
@@ -430,7 +417,7 @@ pub enum InExpression {
     Empty,
 
     /// Select
-    Select(SelectStatement),
+    Select(SelectStatementType),
 
     /// Expressions
     Expression(Vec<Expression>),
@@ -446,10 +433,10 @@ pub enum InExpression {
 #[derive(Debug, PartialEq, Clone)]
 pub enum ExistsStatement {
     /// Exists
-    Exists(SelectStatement),
+    Exists(SelectStatementType),
 
     /// Not Exists
-    NotExists(SelectStatement),
+    NotExists(SelectStatementType),
 }
 
 /// A case expression

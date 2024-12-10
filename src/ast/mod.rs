@@ -1,5 +1,6 @@
 mod alter;
 mod create;
+mod cte;
 mod delete;
 mod drop;
 mod explain;
@@ -39,7 +40,7 @@ pub use update::UpdateStatement;
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     /// Data Query Language (DQL), see [SelectStatement]
-    Select(SelectStatement),
+    Select(SelectStatementType),
 
     /// Data Manipulation Language (DML), see [InsertStatement]
     Insert(InsertStatement),
@@ -95,6 +96,17 @@ pub enum Statement {
 
     /// EXPLAIN statement (can wrap another statement), see [ExplainStatement]
     Explain(ExplainStatement),
+}
+
+/// An ordering term, used in the ORDER BY clause
+#[derive(Debug, PartialEq, Clone)]
+pub struct OrderingTerm {
+    /// The expression to order by
+    pub expression: Box<Expression>,
+    /// The ordering
+    pub ordering: Option<Ordering>,
+    /// The nulls ordering
+    pub nulls_ordering: Option<NullsOrdering>,
 }
 
 /// An ordering
