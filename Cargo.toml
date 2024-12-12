@@ -12,6 +12,10 @@ description = "An SQLite fully compatible tokenizer and parser written in Rust"
 [dependencies]
 once_cell = "1.20.2"
 
+[dev-dependencies]
+sqlite3-parser = "0.13.0"
+fallible-iterator = "0.3.0"
+
 [profile.release]
 lto = true
 codegen-units = 16
