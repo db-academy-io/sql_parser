@@ -23,6 +23,8 @@ pub trait SelectStatementParser {
 
     fn parse_select_from_clause(&mut self) -> Result<Option<SelectFrom>, ParsingError>;
 
+    fn parse_select_from_clause_subquery(&mut self) -> Result<SelectFrom, ParsingError>;
+
     fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError>;
 }
 
@@ -101,85 +103,87 @@ impl<'a> SelectStatementParser for Parser<'a> {
 
     fn parse_select_from_clause(&mut self) -> Result<Option<SelectFrom>, ParsingError> {
         if let Ok(Keyword::From) = self.peek_as_keyword() {
-            dbg!("parse_select_from_clause");
             self.consume_as_keyword(Keyword::From)?;
-
-            dbg!(&self.peek_token());
-            if self.peek_as(TokenType::LeftParen).is_ok() {
-                self.consume_as(TokenType::LeftParen)?;
-                dbg!(&self.peek_token());
-
-                if let Ok(Keyword::Select) = self.peek_as_keyword() {
-                    dbg!(&self.peek_token());
-                    let subquery = self.parse_select_statement()?;
-                    dbg!(&subquery);
-
-                    // Here the right parenthesis is mandatory
-                    self.consume_as(TokenType::RightParen)?;
-                    if let Ok(Keyword::As) = self.peek_as_keyword() {
-                        self.consume_as_keyword(Keyword::As)?;
-                        let alias = self.consume_as_id()?;
-                        return Ok(Some(SelectFrom::Subquery(SelectFromSubquery {
-                            subquery: Box::new(subquery),
-                            alias: Some(alias.to_string()),
-                        })));
-                    }
-
-                    if let Ok(value) = self.peek_as_id() {
-                        return Ok(Some(SelectFrom::Subquery(SelectFromSubquery {
-                            subquery: Box::new(subquery),
-                            alias: Some(value.to_string()),
-                        })));
-                    }
-
-                    return Ok(Some(SelectFrom::Subquery(SelectFromSubquery {
-                        subquery: Box::new(subquery),
-                        alias: None,
-                    })));
-                }
-            }
-
-            if let Ok(id) = self.parse_identifier() {
-                dbg!("parse_select_from_clause");
-                if self.peek_as(TokenType::LeftParen).is_ok() {
-                    self.consume_as(TokenType::LeftParen)?;
-
-                    let arguments = self.parse_comma_separated_expressions()?;
-
-                    self.consume_as(TokenType::RightParen)?;
-                    let alias = self.parse_alias_if_exists()?;
-                    return Ok(Some(SelectFrom::Function(SelectFromFunction {
-                        function_name: id,
-                        arguments,
-                        alias,
-                    })));
-                } else {
-                    let alias = self.parse_alias_if_exists()?;
-
-                    let indexed_type = {
-                        if self.consume_as_keyword(Keyword::Indexed).is_ok() {
-                            self.consume_as_keyword(Keyword::By)?;
-                            Some(IndexedType::Indexed(self.consume_as_id()?))
-                        } else if self.consume_as_keyword(Keyword::Not).is_ok() {
-                            self.consume_as_keyword(Keyword::Indexed)?;
-                            Some(IndexedType::NotIndexed)
-                        } else {
-                            None
-                        }
-                    };
-
-                    return Ok(Some(SelectFrom::Table(SelectFromTable {
-                        table_id: id,
-                        alias,
-                        indexed_type,
-                    })));
-                }
-            }
-
-            // TODO: Parse table-or-subquery
-            return Ok(None);
+            return Ok(Some(self.parse_select_from_clause_subquery()?));
         }
         Ok(None)
+    }
+
+    fn parse_select_from_clause_subquery(&mut self) -> Result<SelectFrom, ParsingError> {
+        dbg!("parse_select_from_clause");
+
+        dbg!(&self.peek_token());
+        if self.peek_as(TokenType::LeftParen).is_ok() {
+            self.consume_as(TokenType::LeftParen)?;
+            dbg!(&self.peek_token());
+
+            if let Ok(Keyword::Select) = self.peek_as_keyword() {
+                let subquery = self.parse_select_statement()?;
+                // Here the right parenthesis is mandatory
+                self.consume_as(TokenType::RightParen)?;
+                let alias = self.parse_alias_if_exists()?;
+                return Ok(SelectFrom::Subquery(SelectFromSubquery {
+                    subquery: Box::new(subquery),
+                    alias,
+                }));
+            } else {
+                let mut froms = Vec::new();
+                loop {
+                    dbg!("parse_select_from_clause");
+                    let table_or_subquery = self.parse_select_from_clause_subquery()?;
+                    dbg!(&table_or_subquery);
+                    froms.push(table_or_subquery);
+
+                    if self.consume_as(TokenType::Comma).is_err() {
+                        break;
+                    }
+                }
+                // Here the right parenthesis is mandatory
+                self.consume_as(TokenType::RightParen)?;
+                return Ok(SelectFrom::Froms(froms));
+            };
+        }
+
+        if let Ok(id) = self.parse_identifier() {
+            dbg!("parse_select_from_clause");
+            if self.peek_as(TokenType::LeftParen).is_ok() {
+                self.consume_as(TokenType::LeftParen)?;
+
+                let arguments = self.parse_comma_separated_expressions()?;
+
+                self.consume_as(TokenType::RightParen)?;
+                let alias = self.parse_alias_if_exists()?;
+                return Ok(SelectFrom::Function(SelectFromFunction {
+                    function_name: id,
+                    arguments,
+                    alias,
+                }));
+            } else {
+                let alias = self.parse_alias_if_exists()?;
+
+                let indexed_type = {
+                    if self.consume_as_keyword(Keyword::Indexed).is_ok() {
+                        self.consume_as_keyword(Keyword::By)?;
+                        Some(IndexedType::Indexed(self.consume_as_id()?))
+                    } else if self.consume_as_keyword(Keyword::Not).is_ok() {
+                        self.consume_as_keyword(Keyword::Indexed)?;
+                        Some(IndexedType::NotIndexed)
+                    } else {
+                        None
+                    }
+                };
+
+                return Ok(SelectFrom::Table(SelectFromTable {
+                    table_id: id,
+                    alias,
+                    indexed_type,
+                }));
+            }
+        }
+        // TODO: improve this error message
+        Err(ParsingError::UnexpectedToken(
+            self.peek_token()?.to_string(),
+        ))
     }
 
     fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError> {
@@ -667,6 +671,85 @@ mod test_select_from_table_function {
         run_sunny_day_test(
             "SELECT * FROM schema_1.function_1(1, 2, 3) alias",
             Statement::Select(expected_statement.clone()),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_from_comma_separated_table_or_subqueries {
+    use super::test_utils::select_statement_with_from;
+    use crate::expression::test_utils::numeric_literal_expression;
+    use crate::parser::test_utils::*;
+    use crate::{
+        Identifier, IndexedType, SelectFrom, SelectFromFunction, SelectFromSubquery,
+        SelectFromTable, Statement,
+    };
+
+    #[test]
+    fn test_select_from_comma_separated_table_or_subqueries() {
+        let expected_statement = select_statement_with_from(SelectFrom::Froms(vec![
+            SelectFrom::Table(SelectFromTable::from(Identifier::Single(
+                "table_1".to_string(),
+            ))),
+            SelectFrom::Table(SelectFromTable::from(Identifier::Compound(vec![
+                "schema2".to_string(),
+                "table2".to_string(),
+            ]))),
+            SelectFrom::Table(SelectFromTable {
+                table_id: Identifier::Compound(vec!["schema3".to_string(), "table3".to_string()]),
+                alias: Some("table3_alias".to_string()),
+                indexed_type: None,
+            }),
+            SelectFrom::Table(SelectFromTable {
+                table_id: Identifier::Single("indexed_table".to_string()),
+                alias: Some("t1".to_string()),
+                indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
+            }),
+            SelectFrom::Table(SelectFromTable {
+                table_id: Identifier::Single("not_indexed_table".to_string()),
+                alias: Some("t2".to_string()),
+                indexed_type: Some(IndexedType::NotIndexed),
+            }),
+            SelectFrom::Function(SelectFromFunction {
+                function_name: Identifier::Compound(vec![
+                    "schema4".to_string(),
+                    "function_1".to_string(),
+                ]),
+                arguments: vec![
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                    numeric_literal_expression("3"),
+                ],
+                alias: Some("f1".to_string()),
+            }),
+            SelectFrom::Subquery(SelectFromSubquery {
+                subquery: Box::new(select_statement_with_from(SelectFrom::Table(
+                    SelectFromTable::from(Identifier::Single("table_2".to_string())),
+                ))),
+                alias: Some("select_alias".to_string()),
+            }),
+            SelectFrom::Froms(vec![
+                SelectFrom::Table(SelectFromTable::from(Identifier::Single(
+                    "froms_1".to_string(),
+                ))),
+                SelectFrom::Table(SelectFromTable::from(Identifier::Single(
+                    "froms_2".to_string(),
+                ))),
+            ]),
+        ]));
+
+        run_sunny_day_test(
+            "SELECT * FROM (
+                    table_1, 
+                    schema2.table2,
+                    schema3.table3 as table3_alias,
+                    indexed_table as t1 INDEXED BY index_1,
+                    not_indexed_table as t2 NOT INDEXED,
+                    schema4.function_1(1, 2, 3) as f1,
+                    (SELECT * FROM table_2) as select_alias,
+                    (froms_1, froms_2)
+                )",
+            Statement::Select(expected_statement),
         );
     }
 }
