@@ -25,6 +25,9 @@ pub trait SelectStatementParser {
 
     fn parse_select_from_clause_subquery(&mut self) -> Result<SelectFrom, ParsingError>;
 
+    fn parse_select_from_table_indexed_type(&mut self)
+        -> Result<Option<IndexedType>, ParsingError>;
+
     fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError>;
 }
 
@@ -160,18 +163,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 }));
             } else {
                 let alias = self.parse_alias_if_exists()?;
-
-                let indexed_type = {
-                    if self.consume_as_keyword(Keyword::Indexed).is_ok() {
-                        self.consume_as_keyword(Keyword::By)?;
-                        Some(IndexedType::Indexed(self.consume_as_id()?))
-                    } else if self.consume_as_keyword(Keyword::Not).is_ok() {
-                        self.consume_as_keyword(Keyword::Indexed)?;
-                        Some(IndexedType::NotIndexed)
-                    } else {
-                        None
-                    }
-                };
+                let indexed_type = self.parse_select_from_table_indexed_type()?;
 
                 return Ok(SelectFrom::Table(SelectFromTable {
                     table_id: id,
@@ -191,6 +183,20 @@ impl<'a> SelectStatementParser for Parser<'a> {
             Ok(Some(self.consume_as_id()?))
         } else if let Ok(value) = self.consume_as_id() {
             Ok(Some(value.to_string()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn parse_select_from_table_indexed_type(
+        &mut self,
+    ) -> Result<Option<IndexedType>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Indexed).is_ok() {
+            self.consume_as_keyword(Keyword::By)?;
+            Ok(Some(IndexedType::Indexed(self.consume_as_id()?)))
+        } else if self.consume_as_keyword(Keyword::Not).is_ok() {
+            self.consume_as_keyword(Keyword::Indexed)?;
+            Ok(Some(IndexedType::NotIndexed))
         } else {
             Ok(None)
         }
