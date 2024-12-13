@@ -83,6 +83,16 @@ pub struct SelectFromTable {
     pub indexed_type: Option<IndexedType>,
 }
 
+impl From<Identifier> for SelectFromTable {
+    fn from(table_id: Identifier) -> Self {
+        Self {
+            table_id,
+            alias: None,
+            indexed_type: None,
+        }
+    }
+}
+
 /// An enum representing the possible indexed types
 #[derive(Debug, PartialEq, Clone)]
 pub enum IndexedType {
