@@ -1,6 +1,8 @@
 mod values;
 
-use crate::{DistinctType, Expression, Identifier, Keyword, TokenType};
+use crate::{
+    DistinctType, Expression, Identifier, Keyword, SelectFrom, SelectFromSubquery, TokenType,
+};
 
 use super::expression::ExpressionParser;
 use super::{Parser, ParsingError};
@@ -16,6 +18,8 @@ pub trait SelectStatementParser {
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError>;
 
     fn parse_select_column(&mut self) -> Result<SelectItem, ParsingError>;
+
+    fn parse_select_from_clause(&mut self) -> Result<Option<SelectFrom>, ParsingError>;
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
@@ -38,6 +42,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
         let select_statement = SelectStatement {
             distinct_type,
             columns: self.parse_select_columns()?,
+            from: self.parse_select_from_clause()?,
             ..Default::default()
         };
 
@@ -89,27 +94,90 @@ impl<'a> SelectStatementParser for Parser<'a> {
             self.peek_token()?.to_string(),
         ))
     }
+
+    fn parse_select_from_clause(&mut self) -> Result<Option<SelectFrom>, ParsingError> {
+        if let Ok(Keyword::From) = self.peek_as_keyword() {
+            dbg!("parse_select_from_clause");
+            self.consume_as_keyword(Keyword::From)?;
+
+            dbg!(&self.peek_token());
+            if self.peek_as(TokenType::LeftParen).is_ok() {
+                self.consume_as(TokenType::LeftParen)?;
+                dbg!(&self.peek_token());
+
+                if let Ok(Keyword::Select) = self.peek_as_keyword() {
+                    dbg!(&self.peek_token());
+                    let subquery = self.parse_select_statement()?;
+                    dbg!(&subquery);
+
+                    // Here the right parenthesis is mandatory
+                    self.consume_as(TokenType::RightParen)?;
+                    if let Ok(Keyword::As) = self.peek_as_keyword() {
+                        self.consume_as_keyword(Keyword::As)?;
+                        let alias = self.consume_as_id()?;
+                        return Ok(Some(SelectFrom::Subquery(SelectFromSubquery {
+                            subquery: Box::new(subquery),
+                            alias: Some(alias.to_string()),
+                        })));
+                    }
+
+                    if let Ok(value) = self.peek_as_id() {
+                        return Ok(Some(SelectFrom::Subquery(SelectFromSubquery {
+                            subquery: Box::new(subquery),
+                            alias: Some(value.to_string()),
+                        })));
+                    }
+
+                    return Ok(Some(SelectFrom::Subquery(SelectFromSubquery {
+                        subquery: Box::new(subquery),
+                        alias: None,
+                    })));
+                }
+            }
+
+            // TODO: Parse table-or-subquery
+            return Ok(None);
+        }
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
 mod test_utils {
-    use crate::{DistinctType, SelectItem, SelectStatement, SelectStatementType, Statement};
+    use crate::{
+        DistinctType, Expression, Identifier, SelectFrom, SelectItem, SelectStatement,
+        SelectStatementType,
+    };
 
-    pub fn create_select_statement(
+    pub fn select_statement_with_columns(
         distinct_type: DistinctType,
         columns: Vec<SelectItem>,
-    ) -> Statement {
-        Statement::Select(SelectStatementType::Select(SelectStatement {
+    ) -> SelectStatement {
+        SelectStatement {
             distinct_type,
             columns,
             ..Default::default()
-        }))
+        }
+    }
+
+    pub fn select_statement_with_from(from: SelectFrom) -> SelectStatementType {
+        SelectStatementType::Select(SelectStatement {
+            distinct_type: DistinctType::None,
+            columns: vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Wildcard,
+            ))],
+            from: Some(from),
+            ..Default::default()
+        })
     }
 }
 
 #[cfg(test)]
 mod test_select_result_columns {
-    use crate::{BinaryOp, DistinctType, Expression, Identifier, ParsingError, SelectItem};
+    use crate::{
+        BinaryOp, DistinctType, Expression, Identifier, ParsingError, SelectItem,
+        SelectStatementType, Statement,
+    };
 
     use super::test_utils::*;
     use crate::parser::expression::test_utils::*;
@@ -119,10 +187,10 @@ mod test_select_result_columns {
     fn test_select_distinct() {
         run_sunny_day_test(
             "SELECT DISTINCT column1",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::Distinct,
                 vec![SelectItem::Expression(identifier_expression(&["column1"]))],
-            ),
+            ))),
         );
     }
 
@@ -130,10 +198,10 @@ mod test_select_result_columns {
     fn test_select_all() {
         run_sunny_day_test(
             "SELECT ALL column1",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::All,
                 vec![SelectItem::Expression(identifier_expression(&["column1"]))],
-            ),
+            ))),
         );
     }
 
@@ -154,10 +222,10 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_single_literal_value() {
         run_sunny_day_test(
             "SELECT 1",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(numeric_literal_expression("1"))],
-            ),
+            ))),
         );
     }
 
@@ -165,10 +233,10 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_single_identifier() {
         run_sunny_day_test(
             "SELECT id",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(identifier_expression(&["id"]))],
-            ),
+            ))),
         );
     }
 
@@ -176,14 +244,14 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_multiple_literal_values() {
         run_sunny_day_test(
             "SELECT 1, 2, 3",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![
                     SelectItem::Expression(numeric_literal_expression("1")),
                     SelectItem::Expression(numeric_literal_expression("2")),
                     SelectItem::Expression(numeric_literal_expression("3")),
                 ],
-            ),
+            ))),
         );
     }
 
@@ -191,14 +259,14 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_multiple_identifiers() {
         run_sunny_day_test(
             "SELECT id, name, age",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![
                     SelectItem::Expression(identifier_expression(&["id"])),
                     SelectItem::Expression(identifier_expression(&["name"])),
                     SelectItem::Expression(identifier_expression(&["age"])),
                 ],
-            ),
+            ))),
         );
     }
 
@@ -206,12 +274,12 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_wildcard() {
         run_sunny_day_test(
             "SELECT *",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(Expression::Identifier(
                     Identifier::Wildcard,
                 ))],
-            ),
+            ))),
         );
     }
 
@@ -219,12 +287,12 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_table_name_and_wildcard() {
         run_sunny_day_test(
             "SELECT table_1.*",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(Expression::Identifier(
                     Identifier::NameWithWildcard("table_1".to_string()),
                 ))],
-            ),
+            ))),
         );
     }
 
@@ -240,13 +308,13 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_alias() {
         run_sunny_day_test(
             "SELECT column1 AS alias",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::ExpressionWithAlias(
                     identifier_expression(&["column1"]),
                     "alias".to_string(),
                 )],
-            ),
+            ))),
         );
     }
 
@@ -254,13 +322,13 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_alias_without_as_keyword() {
         run_sunny_day_test(
             "SELECT column1 alias",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::ExpressionWithAlias(
                     identifier_expression(&["column1"]),
                     "alias".to_string(),
                 )],
-            ),
+            ))),
         );
     }
 
@@ -268,7 +336,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_multiple_columns_and_aliases() {
         run_sunny_day_test(
             "SELECT column1, column2 AS alias2",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![
                     SelectItem::Expression(identifier_expression(&["column1"])),
@@ -277,7 +345,7 @@ mod test_select_result_columns {
                         "alias2".to_string(),
                     ),
                 ],
-            ),
+            ))),
         );
     }
 
@@ -285,7 +353,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_expression_and_alias() {
         run_sunny_day_test(
             "SELECT 1 + col1 as incremented, column2 * 2 - 1 as doubled",
-            create_select_statement(
+            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![
                     SelectItem::ExpressionWithAlias(
@@ -309,7 +377,74 @@ mod test_select_result_columns {
                         "doubled".to_string(),
                     ),
                 ],
-            ),
+            ))),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_from_subquery {
+    use super::test_utils::{select_statement_with_columns, select_statement_with_from};
+    use crate::parser::test_utils::*;
+    use crate::{
+        DistinctType, Expression, Identifier, SelectFrom, SelectFromSubquery, SelectItem,
+        SelectStatementType, Statement,
+    };
+
+    #[test]
+    fn test_select_from_subquery() {
+        let expected_statement =
+            select_statement_with_from(SelectFrom::Subquery(SelectFromSubquery {
+                subquery: Box::new(SelectStatementType::Select(select_statement_with_columns(
+                    DistinctType::None,
+                    vec![SelectItem::Expression(Expression::Identifier(
+                        Identifier::Single("col1".to_string()),
+                    ))],
+                ))),
+                alias: None,
+            }));
+
+        run_sunny_day_test(
+            "SELECT * FROM (SELECT col1)",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_from_subquery_aliased() {
+        let expected_statement =
+            select_statement_with_from(SelectFrom::Subquery(SelectFromSubquery {
+                subquery: Box::new(SelectStatementType::Select(select_statement_with_columns(
+                    DistinctType::None,
+                    vec![SelectItem::Expression(Expression::Identifier(
+                        Identifier::NameWithWildcard("t".to_string()),
+                    ))],
+                ))),
+                alias: Some("alias".to_string()),
+            }));
+
+        run_sunny_day_test(
+            "SELECT * FROM (SELECT t.* ) as alias",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_from_subquery_aliased_without_as_keyword() {
+        let expected_statement =
+            select_statement_with_from(SelectFrom::Subquery(SelectFromSubquery {
+                subquery: Box::new(SelectStatementType::Select(select_statement_with_columns(
+                    DistinctType::None,
+                    vec![SelectItem::Expression(Expression::Identifier(
+                        Identifier::Single("t1".to_string()),
+                    ))],
+                ))),
+                alias: Some("alias".to_string()),
+            }));
+
+        run_sunny_day_test(
+            "SELECT * FROM (SELECT t1) alias",
+            Statement::Select(expected_statement),
         );
     }
 }

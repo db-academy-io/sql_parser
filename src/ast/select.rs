@@ -103,7 +103,7 @@ pub struct SelectFromFunction {
 /// A subquery in a FROM clause
 #[derive(Debug, PartialEq, Clone)]
 pub struct SelectFromSubquery {
-    pub subquery: Box<SelectStatement>,
+    pub subquery: Box<SelectStatementType>,
     pub alias: Option<String>,
 }
 
