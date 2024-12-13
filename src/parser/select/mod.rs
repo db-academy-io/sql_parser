@@ -2,8 +2,8 @@ mod values;
 
 use crate::expression::IdentifierParser;
 use crate::{
-    DistinctType, Expression, Identifier, IndexedType, Keyword, SelectFrom, SelectFromSubquery,
-    SelectFromTable, TokenType,
+    DistinctType, Expression, Identifier, IndexedType, Keyword, SelectFrom, SelectFromFunction,
+    SelectFromSubquery, SelectFromTable, TokenType,
 };
 
 use super::expression::ExpressionParser;
@@ -22,6 +22,8 @@ pub trait SelectStatementParser {
     fn parse_select_column(&mut self) -> Result<SelectItem, ParsingError>;
 
     fn parse_select_from_clause(&mut self) -> Result<Option<SelectFrom>, ParsingError>;
+
+    fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError>;
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
@@ -138,39 +140,56 @@ impl<'a> SelectStatementParser for Parser<'a> {
             }
 
             if let Ok(id) = self.parse_identifier() {
-                let alias = {
-                    if self.consume_as_keyword(Keyword::As).is_ok() {
-                        Some(self.consume_as_id()?)
-                    } else if let Ok(value) = self.consume_as_id() {
-                        Some(value.to_string())
-                    } else {
-                        None
-                    }
-                };
+                dbg!("parse_select_from_clause");
+                if self.peek_as(TokenType::LeftParen).is_ok() {
+                    self.consume_as(TokenType::LeftParen)?;
 
-                let indexed_type = {
-                    if self.consume_as_keyword(Keyword::Indexed).is_ok() {
-                        self.consume_as_keyword(Keyword::By)?;
-                        Some(IndexedType::Indexed(self.consume_as_id()?))
-                    } else if self.consume_as_keyword(Keyword::Not).is_ok() {
-                        self.consume_as_keyword(Keyword::Indexed)?;
-                        Some(IndexedType::NotIndexed)
-                    } else {
-                        None
-                    }
-                };
+                    let arguments = self.parse_comma_separated_expressions()?;
 
-                return Ok(Some(SelectFrom::Table(SelectFromTable {
-                    table_id: id,
-                    alias,
-                    indexed_type,
-                })));
+                    self.consume_as(TokenType::RightParen)?;
+                    let alias = self.parse_alias_if_exists()?;
+                    return Ok(Some(SelectFrom::Function(SelectFromFunction {
+                        function_name: id,
+                        arguments,
+                        alias,
+                    })));
+                } else {
+                    let alias = self.parse_alias_if_exists()?;
+
+                    let indexed_type = {
+                        if self.consume_as_keyword(Keyword::Indexed).is_ok() {
+                            self.consume_as_keyword(Keyword::By)?;
+                            Some(IndexedType::Indexed(self.consume_as_id()?))
+                        } else if self.consume_as_keyword(Keyword::Not).is_ok() {
+                            self.consume_as_keyword(Keyword::Indexed)?;
+                            Some(IndexedType::NotIndexed)
+                        } else {
+                            None
+                        }
+                    };
+
+                    return Ok(Some(SelectFrom::Table(SelectFromTable {
+                        table_id: id,
+                        alias,
+                        indexed_type,
+                    })));
+                }
             }
 
             // TODO: Parse table-or-subquery
             return Ok(None);
         }
         Ok(None)
+    }
+
+    fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError> {
+        if self.consume_as_keyword(Keyword::As).is_ok() {
+            Ok(Some(self.consume_as_id()?))
+        } else if let Ok(value) = self.consume_as_id() {
+            Ok(Some(value.to_string()))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -545,26 +564,109 @@ mod test_select_from_subquery {
 
         run_sunny_day_test(
             "SELECT * FROM (SELECT t.* ) as alias",
+            Statement::Select(expected_statement.clone()),
+        );
+
+        // without the as keyword
+        run_sunny_day_test(
+            "SELECT * FROM (SELECT t.* ) alias",
+            Statement::Select(expected_statement.clone()),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_from_table_function {
+    use super::test_utils::select_statement_with_from;
+    use crate::expression::test_utils::{
+        binary_op_expression, identifier_expression, numeric_literal_expression,
+    };
+    use crate::parser::test_utils::*;
+    use crate::{BinaryOp, Identifier, SelectFrom, SelectFromFunction, Statement};
+
+    #[test]
+    fn test_select_from_table_function() {
+        let expected_statement =
+            select_statement_with_from(SelectFrom::Function(SelectFromFunction {
+                function_name: Identifier::Single("function_1".to_string()),
+                arguments: vec![numeric_literal_expression("1")],
+                alias: None,
+            }));
+
+        run_sunny_day_test(
+            "SELECT * FROM function_1(1)",
             Statement::Select(expected_statement),
         );
     }
 
     #[test]
-    fn test_select_from_subquery_aliased_without_as_keyword() {
+    fn test_select_from_table_function_with_schema() {
         let expected_statement =
-            select_statement_with_from(SelectFrom::Subquery(SelectFromSubquery {
-                subquery: Box::new(SelectStatementType::Select(select_statement_with_columns(
-                    DistinctType::None,
-                    vec![SelectItem::Expression(Expression::Identifier(
-                        Identifier::Single("t1".to_string()),
-                    ))],
-                ))),
+            select_statement_with_from(SelectFrom::Function(SelectFromFunction {
+                function_name: Identifier::Compound(vec![
+                    "schema_1".to_string(),
+                    "function_1".to_string(),
+                ]),
+                arguments: vec![binary_op_expression(
+                    BinaryOp::Plus,
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                )],
+                alias: None,
+            }));
+
+        run_sunny_day_test(
+            "SELECT * FROM schema_1.function_1(1+2)",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_from_table_function_with_multiple_arguments() {
+        let expected_statement =
+            select_statement_with_from(SelectFrom::Function(SelectFromFunction {
+                function_name: Identifier::Compound(vec![
+                    "schema_1".to_string(),
+                    "function_1".to_string(),
+                ]),
+                arguments: vec![
+                    numeric_literal_expression("1"),
+                    identifier_expression(&["col1"]),
+                    numeric_literal_expression("3"),
+                ],
+                alias: None,
+            }));
+
+        run_sunny_day_test(
+            "SELECT * FROM schema_1.function_1(1, col1, 3)",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_from_table_function_with_alias() {
+        let expected_statement =
+            select_statement_with_from(SelectFrom::Function(SelectFromFunction {
+                function_name: Identifier::Compound(vec![
+                    "schema_1".to_string(),
+                    "function_1".to_string(),
+                ]),
+                arguments: vec![
+                    numeric_literal_expression("1"),
+                    numeric_literal_expression("2"),
+                    numeric_literal_expression("3"),
+                ],
                 alias: Some("alias".to_string()),
             }));
 
         run_sunny_day_test(
-            "SELECT * FROM (SELECT t1) alias",
-            Statement::Select(expected_statement),
+            "SELECT * FROM schema_1.function_1(1, 2, 3) AS alias",
+            Statement::Select(expected_statement.clone()),
+        );
+
+        run_sunny_day_test(
+            "SELECT * FROM schema_1.function_1(1, 2, 3) alias",
+            Statement::Select(expected_statement.clone()),
         );
     }
 }
