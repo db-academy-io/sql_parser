@@ -8,6 +8,8 @@ pub enum SelectStatementType {
     Select(SelectStatement),
     /// A VALUES statement
     Values(ValuesStatement),
+    /// Union statement
+    Union(UnionStatement),
 }
 
 /// An AST for [SELECT](https://www.sqlite.org/lang_select.html) SQL statement.
@@ -194,4 +196,30 @@ pub struct LimitClause {
 pub struct ValuesStatement {
     /// The list of values in a VALUES statement grouped by parenthesis
     pub values: Vec<Vec<Expression>>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum UnionStatementType {
+    Union,
+    UnionAll,
+    Intersect,
+    Except,
+}
+
+impl Display for UnionStatementType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UnionStatementType::Union => write!(f, "UNION"),
+            UnionStatementType::UnionAll => write!(f, "UNION ALL"),
+            UnionStatementType::Intersect => write!(f, "INTERSECT"),
+            UnionStatementType::Except => write!(f, "EXCEPT"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct UnionStatement {
+    pub union_type: UnionStatementType,
+    pub left: Box<SelectStatementType>,
+    pub right: Box<SelectStatementType>,
 }

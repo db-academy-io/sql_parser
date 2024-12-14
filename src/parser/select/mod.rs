@@ -4,7 +4,7 @@ use crate::expression::IdentifierParser;
 use crate::{
     DistinctType, Expression, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable,
     JoinType, Keyword, NamedWindowDefinition, SelectFrom, SelectFromFunction, SelectFromSubquery,
-    SelectFromTable, TokenType,
+    SelectFromTable, TokenType, UnionStatement, UnionStatementType,
 };
 
 use super::expression::ExpressionParser;
@@ -18,6 +18,8 @@ pub use values::ValuesStatementParser;
 /// https://www.sqlite.org/lang_select.html
 pub trait SelectStatementParser {
     fn parse_select_statement(&mut self) -> Result<SelectStatementType, ParsingError>;
+
+    fn parse_select_statement_core(&mut self) -> Result<SelectStatementType, ParsingError>;
 
     fn parse_distinct_type(&mut self) -> Result<DistinctType, ParsingError>;
 
@@ -54,6 +56,8 @@ pub trait SelectStatementParser {
     fn parse_window_clause(&mut self) -> Result<Option<Vec<NamedWindowDefinition>>, ParsingError>;
 
     fn parse_named_window_definition(&mut self) -> Result<NamedWindowDefinition, ParsingError>;
+
+    fn parse_union_clause(&mut self) -> Result<Option<UnionStatementType>, ParsingError>;
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
@@ -62,10 +66,26 @@ impl<'a> SelectStatementParser for Parser<'a> {
             return Ok(SelectStatementType::Values(self.parse_values_statement()?));
         }
 
+        let select_statement = self.parse_select_statement_core()?;
+
+        if let Some(union_type) = self.parse_union_clause()? {
+            let left = Box::new(select_statement);
+            let right = Box::new(self.parse_select_statement()?);
+            return Ok(SelectStatementType::Union(UnionStatement {
+                union_type,
+                left,
+                right,
+            }));
+        } else {
+            Ok(select_statement)
+        }
+    }
+
+    fn parse_select_statement_core(&mut self) -> Result<SelectStatementType, ParsingError> {
         // Consume the SELECT keyword
         self.consume_as_keyword(Keyword::Select)?;
 
-        let select_statement = SelectStatement {
+        Ok(SelectStatementType::Select(SelectStatement {
             distinct_type: self.parse_distinct_type()?,
             columns: self.parse_select_columns()?,
             from: self.parse_select_from_clause()?,
@@ -74,9 +94,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             having: self.parse_having_clause()?,
             window: self.parse_window_clause()?,
             ..Default::default()
-        };
-
-        Ok(SelectStatementType::Select(select_statement))
+        }))
     }
 
     fn parse_distinct_type(&mut self) -> Result<DistinctType, ParsingError> {
@@ -396,13 +414,29 @@ impl<'a> SelectStatementParser for Parser<'a> {
             window_definition,
         })
     }
+
+    fn parse_union_clause(&mut self) -> Result<Option<UnionStatementType>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Except).is_ok() {
+            Ok(Some(UnionStatementType::Except))
+        } else if self.consume_as_keyword(Keyword::Intersect).is_ok() {
+            Ok(Some(UnionStatementType::Intersect))
+        } else if self.consume_as_keyword(Keyword::Union).is_ok() {
+            if self.consume_as_keyword(Keyword::All).is_ok() {
+                Ok(Some(UnionStatementType::UnionAll))
+            } else {
+                Ok(Some(UnionStatementType::Union))
+            }
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[cfg(test)]
 mod test_utils {
     use crate::{
         DistinctType, Expression, Identifier, NamedWindowDefinition, SelectFrom, SelectFromTable,
-        SelectItem, SelectStatement, SelectStatementType,
+        SelectItem, SelectStatement, SelectStatementType, UnionStatement, UnionStatementType,
     };
 
     pub fn select_statement_with_columns(
@@ -491,6 +525,18 @@ mod test_utils {
             })),
             window: Some(windows),
             ..Default::default()
+        })
+    }
+
+    pub fn select_statement_with_union_clause(
+        union_type: UnionStatementType,
+        left: SelectStatementType,
+        right: SelectStatementType,
+    ) -> SelectStatementType {
+        SelectStatementType::Union(UnionStatement {
+            union_type,
+            left: Box::new(left),
+            right: Box::new(right),
         })
     }
 }
@@ -1509,5 +1555,43 @@ mod test_select_window_clause {
             "SELECT * FROM table_1 WINDOW window_1 as (), window_2 as (), window_3 as ()",
             Statement::Select(expected_statement),
         );
+    }
+}
+
+#[cfg(test)]
+mod test_select_union_clause {
+    use super::test_utils::{select_statement_with_from, select_statement_with_union_clause};
+    use crate::parser::test_utils::*;
+    use crate::{Identifier, SelectFrom, SelectFromTable, Statement, UnionStatementType};
+
+    #[test]
+    fn test_select_union_clause() {
+        let union_types = vec![
+            UnionStatementType::Union,
+            UnionStatementType::UnionAll,
+            UnionStatementType::Intersect,
+            UnionStatementType::Except,
+        ];
+
+        let left = select_statement_with_from(SelectFrom::Table(SelectFromTable::from(
+            Identifier::Single("table_1".to_string()),
+        )));
+
+        let right = select_statement_with_from(SelectFrom::Table(SelectFromTable::from(
+            Identifier::Single("table_2".to_string()),
+        )));
+
+        for union_type in union_types {
+            let expected_statement =
+                select_statement_with_union_clause(union_type.clone(), left.clone(), right.clone());
+
+            run_sunny_day_test(
+                &format!(
+                    "SELECT * FROM table_1 {} SELECT * FROM table_2",
+                    union_type.to_string()
+                ),
+                Statement::Select(expected_statement),
+            );
+        }
     }
 }
