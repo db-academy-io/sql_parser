@@ -396,8 +396,9 @@ impl<'a> ExpressionParser for Parser<'a> {
 pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
-        BinaryOp, DataType, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue,
-        Parser, RaiseFunction, SelectStatementType, Statement, UnaryOp, WindowDefinition,
+        BinaryMatchingExpression, BinaryOp, DataType, ExistsStatement, Function, FunctionArg,
+        Identifier, LiteralValue, Parser, RaiseFunction, SelectStatementType, Statement, UnaryOp,
+        WindowDefinition,
     };
 
     pub fn run_sunny_day_test_with_multiple_expressions(
@@ -484,6 +485,13 @@ pub(crate) mod test_utils {
         Expression::BinaryOp(Box::new(left), op, Box::new(right))
     }
 
+    pub fn binary_matching_expression(
+        lhs: Expression,
+        binary_matching_expression: BinaryMatchingExpression,
+    ) -> Expression {
+        Expression::BinaryMatchingExpression(Box::new(lhs), binary_matching_expression)
+    }
+
     pub fn function_expression(
         name: &str,
         arg: FunctionArg,
@@ -500,8 +508,8 @@ pub(crate) mod test_utils {
         Expression::Function(function)
     }
 
-    pub fn exist_expression(is_inverted: bool, statement: SelectStatementType) -> Expression {
-        Expression::ExistsStatement(if is_inverted {
+    pub fn exist_expression(is_not: bool, statement: SelectStatementType) -> Expression {
+        Expression::ExistsStatement(if is_not {
             ExistsStatement::NotExists(statement)
         } else {
             ExistsStatement::Exists(statement)

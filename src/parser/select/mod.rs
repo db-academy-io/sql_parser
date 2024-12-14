@@ -18,6 +18,8 @@ pub use values::ValuesStatementParser;
 pub trait SelectStatementParser {
     fn parse_select_statement(&mut self) -> Result<SelectStatementType, ParsingError>;
 
+    fn parse_distinct_type(&mut self) -> Result<DistinctType, ParsingError>;
+
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError>;
 
     fn parse_select_column(&mut self) -> Result<SelectItem, ParsingError>;
@@ -41,6 +43,12 @@ pub trait SelectStatementParser {
     fn parse_select_from_clause_join_constraints(
         &mut self,
     ) -> Result<Option<JoinConstraint>, ParsingError>;
+
+    fn parse_where_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError>;
+
+    fn parse_group_by_clause(&mut self) -> Result<Option<Vec<Box<Expression>>>, ParsingError>;
+
+    fn parse_having_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError>;
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
@@ -52,22 +60,25 @@ impl<'a> SelectStatementParser for Parser<'a> {
         // Consume the SELECT keyword
         self.consume_as_keyword(Keyword::Select)?;
 
-        let distinct_type = if self.consume_as_keyword(Keyword::Distinct).is_ok() {
-            DistinctType::Distinct
-        } else if self.consume_as_keyword(Keyword::All).is_ok() {
-            DistinctType::All
-        } else {
-            DistinctType::None
-        };
-
         let select_statement = SelectStatement {
-            distinct_type,
+            distinct_type: self.parse_distinct_type()?,
             columns: self.parse_select_columns()?,
             from: self.parse_select_from_clause()?,
+            where_clause: self.parse_where_clause()?,
             ..Default::default()
         };
 
         Ok(SelectStatementType::Select(select_statement))
+    }
+
+    fn parse_distinct_type(&mut self) -> Result<DistinctType, ParsingError> {
+        if self.consume_as_keyword(Keyword::Distinct).is_ok() {
+            Ok(DistinctType::Distinct)
+        } else if self.consume_as_keyword(Keyword::All).is_ok() {
+            Ok(DistinctType::All)
+        } else {
+            Ok(DistinctType::None)
+        }
     }
 
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError> {
@@ -320,13 +331,29 @@ impl<'a> SelectStatementParser for Parser<'a> {
             Ok(None)
         }
     }
+
+    fn parse_where_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Where).is_ok() {
+            Ok(Some(Box::new(self.parse_expression()?)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn parse_group_by_clause(&mut self) -> Result<Option<Vec<Box<Expression>>>, ParsingError> {
+        todo!()
+    }
+
+    fn parse_having_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError> {
+        todo!()
+    }
 }
 
 #[cfg(test)]
 mod test_utils {
     use crate::{
-        DistinctType, Expression, Identifier, SelectFrom, SelectItem, SelectStatement,
-        SelectStatementType,
+        DistinctType, Expression, Identifier, SelectFrom, SelectFromTable, SelectItem,
+        SelectStatement, SelectStatementType,
     };
 
     pub fn select_statement_with_columns(
@@ -347,6 +374,22 @@ mod test_utils {
                 Identifier::Wildcard,
             ))],
             from: Some(from),
+            ..Default::default()
+        })
+    }
+
+    pub fn select_statement_with_where_clause(where_clause: Expression) -> SelectStatementType {
+        SelectStatementType::Select(SelectStatement {
+            distinct_type: DistinctType::None,
+            columns: vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Wildcard,
+            ))],
+            from: Some(SelectFrom::Table(SelectFromTable {
+                table_id: Identifier::Single("table_1".to_string()),
+                alias: None,
+                indexed_type: None,
+            })),
+            where_clause: Some(Box::new(where_clause)),
             ..Default::default()
         })
     }
@@ -1110,6 +1153,86 @@ mod test_select_from_with_join_clause {
                     ON t2.col2 = t3.col3
                 ) as t_complex
                 ON t1.col1 = t_complex.col1",
+            Statement::Select(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_where_clause {
+    use super::test_utils::{select_statement_with_from, select_statement_with_where_clause};
+    use crate::expression::test_utils::{
+        binary_op_expression, identifier_expression, numeric_literal_expression,
+    };
+    use crate::parser::test_utils::*;
+    use crate::{BinaryOp, Expression, Identifier, SelectFrom, SelectFromTable, Statement};
+
+    #[test]
+    fn test_select_where_clause() {
+        let expected_statement = select_statement_with_where_clause(binary_op_expression(
+            BinaryOp::Equals,
+            numeric_literal_expression("1"),
+            numeric_literal_expression("1"),
+        ));
+        run_sunny_day_test(
+            "SELECT * FROM table_1 WHERE 1 = 1",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_where_clause_with_binary_ops() {
+        use BinaryOp::*;
+        let binary_ops = vec![
+            Plus,
+            Minus,
+            Mul,
+            Div,
+            Remainder,
+            GreaterThan,
+            GreaterThanOrEquals,
+            LessThan,
+            LessThanOrEquals,
+            Equals,
+            EqualsEquals,
+            NotEquals,
+            Concat,
+            BitAnd,
+            BitOr,
+            LeftShift,
+            RightShift,
+        ];
+
+        for binary_op in binary_ops {
+            let expected_statement = select_statement_with_where_clause(binary_op_expression(
+                binary_op.clone(),
+                identifier_expression(&["col1"]),
+                identifier_expression(&["col2"]),
+            ));
+            run_sunny_day_test(
+                &format!("SELECT * FROM table_1 WHERE col1 {} col2", binary_op),
+                Statement::Select(expected_statement),
+            );
+        }
+    }
+
+    #[test]
+    fn test_select_where_clause_with_subquery() {
+        let subquery = select_statement_with_from(SelectFrom::Table(SelectFromTable::from(
+            Identifier::Single("table_2".to_string()),
+        )));
+
+        let expression = Expression::BinaryMatchingExpression(
+            Box::new(identifier_expression(&["col1"])),
+            BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::In(
+                InExpression::Select(subquery),
+            ))),
+        );
+
+        let expected_statement = select_statement_with_where_clause(expression);
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 WHERE col1 NOT IN (SELECT * FROM table_2)",
             Statement::Select(expected_statement),
         );
     }
