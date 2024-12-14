@@ -3,8 +3,8 @@ mod values;
 use crate::expression::IdentifierParser;
 use crate::{
     DistinctType, Expression, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable,
-    JoinType, Keyword, NamedWindowDefinition, SelectFrom, SelectFromFunction, SelectFromSubquery,
-    SelectFromTable, TokenType, UnionStatement, UnionStatementType,
+    JoinType, Keyword, LimitClause, NamedWindowDefinition, SelectFrom, SelectFromFunction,
+    SelectFromSubquery, SelectFromTable, TokenType, UnionStatement, UnionStatementType,
 };
 
 use super::expression::ExpressionParser;
@@ -55,6 +55,8 @@ pub trait SelectStatementParser {
 
     fn parse_window_clause(&mut self) -> Result<Option<Vec<NamedWindowDefinition>>, ParsingError>;
 
+    fn parse_limit_clause(&mut self) -> Result<Option<LimitClause>, ParsingError>;
+
     fn parse_named_window_definition(&mut self) -> Result<NamedWindowDefinition, ParsingError>;
 
     fn parse_union_clause(&mut self) -> Result<Option<UnionStatementType>, ParsingError>;
@@ -80,7 +82,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             match select_statement {
                 SelectStatementType::Select(mut select_statement) => {
                     select_statement.order_by = self.parse_order_by_clause()?;
-
+                    select_statement.limit = self.parse_limit_clause()?;
                     SelectStatementType::Select(select_statement)
                 }
                 _ => select_statement,
@@ -414,6 +416,36 @@ impl<'a> SelectStatementParser for Parser<'a> {
         }
     }
 
+    fn parse_limit_clause(&mut self) -> Result<Option<LimitClause>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Limit).is_ok() {
+            let limit = self.parse_expression()?;
+
+            if self.consume_as_keyword(Keyword::Offset).is_ok() {
+                let offset = self.parse_expression()?;
+                Ok(Some(LimitClause {
+                    limit: Box::new(limit),
+                    offset: Some(Box::new(offset)),
+                    additional_limit: None,
+                }))
+            } else if self.consume_as(TokenType::Comma).is_ok() {
+                let additional_limit = self.parse_expression()?;
+                Ok(Some(LimitClause {
+                    limit: Box::new(limit),
+                    offset: None,
+                    additional_limit: Some(Box::new(additional_limit)),
+                }))
+            } else {
+                Ok(Some(LimitClause {
+                    limit: Box::new(limit),
+                    offset: None,
+                    additional_limit: None,
+                }))
+            }
+        } else {
+            Ok(None)
+        }
+    }
+
     fn parse_named_window_definition(&mut self) -> Result<NamedWindowDefinition, ParsingError> {
         let window_name = self.consume_as_id()?;
         self.consume_as_keyword(Keyword::As)?;
@@ -444,9 +476,9 @@ impl<'a> SelectStatementParser for Parser<'a> {
 #[cfg(test)]
 mod test_utils {
     use crate::{
-        DistinctType, Expression, Identifier, NamedWindowDefinition, OrderingTerm, SelectFrom,
-        SelectFromTable, SelectItem, SelectStatement, SelectStatementType, UnionStatement,
-        UnionStatementType,
+        DistinctType, Expression, Identifier, LimitClause, NamedWindowDefinition, OrderingTerm,
+        SelectFrom, SelectFromTable, SelectItem, SelectStatement, SelectStatementType,
+        UnionStatement, UnionStatementType,
     };
 
     pub fn select_statement_with_columns(
@@ -564,6 +596,22 @@ mod test_utils {
                 indexed_type: None,
             })),
             order_by: Some(order_by),
+            ..Default::default()
+        })
+    }
+
+    pub fn select_statement_with_limit_clause(limit: LimitClause) -> SelectStatementType {
+        SelectStatementType::Select(SelectStatement {
+            distinct_type: DistinctType::None,
+            columns: vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Wildcard,
+            ))],
+            from: Some(SelectFrom::Table(SelectFromTable {
+                table_id: Identifier::Single("table_1".to_string()),
+                alias: None,
+                indexed_type: None,
+            })),
+            limit: Some(limit),
             ..Default::default()
         })
     }
@@ -1703,6 +1751,74 @@ mod test_select_order_by_clause {
                     ORDER BY 
                         col1 COLLATE binary ASC NULLS LAST,
                         col2 COLLATE utf8 DESC NULLS FIRST",
+            Statement::Select(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_limit_clause {
+    use super::test_utils::select_statement_with_limit_clause;
+    use crate::expression::test_utils::{binary_op_expression, numeric_literal_expression};
+    use crate::parser::test_utils::*;
+    use crate::{BinaryOp, LimitClause, Statement};
+
+    #[test]
+    fn test_select_limit_clause_basic() {
+        let expected_statement = select_statement_with_limit_clause(LimitClause {
+            limit: Box::new(numeric_literal_expression("1")),
+            offset: None,
+            additional_limit: None,
+        });
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 LIMIT 1",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_limit_clause_basic_expression() {
+        let expected_statement = select_statement_with_limit_clause(LimitClause {
+            limit: Box::new(binary_op_expression(
+                BinaryOp::Plus,
+                numeric_literal_expression("1"),
+                numeric_literal_expression("2"),
+            )),
+            offset: None,
+            additional_limit: None,
+        });
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 LIMIT 1 + 2",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_limit_clause_with_offset() {
+        let expected_statement = select_statement_with_limit_clause(LimitClause {
+            limit: Box::new(numeric_literal_expression("1")),
+            offset: Some(Box::new(numeric_literal_expression("2"))),
+            additional_limit: None,
+        });
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 LIMIT 1 OFFSET 2",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_limit_clause_with_additional_limit() {
+        let expected_statement = select_statement_with_limit_clause(LimitClause {
+            limit: Box::new(numeric_literal_expression("1")),
+            offset: None,
+            additional_limit: Some(Box::new(numeric_literal_expression("2"))),
+        });
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 LIMIT 1, 2",
             Statement::Select(expected_statement),
         );
     }
