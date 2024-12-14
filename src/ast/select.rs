@@ -1,4 +1,5 @@
 use super::{Expression, Identifier, OrderingTerm, WindowDefinition};
+use std::fmt::Display;
 
 /// An enum representing the possible types of SELECT statements
 #[derive(Debug, PartialEq, Clone)]
@@ -130,7 +131,7 @@ pub struct JoinClause {
 pub struct JoinTable {
     pub join_type: JoinType,
     pub table: Box<SelectFrom>,
-    pub constraints: JoinConstraint,
+    pub constraints: Option<JoinConstraint>,
 }
 
 /// A type alias for the `NATURAL` keyword in a JOIN clause
@@ -151,13 +152,33 @@ pub enum JoinType {
     Cross,
 }
 
+impl Display for JoinType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            JoinType::Left(is_natural) => {
+                write!(f, "{} LEFT", if *is_natural { "NATURAL" } else { "" })
+            }
+            JoinType::Right(is_natural) => {
+                write!(f, "{} RIGHT", if *is_natural { "NATURAL" } else { "" })
+            }
+            JoinType::Full(is_natural) => {
+                write!(f, "{} FULL", if *is_natural { "NATURAL" } else { "" })
+            }
+            JoinType::Inner(is_natural) => {
+                write!(f, "{} INNER", if *is_natural { "NATURAL" } else { "" })
+            }
+            JoinType::Cross => write!(f, "CROSS"),
+        }
+    }
+}
+
 /// A constraint for a JOIN clause
 #[derive(Debug, PartialEq, Clone)]
 pub enum JoinConstraint {
     /// ON clause
     On(Expression),
     /// USING clause
-    Using(Vec<String>),
+    Using(Vec<Identifier>),
 }
 
 /// A clause for a LIMIT statement
