@@ -3,11 +3,12 @@ mod values;
 use crate::expression::IdentifierParser;
 use crate::{
     DistinctType, Expression, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable,
-    JoinType, Keyword, SelectFrom, SelectFromFunction, SelectFromSubquery, SelectFromTable,
-    TokenType,
+    JoinType, Keyword, NamedWindowDefinition, SelectFrom, SelectFromFunction, SelectFromSubquery,
+    SelectFromTable, TokenType,
 };
 
 use super::expression::ExpressionParser;
+use super::window_definition::WindowDefinitionParser;
 use super::{Parser, ParsingError};
 use crate::ast::{SelectItem, SelectStatement, SelectStatementType};
 pub use values::ValuesStatementParser;
@@ -49,6 +50,10 @@ pub trait SelectStatementParser {
     fn parse_group_by_clause(&mut self) -> Result<Option<Vec<Expression>>, ParsingError>;
 
     fn parse_having_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError>;
+
+    fn parse_window_clause(&mut self) -> Result<Option<Vec<NamedWindowDefinition>>, ParsingError>;
+
+    fn parse_named_window_definition(&mut self) -> Result<NamedWindowDefinition, ParsingError>;
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
@@ -67,6 +72,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             where_clause: self.parse_where_clause()?,
             group_by: self.parse_group_by_clause()?,
             having: self.parse_having_clause()?,
+            window: self.parse_window_clause()?,
             ..Default::default()
         };
 
@@ -365,13 +371,38 @@ impl<'a> SelectStatementParser for Parser<'a> {
             Ok(None)
         }
     }
+
+    fn parse_window_clause(&mut self) -> Result<Option<Vec<NamedWindowDefinition>>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Window).is_ok() {
+            let mut windows = Vec::new();
+            loop {
+                windows.push(self.parse_named_window_definition()?);
+                if self.consume_as(TokenType::Comma).is_err() {
+                    break;
+                }
+            }
+            Ok(Some(windows))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn parse_named_window_definition(&mut self) -> Result<NamedWindowDefinition, ParsingError> {
+        let window_name = self.consume_as_id()?;
+        self.consume_as_keyword(Keyword::As)?;
+        let window_definition = self.parse_window_definition()?;
+        Ok(NamedWindowDefinition {
+            window_name,
+            window_definition,
+        })
+    }
 }
 
 #[cfg(test)]
 mod test_utils {
     use crate::{
-        DistinctType, Expression, Identifier, SelectFrom, SelectFromTable, SelectItem,
-        SelectStatement, SelectStatementType,
+        DistinctType, Expression, Identifier, NamedWindowDefinition, SelectFrom, SelectFromTable,
+        SelectItem, SelectStatement, SelectStatementType, WindowDefinition,
     };
 
     pub fn select_statement_with_columns(
@@ -440,9 +471,25 @@ mod test_utils {
                 alias: None,
                 indexed_type: None,
             })),
-            where_clause: None,
-            group_by: None,
             having: Some(Box::new(having)),
+            ..Default::default()
+        })
+    }
+
+    pub fn select_statement_with_window_clause(
+        windows: Vec<NamedWindowDefinition>,
+    ) -> SelectStatementType {
+        SelectStatementType::Select(SelectStatement {
+            distinct_type: DistinctType::None,
+            columns: vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Wildcard,
+            ))],
+            from: Some(SelectFrom::Table(SelectFromTable {
+                table_id: Identifier::Single("table_1".to_string()),
+                alias: None,
+                indexed_type: None,
+            })),
+            window: Some(windows),
             ..Default::default()
         })
     }
@@ -1361,6 +1408,105 @@ mod test_select_having_clause {
 
         run_sunny_day_test(
             "SELECT * FROM table_1 HAVING col1 > 1",
+            Statement::Select(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_window_clause {
+    use super::test_utils::select_statement_with_window_clause;
+    use crate::expression::test_utils::{identifier_expression, numeric_literal_expression};
+    use crate::parser::test_utils::*;
+    use crate::{
+        BetweenFrameSpec, BetweenFrameSpecType, Expression, FrameSpec, FrameSpecExclude,
+        FrameSpecType, FrameType, NamedWindowDefinition, NullsOrdering, Ordering, OrderingTerm,
+        Statement, WindowDefinition,
+    };
+
+    #[test]
+    fn test_select_with_single_window_clause() {
+        let expected_statement = select_statement_with_window_clause(vec![NamedWindowDefinition {
+            window_name: "window_1".to_string(),
+            window_definition: WindowDefinition::default(),
+        }]);
+        run_sunny_day_test(
+            "SELECT * FROM table_1 WINDOW window_1 as ()",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_with_single_window_clause_complex() {
+        let expected_statement = select_statement_with_window_clause(vec![NamedWindowDefinition {
+            window_name: "window_1".to_string(),
+            window_definition: WindowDefinition {
+                base_window_name: Some("base_window_name".to_string()),
+                partition_by: Some(vec![
+                    identifier_expression(&["col1"]),
+                    identifier_expression(&["col2"]),
+                ]),
+                order_by: Some(vec![
+                    OrderingTerm {
+                        expression: Box::new(identifier_expression(&["col3"])),
+                        ordering: None,
+                        nulls_ordering: None,
+                    },
+                    OrderingTerm {
+                        expression: Box::new(Expression::CollateExpression(
+                            Box::new(identifier_expression(&["col4"])),
+                            "binary".to_string(),
+                        )),
+                        ordering: Some(Ordering::Asc),
+                        nulls_ordering: Some(NullsOrdering::Last),
+                    },
+                ]),
+                frame_spec: Some(FrameSpec {
+                    frame_type: FrameType::Range,
+                    frame_spec_type: FrameSpecType::Between(BetweenFrameSpec {
+                        start: BetweenFrameSpecType::Preceding(Box::new(
+                            numeric_literal_expression("1"),
+                        )),
+                        end: BetweenFrameSpecType::Following(Box::new(numeric_literal_expression(
+                            "2",
+                        ))),
+                    }),
+                    exclude: Some(FrameSpecExclude::CurrentRow),
+                }),
+            },
+        }]);
+        run_sunny_day_test(
+            "SELECT * FROM table_1 
+                    WINDOW window_1 as (
+                        base_window_name 
+                        PARTITION BY col1, col2 
+                        ORDER BY col3, col4 COLLATE binary ASC NULLS LAST 
+                        RANGE BETWEEN 1 PRECEDING AND 2 FOLLOWING 
+                        EXCLUDE CURRENT ROW
+                    )",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_with_multiple_window_clause() {
+        let expected_statement = select_statement_with_window_clause(vec![
+            NamedWindowDefinition {
+                window_name: "window_1".to_string(),
+                window_definition: WindowDefinition::default(),
+            },
+            NamedWindowDefinition {
+                window_name: "window_2".to_string(),
+                window_definition: WindowDefinition::default(),
+            },
+            NamedWindowDefinition {
+                window_name: "window_3".to_string(),
+                window_definition: WindowDefinition::default(),
+            },
+        ]);
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 WINDOW window_1 as (), window_2 as (), window_3 as ()",
             Statement::Select(expected_statement),
         );
     }

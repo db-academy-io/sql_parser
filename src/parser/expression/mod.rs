@@ -12,24 +12,23 @@ mod like_expr;
 mod raise_expr;
 mod regexp_match_expr;
 
+use crate::{
+    BinaryOp, Expression, Keyword, LiteralValue, Parser, ParsingError, TokenType,
+    UnaryMatchingExpression, UnaryOp,
+};
 use between_expr::BetweenExpressionParser;
 use case_expr::CaseExpressionParser;
 use cast_expr::CastExpressionParser;
 use collate_expr::CollateExpressionParser;
 pub use data_type::DataTypeParser;
 use exists_expr::ExistsExpressionParser;
-use function_expr::FunctionParser;
+pub use function_expr::FunctionParser;
 pub use identifier::IdentifierParser;
 use in_expr::InExpressionParser;
 use is_expr::IsExpressionParser;
 use like_expr::LikeExpressionParser;
 use raise_expr::RaiseExpressionParser;
 use regexp_match_expr::RegexpMatchExpressionParser;
-
-use crate::{
-    BinaryOp, Expression, Keyword, LiteralValue, Parser, ParsingError, TokenType,
-    UnaryMatchingExpression, UnaryOp,
-};
 
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
@@ -398,7 +397,6 @@ pub(crate) mod test_utils {
     use crate::{
         BinaryOp, DataType, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue,
         OverClause, Parser, RaiseFunction, SelectStatementType, Statement, UnaryOp,
-        WindowDefinition,
     };
 
     pub fn run_sunny_day_test_with_multiple_expressions(

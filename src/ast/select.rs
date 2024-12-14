@@ -1,4 +1,4 @@
-use super::{Expression, Identifier, OrderingTerm, WindowDefinition};
+use super::{Expression, Identifier, NamedWindowDefinition, OrderingTerm};
 use std::fmt::Display;
 
 /// An enum representing the possible types of SELECT statements
@@ -32,7 +32,7 @@ pub struct SelectStatement {
     pub having: Option<Box<Expression>>,
 
     /// The WINDOW clause
-    pub window: Option<Vec<WindowDefinition>>,
+    pub window: Option<Vec<NamedWindowDefinition>>,
 
     /// The ORDER BY clause
     pub order_by: Option<OrderingTerm>,

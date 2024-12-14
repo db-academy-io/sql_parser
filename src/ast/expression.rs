@@ -258,6 +258,15 @@ pub struct WindowDefinition {
     pub frame_spec: Option<FrameSpec>,
 }
 
+/// A window definition
+#[derive(Debug, PartialEq, Clone, Default)]
+pub struct NamedWindowDefinition {
+    /// The window name
+    pub window_name: String,
+    /// The window definition
+    pub window_definition: WindowDefinition,
+}
+
 /// Nulls ordering
 #[derive(Debug, PartialEq, Clone)]
 pub enum NullsOrdering {

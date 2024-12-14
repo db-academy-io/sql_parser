@@ -3,12 +3,12 @@ use std::iter::Peekable;
 mod alter;
 mod column_definition;
 mod drop;
+mod errors;
 pub(crate) mod expression;
 mod select;
 mod sqlite;
 mod trx;
-
-mod errors;
+mod window_definition;
 
 #[cfg(test)]
 mod test_utils;
@@ -19,7 +19,6 @@ use drop::DropStatementParser;
 pub use errors::*;
 use select::{SelectStatementParser, ValuesStatementParser};
 use sqlite::SQLite3StatementParser;
-
 use trx::TransactionStatementParser;
 
 /// A parser for SQLite SQL statements
