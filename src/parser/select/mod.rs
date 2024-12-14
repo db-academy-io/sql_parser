@@ -402,7 +402,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
 mod test_utils {
     use crate::{
         DistinctType, Expression, Identifier, NamedWindowDefinition, SelectFrom, SelectFromTable,
-        SelectItem, SelectStatement, SelectStatementType, WindowDefinition,
+        SelectItem, SelectStatement, SelectStatementType,
     };
 
     pub fn select_statement_with_columns(

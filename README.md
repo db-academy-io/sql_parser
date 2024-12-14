@@ -58,7 +58,7 @@ The items were taken from the official SQLite documentation
 
 ### Advanced statements
 
-#### SELECT Statement ![progress](https://progress-bar.xyz/5/?scale=9&suffix=%%%20(5%20of%209)&width=140)
+#### SELECT Statement ![progress](https://progress-bar.xyz/6/?scale=9&suffix=%%%20(6%20of%209)&width=140)
 
 1. [select-core-stmt](https://www.sqlite.org/syntax/select-core.html)
     1. [values-stmt](https://www.sqlite.org/syntax/select-core.html) &#9989;
@@ -66,7 +66,7 @@ The items were taken from the official SQLite documentation
     1. [table-or-subquery](https://www.sqlite.org/lang_select.html#tablename) &#9989;
     1. [join-clauses](https://www.sqlite.org/syntax/join-clause.html) &#9989;
     1. [where-group-by-having-clause](https://www.sqlite.org/lang_select.html#where) &#9989;
-    1. [window-functions](https://www.sqlite.org/syntax/window-defn.html)
+    1. [window-functions](https://www.sqlite.org/syntax/window-defn.html) &#9989;
 1. [with-compound-stmt](https://www.sqlite.org/syntax/factored-select-stmt.html)
 1. [order-by-and-limit-clause](https://www.sqlite.org/lang_select.html#orderby)
 1. [common-table-expressions](https://www.sqlite.org/syntax/common-table-expression.html)
