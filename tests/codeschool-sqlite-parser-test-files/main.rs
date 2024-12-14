@@ -66,7 +66,7 @@ fn run_codeschool_sqlite_parser_with_sqlite3_parser() {
             let file = entry.expect("Failed to read directory entry").path();
 
             if file.extension().and_then(|ext| ext.to_str()) == Some("sql") {
-                let parsing_result = parse_sql_file(&file.to_str().unwrap());
+                let parsing_result = parse_sql_file(file.to_str().unwrap());
                 if parsing_result {
                     passed_test += 1;
                 }

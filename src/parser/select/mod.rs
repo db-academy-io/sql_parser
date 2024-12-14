@@ -71,11 +71,11 @@ impl<'a> SelectStatementParser for Parser<'a> {
         if let Some(union_type) = self.parse_union_clause()? {
             let left = Box::new(select_statement);
             let right = Box::new(self.parse_select_statement()?);
-            return Ok(SelectStatementType::Union(UnionStatement {
+            Ok(SelectStatementType::Union(UnionStatement {
                 union_type,
                 left,
                 right,
-            }));
+            }))
         } else {
             Ok(select_statement)
         }
@@ -1586,10 +1586,7 @@ mod test_select_union_clause {
                 select_statement_with_union_clause(union_type.clone(), left.clone(), right.clone());
 
             run_sunny_day_test(
-                &format!(
-                    "SELECT * FROM table_1 {} SELECT * FROM table_2",
-                    union_type.to_string()
-                ),
+                &format!("SELECT * FROM table_1 {} SELECT * FROM table_2", union_type),
                 Statement::Select(expected_statement),
             );
         }
