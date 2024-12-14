@@ -1,6 +1,6 @@
 use crate::{
-    BetweenFrameSpec, BetweenFrameSpecType, FrameSpec, FrameSpecExclude, FrameSpecType, FrameType,
-    Keyword, NullsOrdering, Ordering, OrderingTerm, TokenType, WindowDefinition,
+    BetweenFrameSpec, BetweenFrameSpecType, Expression, FrameSpec, FrameSpecExclude, FrameSpecType,
+    FrameType, Keyword, NullsOrdering, Ordering, OrderingTerm, TokenType, WindowDefinition,
 };
 
 use super::{expression::ExpressionParser, Parser, ParsingError};
@@ -9,6 +9,10 @@ pub trait WindowDefinitionParser {
     fn parse_window_definition(&mut self) -> Result<WindowDefinition, ParsingError>;
 
     fn parse_ordering_terms(&mut self) -> Result<Vec<OrderingTerm>, ParsingError>;
+
+    fn parse_order_by_clause(&mut self) -> Result<Option<Vec<OrderingTerm>>, ParsingError>;
+
+    fn parser_partition_by_clause(&mut self) -> Result<Option<Vec<Expression>>, ParsingError>;
 
     fn parse_over_clause_frame_spec(&mut self) -> Result<FrameSpec, ParsingError>;
 
@@ -21,36 +25,12 @@ impl<'a> WindowDefinitionParser for Parser<'a> {
         self.consume_as(TokenType::LeftParen)?;
 
         let mut over_clause = WindowDefinition::default();
-        if let Ok(base_window_name) = self.peek_as_id() {
+        if let Ok(base_window_name) = self.consume_as_id() {
             over_clause.base_window_name = Some(base_window_name.to_string());
-            self.consume_as_id()?;
         }
 
-        if let Ok(Keyword::Partition) = self.peek_as_keyword() {
-            self.consume_as_keyword(Keyword::Partition)?;
-
-            self.consume_as_keyword(Keyword::By)?;
-
-            while let Ok(expression) = self.parse_expression() {
-                match over_clause.partition_by.as_mut() {
-                    Some(partition_by) => partition_by.push(expression),
-                    None => over_clause.partition_by = Some(vec![expression]),
-                }
-                if self.peek_as(TokenType::Comma).is_ok() {
-                    self.consume_token()?;
-                } else {
-                    break;
-                }
-            }
-        }
-
-        if let Ok(Keyword::Order) = self.peek_as_keyword() {
-            self.consume_as_keyword(Keyword::Order)?;
-
-            self.consume_as_keyword(Keyword::By)?;
-            let ordering_terms = self.parse_ordering_terms()?;
-            over_clause.order_by = Some(ordering_terms);
-        }
+        over_clause.partition_by = self.parser_partition_by_clause()?;
+        over_clause.order_by = self.parse_order_by_clause()?;
 
         // frame spec
         if let Ok(Keyword::Range | Keyword::Rows | Keyword::Groups) = self.peek_as_keyword() {
@@ -61,6 +41,35 @@ impl<'a> WindowDefinitionParser for Parser<'a> {
         self.consume_as(TokenType::RightParen)?;
 
         Ok(over_clause)
+    }
+
+    fn parse_order_by_clause(&mut self) -> Result<Option<Vec<OrderingTerm>>, ParsingError> {
+        if let Ok(Keyword::Order) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Order)?;
+
+            self.consume_as_keyword(Keyword::By)?;
+            let ordering_terms = self.parse_ordering_terms()?;
+            return Ok(Some(ordering_terms));
+        }
+        Ok(None)
+    }
+
+    fn parser_partition_by_clause(&mut self) -> Result<Option<Vec<Expression>>, ParsingError> {
+        if let Ok(Keyword::Partition) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Partition)?;
+
+            self.consume_as_keyword(Keyword::By)?;
+
+            let mut partition_by = vec![];
+            while let Ok(expression) = self.parse_expression() {
+                partition_by.push(expression);
+                if self.consume_as(TokenType::Comma).is_err() {
+                    break;
+                }
+            }
+            return Ok(Some(partition_by));
+        }
+        Ok(None)
     }
 
     /// Parse a function ordering terms

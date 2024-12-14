@@ -37,7 +37,7 @@ pub struct SelectStatement {
     pub window: Option<Vec<NamedWindowDefinition>>,
 
     /// The ORDER BY clause
-    pub order_by: Option<OrderingTerm>,
+    pub order_by: Option<Vec<OrderingTerm>>,
 
     /// The LIMIT clause
     pub limit: Option<LimitClause>,
