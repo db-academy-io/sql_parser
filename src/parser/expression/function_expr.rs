@@ -1,7 +1,7 @@
 use crate::{
     BetweenFrameSpec, BetweenFrameSpecType, Expression, FrameSpec, FrameSpecExclude, FrameSpecType,
     FrameType, Function, FunctionArg, FunctionArgType, Identifier, Keyword, NullsOrdering,
-    Ordering, OrderingTerm, Parser, ParsingError, TokenType, WindowDefinition,
+    Ordering, OrderingTerm, OverClause, Parser, ParsingError, TokenType, WindowDefinition,
 };
 
 use super::ExpressionParser;
@@ -20,7 +20,7 @@ pub trait FunctionParser {
     fn parse_function_filter_clause(&mut self) -> Result<Expression, ParsingError>;
 
     /// Parse a function over clause
-    fn parse_function_over_clause(&mut self) -> Result<WindowDefinition, ParsingError>;
+    fn parse_window_definition(&mut self) -> Result<WindowDefinition, ParsingError>;
 
     /// Parse a frame spec
     fn parse_function_over_clause_frame_spec(&mut self) -> Result<FrameSpec, ParsingError>;
@@ -56,7 +56,14 @@ impl<'a> FunctionParser for Parser<'a> {
 
         if let Ok(Keyword::Over) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::Over)?;
-            function.over_clause = Some(self.parse_function_over_clause()?);
+
+            function.over_clause = if let Ok(identifier) = self.consume_as_id() {
+                Some(OverClause::WindowName(identifier.to_string()))
+            } else {
+                Some(OverClause::WindowDefinition(
+                    self.parse_window_definition()?,
+                ))
+            };
         }
 
         Ok(Expression::Function(function))
@@ -200,21 +207,12 @@ impl<'a> FunctionParser for Parser<'a> {
     }
 
     /// Parse a function over clause
-    fn parse_function_over_clause(&mut self) -> Result<WindowDefinition, ParsingError> {
-        if let Ok(identifier) = self.peek_as_id() {
-            let over_clause = WindowDefinition {
-                window_name: Some(identifier.to_string()),
-                ..Default::default()
-            };
-            self.consume_as_id()?;
-            return Ok(over_clause);
-        }
-
+    fn parse_window_definition(&mut self) -> Result<WindowDefinition, ParsingError> {
         self.consume_as(TokenType::LeftParen)?;
 
         let mut over_clause = WindowDefinition::default();
         if let Ok(base_window_name) = self.peek_as_id() {
-            over_clause.window_name = Some(base_window_name.to_string());
+            over_clause.base_window_name = Some(base_window_name.to_string());
             self.consume_as_id()?;
         }
 
@@ -373,7 +371,7 @@ mod function_expression_tests {
     use crate::{
         expression::test_utils::*, BetweenFrameSpec, BetweenFrameSpecType, BinaryOp, FrameSpec,
         FrameSpecExclude, FrameSpecType, FrameType, FunctionArg, FunctionArgType, NullsOrdering,
-        Ordering, OrderingTerm, WindowDefinition,
+        Ordering, OrderingTerm, OverClause, WindowDefinition,
     };
 
     #[test]
@@ -543,16 +541,14 @@ mod function_expression_tests {
             arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
         };
 
-        let over_clause = WindowDefinition {
-            window_name: Some("a".to_string()),
-            partition_by: None,
-            order_by: None,
-            frame_spec: None,
-        };
-
         run_sunny_day_expression_test(
             "SELECT abc(1) over a;",
-            &function_expression("abc", expected_arg, None, Some(over_clause)),
+            &function_expression(
+                "abc",
+                expected_arg,
+                None,
+                Some(OverClause::WindowName("a".to_string())),
+            ),
         );
     }
 
@@ -564,7 +560,7 @@ mod function_expression_tests {
         };
 
         let over_clause = WindowDefinition {
-            window_name: None,
+            base_window_name: None,
             partition_by: Some(vec![numeric_literal_expression("1")]),
             order_by: None,
             frame_spec: None,
@@ -572,7 +568,12 @@ mod function_expression_tests {
 
         run_sunny_day_expression_test(
             "SELECT abc(1) over (partition by 1);",
-            &function_expression("abc", expected_arg, None, Some(over_clause)),
+            &function_expression(
+                "abc",
+                expected_arg,
+                None,
+                Some(OverClause::WindowDefinition(over_clause)),
+            ),
         );
     }
 
@@ -584,7 +585,7 @@ mod function_expression_tests {
         };
 
         let over_clause = WindowDefinition {
-            window_name: None,
+            base_window_name: None,
             partition_by: None,
             order_by: Some(vec![OrderingTerm {
                 expression: Box::new(numeric_literal_expression("1")),
@@ -596,7 +597,12 @@ mod function_expression_tests {
 
         run_sunny_day_expression_test(
             "SELECT abc(1) over (order by 1 asc nulls last);",
-            &function_expression("abc", expected_arg, None, Some(over_clause)),
+            &function_expression(
+                "abc",
+                expected_arg,
+                None,
+                Some(OverClause::WindowDefinition(over_clause)),
+            ),
         );
     }
 
@@ -608,7 +614,7 @@ mod function_expression_tests {
         };
 
         let over_clause = WindowDefinition {
-            window_name: Some("a".to_string()),
+            base_window_name: Some("a".to_string()),
             partition_by: None,
             order_by: None,
             frame_spec: Some(FrameSpec {
@@ -625,7 +631,7 @@ mod function_expression_tests {
 
         run_sunny_day_expression_test(
             "SELECT abc(1) over (a groups between 1 preceding and current row exclude current row);",
-            &function_expression("abc", expected_arg, None, Some(over_clause)),
+            &function_expression("abc", expected_arg, None, Some(OverClause::WindowDefinition(over_clause))),
         );
     }
 }

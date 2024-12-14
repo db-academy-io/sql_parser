@@ -213,7 +213,7 @@ pub struct Function {
     /// The filter clause of the function
     pub filter_clause: Option<Box<Expression>>,
     /// The over clause of the function
-    pub over_clause: Option<WindowDefinition>,
+    pub over_clause: Option<OverClause>,
 }
 
 /// A function argument
@@ -237,10 +237,19 @@ pub enum FunctionArgType {
 }
 
 /// An over clause
+#[derive(Debug, PartialEq, Clone)]
+pub enum OverClause {
+    /// A window definition
+    WindowDefinition(WindowDefinition),
+    /// A window name
+    WindowName(String),
+}
+
+/// A window definition
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct WindowDefinition {
     /// The window name
-    pub window_name: Option<String>,
+    pub base_window_name: Option<String>,
     /// The partition by clause
     pub partition_by: Option<Vec<Expression>>,
     /// The order by clause

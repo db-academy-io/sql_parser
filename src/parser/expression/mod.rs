@@ -397,7 +397,8 @@ pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
         BinaryOp, DataType, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue,
-        Parser, RaiseFunction, SelectStatementType, Statement, UnaryOp, WindowDefinition,
+        OverClause, Parser, RaiseFunction, SelectStatementType, Statement, UnaryOp,
+        WindowDefinition,
     };
 
     pub fn run_sunny_day_test_with_multiple_expressions(
@@ -488,7 +489,7 @@ pub(crate) mod test_utils {
         name: &str,
         arg: FunctionArg,
         filter: Option<Box<Expression>>,
-        over: Option<WindowDefinition>,
+        over: Option<OverClause>,
     ) -> Expression {
         let function = Function {
             name: Identifier::Single(name.to_string()),
