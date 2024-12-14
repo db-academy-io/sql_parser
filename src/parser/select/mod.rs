@@ -46,7 +46,7 @@ pub trait SelectStatementParser {
 
     fn parse_where_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError>;
 
-    fn parse_group_by_clause(&mut self) -> Result<Option<Vec<Box<Expression>>>, ParsingError>;
+    fn parse_group_by_clause(&mut self) -> Result<Option<Vec<Expression>>, ParsingError>;
 
     fn parse_having_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError>;
 }
@@ -65,6 +65,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             columns: self.parse_select_columns()?,
             from: self.parse_select_from_clause()?,
             where_clause: self.parse_where_clause()?,
+            group_by: self.parse_group_by_clause()?,
             ..Default::default()
         };
 
@@ -340,8 +341,20 @@ impl<'a> SelectStatementParser for Parser<'a> {
         }
     }
 
-    fn parse_group_by_clause(&mut self) -> Result<Option<Vec<Box<Expression>>>, ParsingError> {
-        todo!()
+    fn parse_group_by_clause(&mut self) -> Result<Option<Vec<Expression>>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Group).is_ok() {
+            self.consume_as_keyword(Keyword::By)?;
+            let mut expressions = Vec::new();
+            loop {
+                expressions.push(self.parse_expression()?);
+                if self.consume_as(TokenType::Comma).is_err() {
+                    break;
+                }
+            }
+            Ok(Some(expressions))
+        } else {
+            Ok(None)
+        }
     }
 
     fn parse_having_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError> {
@@ -390,6 +403,23 @@ mod test_utils {
                 indexed_type: None,
             })),
             where_clause: Some(Box::new(where_clause)),
+            ..Default::default()
+        })
+    }
+
+    pub fn select_statement_with_group_by_clause(group_by: Vec<Expression>) -> SelectStatementType {
+        SelectStatementType::Select(SelectStatement {
+            distinct_type: DistinctType::None,
+            columns: vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Wildcard,
+            ))],
+            from: Some(SelectFrom::Table(SelectFromTable {
+                table_id: Identifier::Single("table_1".to_string()),
+                alias: None,
+                indexed_type: None,
+            })),
+            where_clause: None,
+            group_by: Some(group_by),
             ..Default::default()
         })
     }
@@ -1165,7 +1195,10 @@ mod test_select_where_clause {
         binary_op_expression, identifier_expression, numeric_literal_expression,
     };
     use crate::parser::test_utils::*;
-    use crate::{BinaryOp, Expression, Identifier, SelectFrom, SelectFromTable, Statement};
+    use crate::{
+        BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression, SelectFrom,
+        SelectFromTable, Statement,
+    };
 
     #[test]
     fn test_select_where_clause() {
@@ -1233,6 +1266,54 @@ mod test_select_where_clause {
 
         run_sunny_day_test(
             "SELECT * FROM table_1 WHERE col1 NOT IN (SELECT * FROM table_2)",
+            Statement::Select(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_group_by_clause {
+    use super::test_utils::select_statement_with_group_by_clause;
+    use crate::expression::test_utils::{binary_op_expression, identifier_expression};
+    use crate::parser::test_utils::*;
+    use crate::{BinaryOp, Statement};
+
+    #[test]
+    fn test_select_group_by_clause() {
+        let expected_statement =
+            select_statement_with_group_by_clause(vec![identifier_expression(&["col1"])]);
+        run_sunny_day_test(
+            "SELECT * FROM table_1 GROUP BY col1",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_group_by_clause_with_multiple_columns() {
+        let expected_statement = select_statement_with_group_by_clause(vec![
+            identifier_expression(&["col1"]),
+            identifier_expression(&["col2"]),
+        ]);
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 GROUP BY col1, col2",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_group_by_clause_with_expressions() {
+        let expected_statement = select_statement_with_group_by_clause(vec![
+            identifier_expression(&["col1"]),
+            binary_op_expression(
+                BinaryOp::Plus,
+                identifier_expression(&["col2"]),
+                identifier_expression(&["col3"]),
+            ),
+        ]);
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 GROUP BY col1, col2 + col3",
             Statement::Select(expected_statement),
         );
     }

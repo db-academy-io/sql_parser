@@ -26,7 +26,7 @@ pub struct SelectStatement {
     pub where_clause: Option<Box<Expression>>,
 
     /// The GROUP BY clause
-    pub group_by: Option<Vec<Box<Expression>>>,
+    pub group_by: Option<Vec<Expression>>,
 
     /// The HAVING clause
     pub having: Option<Box<Expression>>,

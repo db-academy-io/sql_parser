@@ -485,13 +485,6 @@ pub(crate) mod test_utils {
         Expression::BinaryOp(Box::new(left), op, Box::new(right))
     }
 
-    pub fn binary_matching_expression(
-        lhs: Expression,
-        binary_matching_expression: BinaryMatchingExpression,
-    ) -> Expression {
-        Expression::BinaryMatchingExpression(Box::new(lhs), binary_matching_expression)
-    }
-
     pub fn function_expression(
         name: &str,
         arg: FunctionArg,
