@@ -396,9 +396,8 @@ impl<'a> ExpressionParser for Parser<'a> {
 pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
-        BinaryMatchingExpression, BinaryOp, DataType, ExistsStatement, Function, FunctionArg,
-        Identifier, LiteralValue, Parser, RaiseFunction, SelectStatementType, Statement, UnaryOp,
-        WindowDefinition,
+        BinaryOp, DataType, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue,
+        Parser, RaiseFunction, SelectStatementType, Statement, UnaryOp, WindowDefinition,
     };
 
     pub fn run_sunny_day_test_with_multiple_expressions(

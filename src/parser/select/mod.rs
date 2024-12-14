@@ -66,6 +66,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             from: self.parse_select_from_clause()?,
             where_clause: self.parse_where_clause()?,
             group_by: self.parse_group_by_clause()?,
+            having: self.parse_having_clause()?,
             ..Default::default()
         };
 
@@ -358,7 +359,11 @@ impl<'a> SelectStatementParser for Parser<'a> {
     }
 
     fn parse_having_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError> {
-        todo!()
+        if self.consume_as_keyword(Keyword::Having).is_ok() {
+            Ok(Some(Box::new(self.parse_expression()?)))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -420,6 +425,24 @@ mod test_utils {
             })),
             where_clause: None,
             group_by: Some(group_by),
+            ..Default::default()
+        })
+    }
+
+    pub fn select_statement_with_having_clause(having: Expression) -> SelectStatementType {
+        SelectStatementType::Select(SelectStatement {
+            distinct_type: DistinctType::None,
+            columns: vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Wildcard,
+            ))],
+            from: Some(SelectFrom::Table(SelectFromTable {
+                table_id: Identifier::Single("table_1".to_string()),
+                alias: None,
+                indexed_type: None,
+            })),
+            where_clause: None,
+            group_by: None,
+            having: Some(Box::new(having)),
             ..Default::default()
         })
     }
@@ -1314,6 +1337,30 @@ mod test_select_group_by_clause {
 
         run_sunny_day_test(
             "SELECT * FROM table_1 GROUP BY col1, col2 + col3",
+            Statement::Select(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_having_clause {
+    use super::test_utils::select_statement_with_having_clause;
+    use crate::expression::test_utils::{
+        binary_op_expression, identifier_expression, numeric_literal_expression,
+    };
+    use crate::parser::test_utils::*;
+    use crate::{BinaryOp, Statement};
+
+    #[test]
+    fn test_select_having_clause() {
+        let expected_statement = select_statement_with_having_clause(binary_op_expression(
+            BinaryOp::GreaterThan,
+            identifier_expression(&["col1"]),
+            numeric_literal_expression("1"),
+        ));
+
+        run_sunny_day_test(
+            "SELECT * FROM table_1 HAVING col1 > 1",
             Statement::Select(expected_statement),
         );
     }
