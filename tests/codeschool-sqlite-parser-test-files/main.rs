@@ -1,9 +1,6 @@
 use std::{fs, path::Path};
 mod sqlite_parser;
 
-use db_academy_sql_parser::Parser;
-use sqlite_parser::parse_sql_file;
-
 #[test]
 fn run_codeschool_sqlite_parser_test() {
     let test_set_path = Path::new("tests/codeschool-sqlite-parser-test-files/sql");
@@ -44,6 +41,7 @@ fn run_codeschool_sqlite_parser_test() {
 }
 
 fn run_test(sql_content: &str) -> bool {
+    use db_academy_sql_parser::Parser;
     let mut parser = Parser::from(sql_content);
     let statement = parser.parse_statement();
     statement.is_ok()
@@ -51,6 +49,7 @@ fn run_test(sql_content: &str) -> bool {
 
 #[test]
 fn run_codeschool_sqlite_parser_with_sqlite3_parser() {
+    use sqlite_parser::parse_sql_file;
     let test_set_path = Path::new("tests/codeschool-sqlite-parser-test-files/sql");
 
     let mut total_tests = 0;
