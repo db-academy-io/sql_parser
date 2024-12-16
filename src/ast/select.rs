@@ -65,7 +65,7 @@ pub enum SelectItem {
 /// An AST for representing a FROM clause
 #[derive(Debug, PartialEq, Clone)]
 pub enum SelectFrom {
-    Table(SelectFromTable),
+    Table(QualifiedTableName),
 
     Function(SelectFromFunction),
 
@@ -76,9 +76,9 @@ pub enum SelectFrom {
     Join(JoinClause),
 }
 
-/// A table in a FROM clause
+/// A [Qualified Table Name](https://www.sqlite.org/syntax/qualified-table-name.html)
 #[derive(Debug, PartialEq, Clone)]
-pub struct SelectFromTable {
+pub struct QualifiedTableName {
     pub table_id: Identifier,
 
     pub alias: Option<String>,
@@ -86,7 +86,7 @@ pub struct SelectFromTable {
     pub indexed_type: Option<IndexedType>,
 }
 
-impl From<Identifier> for SelectFromTable {
+impl From<Identifier> for QualifiedTableName {
     fn from(table_id: Identifier) -> Self {
         Self {
             table_id,
