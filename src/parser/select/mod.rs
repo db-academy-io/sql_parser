@@ -2,9 +2,9 @@ mod values;
 
 use crate::expression::IdentifierParser;
 use crate::{
-    DistinctType, Expression, Identifier, JoinClause, JoinConstraint, JoinTable, JoinType, Keyword,
-    NamedWindowDefinition, QualifiedTableName, SelectFrom, SelectFromFunction, SelectFromSubquery,
-    TokenType, UnionStatement, UnionStatementType,
+    DistinctType, Expression, FromClause, Identifier, JoinClause, JoinConstraint, JoinTable,
+    JoinType, Keyword, NamedWindowDefinition, QualifiedTableName, SelectFromFunction,
+    SelectFromSubquery, TokenType, UnionStatement, UnionStatementType,
 };
 
 use super::expression::ExpressionParser;
@@ -27,14 +27,14 @@ pub trait SelectStatementParser {
 
     fn parse_select_column(&mut self) -> Result<SelectItem, ParsingError>;
 
-    fn parse_select_from_clause(&mut self) -> Result<Option<SelectFrom>, ParsingError>;
+    fn parse_select_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError>;
 
-    fn parse_select_from_clause_subquery(&mut self) -> Result<SelectFrom, ParsingError>;
+    fn parse_select_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError>;
 
     fn parse_select_from_join_clause(
         &mut self,
-        lhs: SelectFrom,
-    ) -> Result<SelectFrom, ParsingError>;
+        lhs: FromClause,
+    ) -> Result<FromClause, ParsingError>;
 
     fn parse_select_from_clause_join_type(&mut self) -> Result<JoinType, ParsingError>;
 
@@ -157,7 +157,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
         ))
     }
 
-    fn parse_select_from_clause(&mut self) -> Result<Option<SelectFrom>, ParsingError> {
+    fn parse_select_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError> {
         if let Ok(Keyword::From) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::From)?;
             return Ok(Some(self.parse_select_from_clause_subquery()?));
@@ -165,7 +165,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
         Ok(None)
     }
 
-    fn parse_select_from_clause_subquery(&mut self) -> Result<SelectFrom, ParsingError> {
+    fn parse_select_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError> {
         dbg!("parse_select_from_clause");
 
         dbg!(&self.peek_token());
@@ -178,7 +178,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 // Here the right parenthesis is mandatory
                 self.consume_as(TokenType::RightParen)?;
                 let alias = self.parse_alias_if_exists()?;
-                return Ok(SelectFrom::Subquery(SelectFromSubquery {
+                return Ok(FromClause::Subquery(SelectFromSubquery {
                     subquery: Box::new(subquery),
                     alias,
                 }));
@@ -196,7 +196,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 }
                 // Here the right parenthesis is mandatory
                 self.consume_as(TokenType::RightParen)?;
-                return Ok(SelectFrom::Froms(froms));
+                return Ok(FromClause::Froms(froms));
             };
         }
 
@@ -209,7 +209,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
 
                 self.consume_as(TokenType::RightParen)?;
                 let alias = self.parse_alias_if_exists()?;
-                return Ok(SelectFrom::Function(SelectFromFunction {
+                return Ok(FromClause::Function(SelectFromFunction {
                     function_name: id,
                     arguments,
                     alias,
@@ -218,7 +218,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 let alias = self.parse_alias_if_exists()?;
                 let indexed_type = self.parse_indexed_type()?;
 
-                let lhs = SelectFrom::Table(QualifiedTableName {
+                let lhs = FromClause::Table(QualifiedTableName {
                     table_id: id,
                     alias,
                     indexed_type,
@@ -235,8 +235,8 @@ impl<'a> SelectStatementParser for Parser<'a> {
 
     fn parse_select_from_join_clause(
         &mut self,
-        lhs: SelectFrom,
-    ) -> Result<SelectFrom, ParsingError> {
+        lhs: FromClause,
+    ) -> Result<FromClause, ParsingError> {
         dbg!("parse_select_from_join_clause");
         let mut join_tables = Vec::new();
 
@@ -253,7 +253,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
             return Ok(lhs);
         }
 
-        Ok(SelectFrom::Join(JoinClause {
+        Ok(FromClause::Join(JoinClause {
             lhs_table: Box::new(lhs),
             join_tables,
         }))
@@ -415,9 +415,9 @@ impl<'a> SelectStatementParser for Parser<'a> {
 #[cfg(test)]
 pub mod test_utils {
     use crate::{
-        CteExpression, DistinctType, Expression, Identifier, LimitClause, NamedWindowDefinition,
-        OrderingTerm, QualifiedTableName, Select, SelectFrom, SelectItem, SelectStatement,
-        Statement, UnionStatement, UnionStatementType, WithCteStatement,
+        CteExpression, DistinctType, Expression, FromClause, Identifier, LimitClause,
+        NamedWindowDefinition, OrderingTerm, QualifiedTableName, Select, SelectItem,
+        SelectStatement, Statement, UnionStatement, UnionStatementType, WithCteStatement,
     };
 
     pub fn select_statement_with_columns(
@@ -431,7 +431,7 @@ pub mod test_utils {
         }
     }
 
-    pub fn select_from(from: SelectFrom) -> SelectStatement {
+    pub fn select_from(from: FromClause) -> SelectStatement {
         SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
@@ -443,7 +443,7 @@ pub mod test_utils {
     }
 
     pub fn select_star_from(table_name: Identifier) -> SelectStatement {
-        select_from(SelectFrom::Table(QualifiedTableName::from(table_name)))
+        select_from(FromClause::Table(QualifiedTableName::from(table_name)))
     }
 
     pub fn select_statement_with_where_clause(where_clause: Expression) -> SelectStatement {
@@ -452,7 +452,7 @@ pub mod test_utils {
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
             ))],
-            from: Some(SelectFrom::Table(QualifiedTableName {
+            from: Some(FromClause::Table(QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: None,
                 indexed_type: None,
@@ -468,7 +468,7 @@ pub mod test_utils {
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
             ))],
-            from: Some(SelectFrom::Table(QualifiedTableName {
+            from: Some(FromClause::Table(QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: None,
                 indexed_type: None,
@@ -485,7 +485,7 @@ pub mod test_utils {
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
             ))],
-            from: Some(SelectFrom::Table(QualifiedTableName {
+            from: Some(FromClause::Table(QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: None,
                 indexed_type: None,
@@ -503,7 +503,7 @@ pub mod test_utils {
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
             ))],
-            from: Some(SelectFrom::Table(QualifiedTableName {
+            from: Some(FromClause::Table(QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: None,
                 indexed_type: None,
@@ -531,7 +531,7 @@ pub mod test_utils {
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
             ))],
-            from: Some(SelectFrom::Table(QualifiedTableName {
+            from: Some(FromClause::Table(QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: None,
                 indexed_type: None,
@@ -547,7 +547,7 @@ pub mod test_utils {
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
             ))],
-            from: Some(SelectFrom::Table(QualifiedTableName {
+            from: Some(FromClause::Table(QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: None,
                 indexed_type: None,
@@ -569,7 +569,7 @@ pub mod test_utils {
                 columns: vec![SelectItem::Expression(Expression::Identifier(
                     Identifier::Wildcard,
                 ))],
-                from: Some(SelectFrom::Table(QualifiedTableName {
+                from: Some(FromClause::Table(QualifiedTableName {
                     table_id: Identifier::Single("table_1".to_string()),
                     alias: None,
                     indexed_type: None,
@@ -794,11 +794,11 @@ mod test_select_result_columns {
 mod test_select_from_table_indexed {
     use super::test_utils::select_from;
     use crate::parser::test_utils::*;
-    use crate::{Identifier, IndexedType, QualifiedTableName, SelectFrom, Statement};
+    use crate::{FromClause, Identifier, IndexedType, QualifiedTableName, Statement};
 
     #[test]
     fn test_select_from_table() {
-        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName::from(
+        let expected_statement = select_from(FromClause::Table(QualifiedTableName::from(
             Identifier::Single("table_1".to_string()),
         )));
 
@@ -810,7 +810,7 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_with_schema() {
-        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName::from(
+        let expected_statement = select_from(FromClause::Table(QualifiedTableName::from(
             Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
         )));
 
@@ -822,7 +822,7 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_with_alias() {
-        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName {
+        let expected_statement = select_from(FromClause::Table(QualifiedTableName {
             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
             alias: Some("alias".to_string()),
             indexed_type: None,
@@ -836,7 +836,7 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_with_alias_without_as_keyword() {
-        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName {
+        let expected_statement = select_from(FromClause::Table(QualifiedTableName {
             table_id: Identifier::Single("table_1".to_string()),
             alias: Some("alias".to_string()),
             indexed_type: None,
@@ -850,7 +850,7 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_with_alias_indexed() {
-        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName {
+        let expected_statement = select_from(FromClause::Table(QualifiedTableName {
             table_id: Identifier::Single("table_1".to_string()),
             alias: Some("alias".to_string()),
             indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
@@ -864,7 +864,7 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_not_indexed() {
-        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName {
+        let expected_statement = select_from(FromClause::Table(QualifiedTableName {
             table_id: Identifier::Single("table_1".to_string()),
             alias: None,
             indexed_type: Some(IndexedType::NotIndexed),
@@ -882,13 +882,13 @@ mod test_select_from_subquery {
     use super::test_utils::{select_from, select_statement_with_columns};
     use crate::parser::test_utils::*;
     use crate::{
-        DistinctType, Expression, Identifier, SelectFrom, SelectFromSubquery, SelectItem,
+        DistinctType, Expression, FromClause, Identifier, SelectFromSubquery, SelectItem,
         SelectStatement, Statement,
     };
 
     #[test]
     fn test_select_from_subquery() {
-        let expected_statement = select_from(SelectFrom::Subquery(SelectFromSubquery {
+        let expected_statement = select_from(FromClause::Subquery(SelectFromSubquery {
             subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(Expression::Identifier(
@@ -906,7 +906,7 @@ mod test_select_from_subquery {
 
     #[test]
     fn test_select_from_subquery_aliased() {
-        let expected_statement = select_from(SelectFrom::Subquery(SelectFromSubquery {
+        let expected_statement = select_from(FromClause::Subquery(SelectFromSubquery {
             subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(Expression::Identifier(
@@ -936,11 +936,11 @@ mod test_select_from_table_function {
         binary_op_expression, identifier_expression, numeric_literal_expression,
     };
     use crate::parser::test_utils::*;
-    use crate::{BinaryOp, Identifier, SelectFrom, SelectFromFunction, Statement};
+    use crate::{BinaryOp, FromClause, Identifier, SelectFromFunction, Statement};
 
     #[test]
     fn test_select_from_table_function() {
-        let expected_statement = select_from(SelectFrom::Function(SelectFromFunction {
+        let expected_statement = select_from(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Single("function_1".to_string()),
             arguments: vec![numeric_literal_expression("1")],
             alias: None,
@@ -954,7 +954,7 @@ mod test_select_from_table_function {
 
     #[test]
     fn test_select_from_table_function_with_schema() {
-        let expected_statement = select_from(SelectFrom::Function(SelectFromFunction {
+        let expected_statement = select_from(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Compound(vec![
                 "schema_1".to_string(),
                 "function_1".to_string(),
@@ -975,7 +975,7 @@ mod test_select_from_table_function {
 
     #[test]
     fn test_select_from_table_function_with_multiple_arguments() {
-        let expected_statement = select_from(SelectFrom::Function(SelectFromFunction {
+        let expected_statement = select_from(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Compound(vec![
                 "schema_1".to_string(),
                 "function_1".to_string(),
@@ -996,7 +996,7 @@ mod test_select_from_table_function {
 
     #[test]
     fn test_select_from_table_function_with_alias() {
-        let expected_statement = select_from(SelectFrom::Function(SelectFromFunction {
+        let expected_statement = select_from(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Compound(vec![
                 "schema_1".to_string(),
                 "function_1".to_string(),
@@ -1026,14 +1026,14 @@ mod test_select_from_comma_separated_table_or_subqueries {
     use super::test_utils::select_from;
     use crate::parser::test_utils::*;
     use crate::{
-        Identifier, IndexedType, JoinClause, JoinTable, JoinType, QualifiedTableName, SelectFrom,
+        FromClause, Identifier, IndexedType, JoinClause, JoinTable, JoinType, QualifiedTableName,
         SelectFromSubquery, Statement,
     };
 
     #[test]
     fn test_select_from_comma_separated_table_or_subqueries() {
-        fn join(lhs: SelectFrom, rhs: SelectFrom) -> SelectFrom {
-            SelectFrom::Join(JoinClause {
+        fn join(lhs: FromClause, rhs: FromClause) -> FromClause {
+            FromClause::Join(JoinClause {
                 lhs_table: Box::new(lhs),
                 join_tables: vec![JoinTable {
                     join_type: JoinType::Cross,
@@ -1043,41 +1043,41 @@ mod test_select_from_comma_separated_table_or_subqueries {
             })
         }
 
-        let table_1 = SelectFrom::Table(QualifiedTableName::from(Identifier::Single(
+        let table_1 = FromClause::Table(QualifiedTableName::from(Identifier::Single(
             "table_1".to_string(),
         )));
         let schema2_table2 =
-            SelectFrom::Table(QualifiedTableName::from(Identifier::Compound(vec![
+            FromClause::Table(QualifiedTableName::from(Identifier::Compound(vec![
                 "schema2".to_string(),
                 "table2".to_string(),
             ])));
 
-        let schema3_table3 = SelectFrom::Table(QualifiedTableName {
+        let schema3_table3 = FromClause::Table(QualifiedTableName {
             table_id: Identifier::Compound(vec!["schema3".to_string(), "table3".to_string()]),
             alias: Some("table3_alias".to_string()),
             indexed_type: None,
         });
 
-        let indexed_table = SelectFrom::Table(QualifiedTableName {
+        let indexed_table = FromClause::Table(QualifiedTableName {
             table_id: Identifier::Single("indexed_table".to_string()),
             alias: Some("t1".to_string()),
             indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
         });
 
-        let not_indexed_table = SelectFrom::Table(QualifiedTableName {
+        let not_indexed_table = FromClause::Table(QualifiedTableName {
             table_id: Identifier::Single("not_indexed_table".to_string()),
             alias: Some("t2".to_string()),
             indexed_type: Some(IndexedType::NotIndexed),
         });
 
-        let subquery = SelectFrom::Subquery(SelectFromSubquery {
-            subquery: Box::new(select_from(SelectFrom::Table(QualifiedTableName::from(
+        let subquery = FromClause::Subquery(SelectFromSubquery {
+            subquery: Box::new(select_from(FromClause::Table(QualifiedTableName::from(
                 Identifier::Single("table_2".to_string()),
             )))),
             alias: Some("select_alias".to_string()),
         });
 
-        let expected_statement = select_from(SelectFrom::Froms(vec![join(
+        let expected_statement = select_from(FromClause::Froms(vec![join(
             table_1,
             join(
                 schema2_table2,
@@ -1108,19 +1108,19 @@ mod test_select_from_with_join_clause {
     use crate::expression::test_utils::{binary_op_expression, identifier_expression};
     use crate::parser::test_utils::*;
     use crate::{
-        BinaryOp, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable, JoinType,
-        QualifiedTableName, SelectFrom, SelectFromSubquery, Statement,
+        BinaryOp, FromClause, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable,
+        JoinType, QualifiedTableName, SelectFromSubquery, Statement,
     };
 
     #[test]
     fn test_select_from_with_join_clause() {
-        let expected_statement = select_from(SelectFrom::Join(JoinClause {
-            lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+        let expected_statement = select_from(FromClause::Join(JoinClause {
+            lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
             join_tables: vec![JoinTable {
                 join_type: JoinType::Inner(false),
-                table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+                table: Box::new(FromClause::Table(QualifiedTableName::from(
                     Identifier::Single("table_2".to_string()),
                 ))),
                 constraints: None,
@@ -1149,13 +1149,13 @@ mod test_select_from_with_join_clause {
         ];
 
         for join_type in join_types {
-            let expected_statement = select_from(SelectFrom::Join(JoinClause {
-                lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+            let expected_statement = select_from(FromClause::Join(JoinClause {
+                lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
                     Identifier::Single("table_1".to_string()),
                 ))),
                 join_tables: vec![JoinTable {
                     join_type: join_type.clone(),
-                    table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+                    table: Box::new(FromClause::Table(QualifiedTableName::from(
                         Identifier::Single("table_2".to_string()),
                     ))),
                     constraints: None,
@@ -1171,13 +1171,13 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_cross_join() {
-        let expected_statement = select_from(SelectFrom::Join(JoinClause {
-            lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+        let expected_statement = select_from(FromClause::Join(JoinClause {
+            lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
             join_tables: vec![JoinTable {
                 join_type: JoinType::Cross,
-                table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+                table: Box::new(FromClause::Table(QualifiedTableName::from(
                     Identifier::Single("table_2".to_string()),
                 ))),
                 constraints: None,
@@ -1197,13 +1197,13 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_join_clause_with_on_constraints() {
-        let expected_statement = select_from(SelectFrom::Join(JoinClause {
-            lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+        let expected_statement = select_from(FromClause::Join(JoinClause {
+            lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
             join_tables: vec![JoinTable {
                 join_type: JoinType::Inner(false),
-                table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+                table: Box::new(FromClause::Table(QualifiedTableName::from(
                     Identifier::Single("table_2".to_string()),
                 ))),
                 constraints: Some(JoinConstraint::On(binary_op_expression(
@@ -1222,13 +1222,13 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_join_clause_with_using_constraints() {
-        let expected_statement = select_from(SelectFrom::Join(JoinClause {
-            lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+        let expected_statement = select_from(FromClause::Join(JoinClause {
+            lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
             join_tables: vec![JoinTable {
                 join_type: JoinType::Inner(false),
-                table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+                table: Box::new(FromClause::Table(QualifiedTableName::from(
                     Identifier::Single("table_2".to_string()),
                 ))),
                 constraints: Some(JoinConstraint::Using(vec![Identifier::Single(
@@ -1245,14 +1245,14 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_join_clause_nested() {
-        let expected_statement = select_from(SelectFrom::Join(JoinClause {
-            lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+        let expected_statement = select_from(FromClause::Join(JoinClause {
+            lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
             join_tables: vec![
                 JoinTable {
                     join_type: JoinType::Inner(false),
-                    table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+                    table: Box::new(FromClause::Table(QualifiedTableName::from(
                         Identifier::Single("table_2".to_string()),
                     ))),
                     constraints: Some(JoinConstraint::On(binary_op_expression(
@@ -1263,7 +1263,7 @@ mod test_select_from_with_join_clause {
                 },
                 JoinTable {
                     join_type: JoinType::Full(false),
-                    table: Box::new(SelectFrom::Table(QualifiedTableName::from(
+                    table: Box::new(FromClause::Table(QualifiedTableName::from(
                         Identifier::Single("table_3".to_string()),
                     ))),
                     constraints: Some(JoinConstraint::Using(vec![Identifier::Single(
@@ -1286,16 +1286,16 @@ mod test_select_from_with_join_clause {
     fn test_select_from_with_join_clause_with_nested_keeping_ordering() {
         let subquery = JoinTable {
             join_type: JoinType::Inner(false),
-            table: Box::new(SelectFrom::Subquery(SelectFromSubquery {
-                subquery: Box::new(select_from(SelectFrom::Join(JoinClause {
-                    lhs_table: Box::new(SelectFrom::Table(QualifiedTableName {
+            table: Box::new(FromClause::Subquery(SelectFromSubquery {
+                subquery: Box::new(select_from(FromClause::Join(JoinClause {
+                    lhs_table: Box::new(FromClause::Table(QualifiedTableName {
                         table_id: Identifier::Single("table_2".to_string()),
                         alias: Some("t2".to_string()),
                         indexed_type: None,
                     })),
                     join_tables: vec![JoinTable {
                         join_type: JoinType::Left(false),
-                        table: Box::new(SelectFrom::Table(QualifiedTableName {
+                        table: Box::new(FromClause::Table(QualifiedTableName {
                             table_id: Identifier::Single("table_3".to_string()),
                             alias: Some("t3".to_string()),
                             indexed_type: Some(IndexedType::Indexed("index_3".to_string())),
@@ -1316,8 +1316,8 @@ mod test_select_from_with_join_clause {
             ))),
         };
 
-        let expected_statement = select_from(SelectFrom::Join(JoinClause {
-            lhs_table: Box::new(SelectFrom::Table(QualifiedTableName {
+        let expected_statement = select_from(FromClause::Join(JoinClause {
+            lhs_table: Box::new(FromClause::Table(QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: Some("t1".to_string()),
                 indexed_type: None,
@@ -1345,8 +1345,8 @@ mod test_select_where_clause {
     };
     use crate::parser::test_utils::*;
     use crate::{
-        BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression,
-        QualifiedTableName, SelectFrom, Statement,
+        BinaryMatchingExpression, BinaryOp, Expression, FromClause, Identifier, InExpression,
+        QualifiedTableName, Statement,
     };
 
     #[test]
@@ -1400,7 +1400,7 @@ mod test_select_where_clause {
 
     #[test]
     fn test_select_where_clause_with_subquery() {
-        let subquery = select_from(SelectFrom::Table(QualifiedTableName::from(
+        let subquery = select_from(FromClause::Table(QualifiedTableName::from(
             Identifier::Single("table_2".to_string()),
         )));
 
@@ -1595,7 +1595,7 @@ mod test_select_window_clause {
 mod test_select_union_clause {
     use super::test_utils::{select_from, select_statement_with_union_clause};
     use crate::parser::test_utils::*;
-    use crate::{Identifier, QualifiedTableName, SelectFrom, Statement, UnionStatementType};
+    use crate::{FromClause, Identifier, QualifiedTableName, Statement, UnionStatementType};
 
     #[test]
     fn test_select_union_clause() {
@@ -1606,11 +1606,11 @@ mod test_select_union_clause {
             UnionStatementType::Except,
         ];
 
-        let left = select_from(SelectFrom::Table(QualifiedTableName::from(
+        let left = select_from(FromClause::Table(QualifiedTableName::from(
             Identifier::Single("table_1".to_string()),
         )));
 
-        let right = select_from(SelectFrom::Table(QualifiedTableName::from(
+        let right = select_from(FromClause::Table(QualifiedTableName::from(
             Identifier::Single("table_2".to_string()),
         )));
 
@@ -1786,7 +1786,7 @@ mod test_select_with_cte {
     use super::super::cte::test_utils::cte_expression;
     use super::test_utils::{select_from, select_statement_with_cte_clause};
     use crate::parser::test_utils::*;
-    use crate::{Identifier, QualifiedTableName, SelectFrom};
+    use crate::{FromClause, Identifier, QualifiedTableName};
 
     #[test]
     fn test_select_cte_clause() {
@@ -1796,7 +1796,7 @@ mod test_select_with_cte {
                 Identifier::Single("cte_1".to_string()),
                 vec![],
                 None,
-                select_from(SelectFrom::Table(QualifiedTableName::from(
+                select_from(FromClause::Table(QualifiedTableName::from(
                     Identifier::Single("cte_table".to_string()),
                 ))),
             )],
@@ -1817,7 +1817,7 @@ mod test_select_with_cte {
                     Identifier::Single("cte_1".to_string()),
                     vec![],
                     None,
-                    select_from(SelectFrom::Table(QualifiedTableName::from(
+                    select_from(FromClause::Table(QualifiedTableName::from(
                         Identifier::Single("cte_table1".to_string()),
                     ))),
                 ),
@@ -1825,7 +1825,7 @@ mod test_select_with_cte {
                     Identifier::Single("cte_2".to_string()),
                     vec![],
                     None,
-                    select_from(SelectFrom::Table(QualifiedTableName::from(
+                    select_from(FromClause::Table(QualifiedTableName::from(
                         Identifier::Single("cte_table2".to_string()),
                     ))),
                 ),

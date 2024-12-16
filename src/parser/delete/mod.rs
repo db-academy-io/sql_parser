@@ -385,7 +385,7 @@ mod test_delete_statements_with_cte {
     use super::test_utils::delete_statement_with_cte_clause;
     use crate::parser::select::test_utils::select_from;
     use crate::parser::test_utils::*;
-    use crate::{Identifier, QualifiedTableName, SelectFrom};
+    use crate::{FromClause, Identifier, QualifiedTableName};
 
     #[test]
     fn test_delete_with_cte() {
@@ -395,7 +395,7 @@ mod test_delete_statements_with_cte {
                 Identifier::Single("cte_1".to_string()),
                 vec![],
                 None,
-                select_from(SelectFrom::Table(QualifiedTableName::from(
+                select_from(FromClause::Table(QualifiedTableName::from(
                     Identifier::from("cte_table"),
                 ))),
             )],
@@ -417,7 +417,7 @@ mod test_delete_statements_with_cte {
                     Identifier::Single("cte_1".to_string()),
                     vec![],
                     None,
-                    select_from(SelectFrom::Table(QualifiedTableName::from(
+                    select_from(FromClause::Table(QualifiedTableName::from(
                         Identifier::Single("cte_table1".to_string()),
                     ))),
                 ),
@@ -425,7 +425,7 @@ mod test_delete_statements_with_cte {
                     Identifier::Single("cte_2".to_string()),
                     vec![],
                     None,
-                    select_from(SelectFrom::Table(QualifiedTableName::from(
+                    select_from(FromClause::Table(QualifiedTableName::from(
                         Identifier::Single("cte_table2".to_string()),
                     ))),
                 ),

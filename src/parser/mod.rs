@@ -10,6 +10,7 @@ pub(crate) mod expression;
 mod select;
 mod sqlite;
 mod trx;
+mod update;
 mod window_definition;
 
 #[cfg(test)]
@@ -28,6 +29,7 @@ use expression::ExpressionParser;
 use select::{SelectStatementParser, ValuesStatementParser};
 use sqlite::SQLite3StatementParser;
 use trx::TransactionStatementParser;
+use update::UpdateStatementParser;
 use window_definition::WindowDefinitionParser;
 /// A parser for SQLite SQL statements
 pub struct Parser<'a> {
@@ -315,6 +317,9 @@ impl<'a> Parser<'a> {
             Keyword::With => CteStatementParser::parse_cte_statement(self).map(Statement::WithCte),
             Keyword::Delete => {
                 DeleteStatementParser::parse_delete_statement(self).map(Statement::Delete)
+            }
+            Keyword::Update => {
+                UpdateStatementParser::parse_update_statement(self).map(Statement::Update)
             }
             Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
                 .map(Statement::AlterTable),

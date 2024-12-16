@@ -22,7 +22,7 @@ pub struct Select {
     pub columns: Vec<SelectItem>,
 
     /// The FROM clause
-    pub from: Option<SelectFrom>,
+    pub from: Option<FromClause>,
 
     /// The WHERE clause
     pub where_clause: Option<Box<Expression>>,
@@ -67,7 +67,7 @@ pub enum SelectItem {
 /// An AST for representing a FROM clause in the
 /// [SELECT](https://www.sqlite.org/lang_select.html) statement
 #[derive(Debug, PartialEq, Clone)]
-pub enum SelectFrom {
+pub enum FromClause {
     /// Select from a table
     Table(QualifiedTableName),
 
@@ -78,7 +78,7 @@ pub enum SelectFrom {
     Subquery(SelectFromSubquery),
 
     /// Select from cartesian product of tables
-    Froms(Vec<SelectFrom>),
+    Froms(Vec<FromClause>),
 
     /// Select from a JOIN clause
     Join(JoinClause),
@@ -134,7 +134,7 @@ pub struct SelectFromSubquery {
 /// A clause for a JOIN statement
 #[derive(Debug, PartialEq, Clone)]
 pub struct JoinClause {
-    pub lhs_table: Box<SelectFrom>,
+    pub lhs_table: Box<FromClause>,
 
     pub join_tables: Vec<JoinTable>,
 }
@@ -143,7 +143,7 @@ pub struct JoinClause {
 #[derive(Debug, PartialEq, Clone)]
 pub struct JoinTable {
     pub join_type: JoinType,
-    pub table: Box<SelectFrom>,
+    pub table: Box<FromClause>,
     pub constraints: Option<JoinConstraint>,
 }
 
