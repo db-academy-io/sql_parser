@@ -21,7 +21,7 @@ pub use create::{
     CreateVirtualTableStatement,
 };
 pub use cte::{CteExpression, MaterializationType, WithCteStatement};
-pub use delete::DeleteStatement;
+pub use delete::{DeleteStatement, ReturningClause};
 pub use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
 pub use explain::ExplainStatement;
 pub use expression::*;

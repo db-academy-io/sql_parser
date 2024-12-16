@@ -7,7 +7,7 @@ pub struct DeleteStatement {
 
     pub where_clause: Option<Box<Expression>>,
 
-    pub returning_clause: Option<Box<ReturningClause>>,
+    pub returning_clause: Vec<ReturningClause>,
 }
 
 /// A [RETURNING](https://www.sqlite.org/lang_returning.html) clause types

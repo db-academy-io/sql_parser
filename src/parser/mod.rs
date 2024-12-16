@@ -3,6 +3,7 @@ use std::iter::Peekable;
 mod alter;
 mod column_definition;
 mod cte;
+mod delete;
 mod drop;
 mod errors;
 pub(crate) mod expression;
@@ -14,9 +15,10 @@ mod window_definition;
 #[cfg(test)]
 mod test_utils;
 
-use crate::{Keyword, SelectStatement, Statement, Token, TokenType, Tokenizer};
+use crate::{IndexedType, Keyword, SelectStatement, Statement, Token, TokenType, Tokenizer};
 use alter::AlterTableStatementParser;
 use cte::CteStatementParser;
+use delete::DeleteStatementParser;
 use drop::DropStatementParser;
 pub use errors::*;
 use select::{SelectStatementParser, ValuesStatementParser};
@@ -219,6 +221,29 @@ impl<'a> Parser<'a> {
         Ok(format!("{}{}", minus_sign, number))
     }
 
+    /// Parse an alias if it exists, after the 'AS' keyword
+    fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError> {
+        if self.consume_as_keyword(Keyword::As).is_ok() {
+            Ok(Some(self.consume_as_id()?))
+        } else if let Ok(value) = self.consume_as_id() {
+            Ok(Some(value.to_string()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn parse_indexed_type(&mut self) -> Result<Option<IndexedType>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Indexed).is_ok() {
+            self.consume_as_keyword(Keyword::By)?;
+            Ok(Some(IndexedType::Indexed(self.consume_as_id()?)))
+        } else if self.consume_as_keyword(Keyword::Not).is_ok() {
+            self.consume_as_keyword(Keyword::Indexed)?;
+            Ok(Some(IndexedType::NotIndexed))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Parse a single statement from the tokenizer [Tokenizer]
     pub fn parse_statement(&mut self) -> Result<Statement, ParsingError> {
         match self.peek_as_keyword()? {
@@ -242,6 +267,9 @@ impl<'a> Parser<'a> {
             Keyword::Values => ValuesStatementParser::parse_values_statement(self)
                 .map(|stmt| Statement::Select(SelectStatement::Values(stmt))),
             Keyword::With => CteStatementParser::parse_cte_statement(self).map(Statement::WithCte),
+            Keyword::Delete => {
+                DeleteStatementParser::parse_delete_statement(self).map(Statement::Delete)
+            }
             Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
                 .map(Statement::AlterTable),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),

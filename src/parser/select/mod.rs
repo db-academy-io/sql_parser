@@ -2,9 +2,9 @@ mod values;
 
 use crate::expression::IdentifierParser;
 use crate::{
-    DistinctType, Expression, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable,
-    JoinType, Keyword, LimitClause, NamedWindowDefinition, QualifiedTableName, SelectFrom,
-    SelectFromFunction, SelectFromSubquery, TokenType, UnionStatement, UnionStatementType,
+    DistinctType, Expression, Identifier, JoinClause, JoinConstraint, JoinTable, JoinType, Keyword,
+    LimitClause, NamedWindowDefinition, QualifiedTableName, SelectFrom, SelectFromFunction,
+    SelectFromSubquery, TokenType, UnionStatement, UnionStatementType,
 };
 
 use super::expression::ExpressionParser;
@@ -30,11 +30,6 @@ pub trait SelectStatementParser {
     fn parse_select_from_clause(&mut self) -> Result<Option<SelectFrom>, ParsingError>;
 
     fn parse_select_from_clause_subquery(&mut self) -> Result<SelectFrom, ParsingError>;
-
-    fn parse_select_from_table_indexed_type(&mut self)
-        -> Result<Option<IndexedType>, ParsingError>;
-
-    fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError>;
 
     fn parse_select_from_join_clause(
         &mut self,
@@ -223,7 +218,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 }));
             } else {
                 let alias = self.parse_alias_if_exists()?;
-                let indexed_type = self.parse_select_from_table_indexed_type()?;
+                let indexed_type = self.parse_indexed_type()?;
 
                 let lhs = SelectFrom::Table(QualifiedTableName {
                     table_id: id,
@@ -340,30 +335,6 @@ impl<'a> SelectStatementParser for Parser<'a> {
             }
             self.consume_as(TokenType::RightParen)?;
             Ok(Some(JoinConstraint::Using(columns)))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError> {
-        if self.consume_as_keyword(Keyword::As).is_ok() {
-            Ok(Some(self.consume_as_id()?))
-        } else if let Ok(value) = self.consume_as_id() {
-            Ok(Some(value.to_string()))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn parse_select_from_table_indexed_type(
-        &mut self,
-    ) -> Result<Option<IndexedType>, ParsingError> {
-        if self.consume_as_keyword(Keyword::Indexed).is_ok() {
-            self.consume_as_keyword(Keyword::By)?;
-            Ok(Some(IndexedType::Indexed(self.consume_as_id()?)))
-        } else if self.consume_as_keyword(Keyword::Not).is_ok() {
-            self.consume_as_keyword(Keyword::Indexed)?;
-            Ok(Some(IndexedType::NotIndexed))
         } else {
             Ok(None)
         }
