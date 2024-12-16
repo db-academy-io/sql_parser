@@ -64,7 +64,10 @@ impl<'a> DeleteStatementParser for Parser<'a> {
 #[cfg(test)]
 mod test_utils {
 
-    use crate::{DeleteStatement, Expression, QualifiedTableName, ReturningClause, Statement};
+    use crate::{
+        CteExpression, DeleteStatement, Expression, QualifiedTableName, ReturningClause, Statement,
+        WithCteStatement,
+    };
 
     pub fn delete_statement(table_name: QualifiedTableName) -> Statement {
         Statement::Delete(DeleteStatement {
@@ -93,6 +96,22 @@ mod test_utils {
             table_name,
             where_clause: None,
             returning_clause,
+        })
+    }
+
+    pub fn delete_statement_with_cte_clause(
+        recursive: bool,
+        cte_expressions: Vec<CteExpression>,
+        table_name: QualifiedTableName,
+    ) -> Statement {
+        Statement::WithCte(WithCteStatement {
+            recursive,
+            cte_expressions,
+            statement: Box::new(Statement::Delete(DeleteStatement {
+                table_name,
+                where_clause: None,
+                returning_clause: vec![],
+            })),
         })
     }
 }
@@ -256,6 +275,67 @@ mod tests_delete_statements {
 
         run_sunny_day_test(
             "DELETE FROM table_1 AS alias_1 INDEXED BY index_1 WHERE column_1 = 'abc' RETURNING *, 1, column_1 AS alias_1",
+            expected_statement,
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_delete_statements_with_cte {
+    use super::super::cte::test_utils::cte_expression;
+    use super::test_utils::delete_statement_with_cte_clause;
+    use crate::parser::select::test_utils::select_from;
+    use crate::parser::test_utils::*;
+    use crate::{Identifier, QualifiedTableName, SelectFrom};
+
+    #[test]
+    fn test_delete_with_cte() {
+        let expected_statement = delete_statement_with_cte_clause(
+            true,
+            vec![cte_expression(
+                Identifier::Single("cte_1".to_string()),
+                vec![],
+                None,
+                select_from(SelectFrom::Table(QualifiedTableName::from(
+                    Identifier::from("cte_table"),
+                ))),
+            )],
+            QualifiedTableName::from(Identifier::Single("cte_1".to_string())),
+        );
+
+        run_sunny_day_test(
+            "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) DELETE FROM cte_1",
+            expected_statement,
+        );
+    }
+
+    #[test]
+    fn test_delete_with_multiple_ctes() {
+        let expected_statement = delete_statement_with_cte_clause(
+            false,
+            vec![
+                cte_expression(
+                    Identifier::Single("cte_1".to_string()),
+                    vec![],
+                    None,
+                    select_from(SelectFrom::Table(QualifiedTableName::from(
+                        Identifier::Single("cte_table1".to_string()),
+                    ))),
+                ),
+                cte_expression(
+                    Identifier::Single("cte_2".to_string()),
+                    vec![],
+                    None,
+                    select_from(SelectFrom::Table(QualifiedTableName::from(
+                        Identifier::Single("cte_table2".to_string()),
+                    ))),
+                ),
+            ],
+            QualifiedTableName::from(Identifier::Single("cte_2".to_string())),
+        );
+
+        run_sunny_day_test(
+            "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_table2) DELETE FROM cte_2",
             expected_statement,
         );
     }

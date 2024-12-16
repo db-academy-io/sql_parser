@@ -463,7 +463,7 @@ pub mod test_utils {
         }
     }
 
-    pub fn select_statement_with_from(from: SelectFrom) -> SelectStatement {
+    pub fn select_from(from: SelectFrom) -> SelectStatement {
         SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
@@ -475,7 +475,7 @@ pub mod test_utils {
     }
 
     pub fn select_star_from(table_name: Identifier) -> SelectStatement {
-        select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(table_name)))
+        select_from(SelectFrom::Table(QualifiedTableName::from(table_name)))
     }
 
     pub fn select_statement_with_where_clause(where_clause: Expression) -> SelectStatement {
@@ -824,15 +824,15 @@ mod test_select_result_columns {
 
 #[cfg(test)]
 mod test_select_from_table_indexed {
-    use super::test_utils::select_statement_with_from;
+    use super::test_utils::select_from;
     use crate::parser::test_utils::*;
     use crate::{Identifier, IndexedType, QualifiedTableName, SelectFrom, Statement};
 
     #[test]
     fn test_select_from_table() {
-        let expected_statement = select_statement_with_from(SelectFrom::Table(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-        ));
+        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName::from(
+            Identifier::Single("table_1".to_string()),
+        )));
 
         run_sunny_day_test(
             "SELECT * FROM table_1",
@@ -842,10 +842,9 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_with_schema() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
-                Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
-            )));
+        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName::from(
+            Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
+        )));
 
         run_sunny_day_test(
             "SELECT * FROM schema_1.table_1",
@@ -855,12 +854,11 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_with_alias() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Table(QualifiedTableName {
-                table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
-                alias: Some("alias".to_string()),
-                indexed_type: None,
-            }));
+        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName {
+            table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
+            alias: Some("alias".to_string()),
+            indexed_type: None,
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM schema_1.table_1 AS alias",
@@ -870,12 +868,11 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_with_alias_without_as_keyword() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Table(QualifiedTableName {
-                table_id: Identifier::Single("table_1".to_string()),
-                alias: Some("alias".to_string()),
-                indexed_type: None,
-            }));
+        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName {
+            table_id: Identifier::Single("table_1".to_string()),
+            alias: Some("alias".to_string()),
+            indexed_type: None,
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM table_1 alias",
@@ -885,12 +882,11 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_with_alias_indexed() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Table(QualifiedTableName {
-                table_id: Identifier::Single("table_1".to_string()),
-                alias: Some("alias".to_string()),
-                indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
-            }));
+        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName {
+            table_id: Identifier::Single("table_1".to_string()),
+            alias: Some("alias".to_string()),
+            indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM table_1 alias INDEXED BY index_1",
@@ -900,12 +896,11 @@ mod test_select_from_table_indexed {
 
     #[test]
     fn test_select_from_table_not_indexed() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Table(QualifiedTableName {
-                table_id: Identifier::Single("table_1".to_string()),
-                alias: None,
-                indexed_type: Some(IndexedType::NotIndexed),
-            }));
+        let expected_statement = select_from(SelectFrom::Table(QualifiedTableName {
+            table_id: Identifier::Single("table_1".to_string()),
+            alias: None,
+            indexed_type: Some(IndexedType::NotIndexed),
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM table_1 NOT INDEXED",
@@ -916,7 +911,7 @@ mod test_select_from_table_indexed {
 
 #[cfg(test)]
 mod test_select_from_subquery {
-    use super::test_utils::{select_statement_with_columns, select_statement_with_from};
+    use super::test_utils::{select_from, select_statement_with_columns};
     use crate::parser::test_utils::*;
     use crate::{
         DistinctType, Expression, Identifier, SelectFrom, SelectFromSubquery, SelectItem,
@@ -925,16 +920,15 @@ mod test_select_from_subquery {
 
     #[test]
     fn test_select_from_subquery() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Subquery(SelectFromSubquery {
-                subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
-                    DistinctType::None,
-                    vec![SelectItem::Expression(Expression::Identifier(
-                        Identifier::Single("col1".to_string()),
-                    ))],
-                ))),
-                alias: None,
-            }));
+        let expected_statement = select_from(SelectFrom::Subquery(SelectFromSubquery {
+            subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
+                DistinctType::None,
+                vec![SelectItem::Expression(Expression::Identifier(
+                    Identifier::Single("col1".to_string()),
+                ))],
+            ))),
+            alias: None,
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM (SELECT col1)",
@@ -944,16 +938,15 @@ mod test_select_from_subquery {
 
     #[test]
     fn test_select_from_subquery_aliased() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Subquery(SelectFromSubquery {
-                subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
-                    DistinctType::None,
-                    vec![SelectItem::Expression(Expression::Identifier(
-                        Identifier::NameWithWildcard("t".to_string()),
-                    ))],
-                ))),
-                alias: Some("alias".to_string()),
-            }));
+        let expected_statement = select_from(SelectFrom::Subquery(SelectFromSubquery {
+            subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
+                DistinctType::None,
+                vec![SelectItem::Expression(Expression::Identifier(
+                    Identifier::NameWithWildcard("t".to_string()),
+                ))],
+            ))),
+            alias: Some("alias".to_string()),
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM (SELECT t.* ) as alias",
@@ -970,7 +963,7 @@ mod test_select_from_subquery {
 
 #[cfg(test)]
 mod test_select_from_table_function {
-    use super::test_utils::select_statement_with_from;
+    use super::test_utils::select_from;
     use crate::expression::test_utils::{
         binary_op_expression, identifier_expression, numeric_literal_expression,
     };
@@ -979,12 +972,11 @@ mod test_select_from_table_function {
 
     #[test]
     fn test_select_from_table_function() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Function(SelectFromFunction {
-                function_name: Identifier::Single("function_1".to_string()),
-                arguments: vec![numeric_literal_expression("1")],
-                alias: None,
-            }));
+        let expected_statement = select_from(SelectFrom::Function(SelectFromFunction {
+            function_name: Identifier::Single("function_1".to_string()),
+            arguments: vec![numeric_literal_expression("1")],
+            alias: None,
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM function_1(1)",
@@ -994,19 +986,18 @@ mod test_select_from_table_function {
 
     #[test]
     fn test_select_from_table_function_with_schema() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Function(SelectFromFunction {
-                function_name: Identifier::Compound(vec![
-                    "schema_1".to_string(),
-                    "function_1".to_string(),
-                ]),
-                arguments: vec![binary_op_expression(
-                    BinaryOp::Plus,
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
-                )],
-                alias: None,
-            }));
+        let expected_statement = select_from(SelectFrom::Function(SelectFromFunction {
+            function_name: Identifier::Compound(vec![
+                "schema_1".to_string(),
+                "function_1".to_string(),
+            ]),
+            arguments: vec![binary_op_expression(
+                BinaryOp::Plus,
+                numeric_literal_expression("1"),
+                numeric_literal_expression("2"),
+            )],
+            alias: None,
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM schema_1.function_1(1+2)",
@@ -1016,19 +1007,18 @@ mod test_select_from_table_function {
 
     #[test]
     fn test_select_from_table_function_with_multiple_arguments() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Function(SelectFromFunction {
-                function_name: Identifier::Compound(vec![
-                    "schema_1".to_string(),
-                    "function_1".to_string(),
-                ]),
-                arguments: vec![
-                    numeric_literal_expression("1"),
-                    identifier_expression(&["col1"]),
-                    numeric_literal_expression("3"),
-                ],
-                alias: None,
-            }));
+        let expected_statement = select_from(SelectFrom::Function(SelectFromFunction {
+            function_name: Identifier::Compound(vec![
+                "schema_1".to_string(),
+                "function_1".to_string(),
+            ]),
+            arguments: vec![
+                numeric_literal_expression("1"),
+                identifier_expression(&["col1"]),
+                numeric_literal_expression("3"),
+            ],
+            alias: None,
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM schema_1.function_1(1, col1, 3)",
@@ -1038,19 +1028,18 @@ mod test_select_from_table_function {
 
     #[test]
     fn test_select_from_table_function_with_alias() {
-        let expected_statement =
-            select_statement_with_from(SelectFrom::Function(SelectFromFunction {
-                function_name: Identifier::Compound(vec![
-                    "schema_1".to_string(),
-                    "function_1".to_string(),
-                ]),
-                arguments: vec![
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
-                    numeric_literal_expression("3"),
-                ],
-                alias: Some("alias".to_string()),
-            }));
+        let expected_statement = select_from(SelectFrom::Function(SelectFromFunction {
+            function_name: Identifier::Compound(vec![
+                "schema_1".to_string(),
+                "function_1".to_string(),
+            ]),
+            arguments: vec![
+                numeric_literal_expression("1"),
+                numeric_literal_expression("2"),
+                numeric_literal_expression("3"),
+            ],
+            alias: Some("alias".to_string()),
+        }));
 
         run_sunny_day_test(
             "SELECT * FROM schema_1.function_1(1, 2, 3) AS alias",
@@ -1066,7 +1055,7 @@ mod test_select_from_table_function {
 
 #[cfg(test)]
 mod test_select_from_comma_separated_table_or_subqueries {
-    use super::test_utils::select_statement_with_from;
+    use super::test_utils::select_from;
     use crate::parser::test_utils::*;
     use crate::{
         Identifier, IndexedType, JoinClause, JoinTable, JoinType, QualifiedTableName, SelectFrom,
@@ -1114,13 +1103,13 @@ mod test_select_from_comma_separated_table_or_subqueries {
         });
 
         let subquery = SelectFrom::Subquery(SelectFromSubquery {
-            subquery: Box::new(select_statement_with_from(SelectFrom::Table(
-                QualifiedTableName::from(Identifier::Single("table_2".to_string())),
-            ))),
+            subquery: Box::new(select_from(SelectFrom::Table(QualifiedTableName::from(
+                Identifier::Single("table_2".to_string()),
+            )))),
             alias: Some("select_alias".to_string()),
         });
 
-        let expected_statement = select_statement_with_from(SelectFrom::Froms(vec![join(
+        let expected_statement = select_from(SelectFrom::Froms(vec![join(
             table_1,
             join(
                 schema2_table2,
@@ -1147,7 +1136,7 @@ mod test_select_from_comma_separated_table_or_subqueries {
 
 #[cfg(test)]
 mod test_select_from_with_join_clause {
-    use super::test_utils::select_statement_with_from;
+    use super::test_utils::select_from;
     use crate::expression::test_utils::{binary_op_expression, identifier_expression};
     use crate::parser::test_utils::*;
     use crate::{
@@ -1157,7 +1146,7 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_join_clause() {
-        let expected_statement = select_statement_with_from(SelectFrom::Join(JoinClause {
+        let expected_statement = select_from(SelectFrom::Join(JoinClause {
             lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
@@ -1192,7 +1181,7 @@ mod test_select_from_with_join_clause {
         ];
 
         for join_type in join_types {
-            let expected_statement = select_statement_with_from(SelectFrom::Join(JoinClause {
+            let expected_statement = select_from(SelectFrom::Join(JoinClause {
                 lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
                     Identifier::Single("table_1".to_string()),
                 ))),
@@ -1214,7 +1203,7 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_cross_join() {
-        let expected_statement = select_statement_with_from(SelectFrom::Join(JoinClause {
+        let expected_statement = select_from(SelectFrom::Join(JoinClause {
             lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
@@ -1240,7 +1229,7 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_join_clause_with_on_constraints() {
-        let expected_statement = select_statement_with_from(SelectFrom::Join(JoinClause {
+        let expected_statement = select_from(SelectFrom::Join(JoinClause {
             lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
@@ -1265,7 +1254,7 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_join_clause_with_using_constraints() {
-        let expected_statement = select_statement_with_from(SelectFrom::Join(JoinClause {
+        let expected_statement = select_from(SelectFrom::Join(JoinClause {
             lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
@@ -1288,7 +1277,7 @@ mod test_select_from_with_join_clause {
 
     #[test]
     fn test_select_from_with_join_clause_nested() {
-        let expected_statement = select_statement_with_from(SelectFrom::Join(JoinClause {
+        let expected_statement = select_from(SelectFrom::Join(JoinClause {
             lhs_table: Box::new(SelectFrom::Table(QualifiedTableName::from(
                 Identifier::Single("table_1".to_string()),
             ))),
@@ -1330,7 +1319,7 @@ mod test_select_from_with_join_clause {
         let subquery = JoinTable {
             join_type: JoinType::Inner(false),
             table: Box::new(SelectFrom::Subquery(SelectFromSubquery {
-                subquery: Box::new(select_statement_with_from(SelectFrom::Join(JoinClause {
+                subquery: Box::new(select_from(SelectFrom::Join(JoinClause {
                     lhs_table: Box::new(SelectFrom::Table(QualifiedTableName {
                         table_id: Identifier::Single("table_2".to_string()),
                         alias: Some("t2".to_string()),
@@ -1359,7 +1348,7 @@ mod test_select_from_with_join_clause {
             ))),
         };
 
-        let expected_statement = select_statement_with_from(SelectFrom::Join(JoinClause {
+        let expected_statement = select_from(SelectFrom::Join(JoinClause {
             lhs_table: Box::new(SelectFrom::Table(QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: Some("t1".to_string()),
@@ -1382,7 +1371,7 @@ mod test_select_from_with_join_clause {
 
 #[cfg(test)]
 mod test_select_where_clause {
-    use super::test_utils::{select_statement_with_from, select_statement_with_where_clause};
+    use super::test_utils::{select_from, select_statement_with_where_clause};
     use crate::expression::test_utils::{
         binary_op_expression, identifier_expression, numeric_literal_expression,
     };
@@ -1443,7 +1432,7 @@ mod test_select_where_clause {
 
     #[test]
     fn test_select_where_clause_with_subquery() {
-        let subquery = select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+        let subquery = select_from(SelectFrom::Table(QualifiedTableName::from(
             Identifier::Single("table_2".to_string()),
         )));
 
@@ -1636,7 +1625,7 @@ mod test_select_window_clause {
 
 #[cfg(test)]
 mod test_select_union_clause {
-    use super::test_utils::{select_statement_with_from, select_statement_with_union_clause};
+    use super::test_utils::{select_from, select_statement_with_union_clause};
     use crate::parser::test_utils::*;
     use crate::{Identifier, QualifiedTableName, SelectFrom, Statement, UnionStatementType};
 
@@ -1649,11 +1638,11 @@ mod test_select_union_clause {
             UnionStatementType::Except,
         ];
 
-        let left = select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+        let left = select_from(SelectFrom::Table(QualifiedTableName::from(
             Identifier::Single("table_1".to_string()),
         )));
 
-        let right = select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+        let right = select_from(SelectFrom::Table(QualifiedTableName::from(
             Identifier::Single("table_2".to_string()),
         )));
 
@@ -1825,9 +1814,9 @@ mod test_select_limit_clause {
 }
 
 #[cfg(test)]
-mod test_select_cte_clause {
+mod test_select_with_cte {
     use super::super::cte::test_utils::cte_expression;
-    use super::test_utils::{select_statement_with_cte_clause, select_statement_with_from};
+    use super::test_utils::{select_from, select_statement_with_cte_clause};
     use crate::parser::test_utils::*;
     use crate::{Identifier, QualifiedTableName, SelectFrom};
 
@@ -1839,7 +1828,7 @@ mod test_select_cte_clause {
                 Identifier::Single("cte_1".to_string()),
                 vec![],
                 None,
-                select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+                select_from(SelectFrom::Table(QualifiedTableName::from(
                     Identifier::Single("cte_table".to_string()),
                 ))),
             )],
@@ -1860,7 +1849,7 @@ mod test_select_cte_clause {
                     Identifier::Single("cte_1".to_string()),
                     vec![],
                     None,
-                    select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+                    select_from(SelectFrom::Table(QualifiedTableName::from(
                         Identifier::Single("cte_table1".to_string()),
                     ))),
                 ),
@@ -1868,7 +1857,7 @@ mod test_select_cte_clause {
                     Identifier::Single("cte_2".to_string()),
                     vec![],
                     None,
-                    select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+                    select_from(SelectFrom::Table(QualifiedTableName::from(
                         Identifier::Single("cte_table2".to_string()),
                     ))),
                 ),
