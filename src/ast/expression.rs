@@ -348,20 +348,23 @@ pub enum FrameSpecExclude {
     Ties,
 }
 
-/// A type name
+/// A String alias for a data type name
+pub type DataTypeName = String;
+
+/// A data type enum, representing the [sqlite-data-types](https://www.sqlite.org/datatype3.html)
 #[derive(Debug, PartialEq, Clone)]
 pub enum DataType {
     /// A data type name, e.g. INTEGER
-    PlainDataType(String),
+    PlainDataType(DataTypeName),
 
     /// A sized data type, e.g. VARCHAR(10)
-    SizedDataType(String, String),
+    SizedDataType(DataTypeName, String),
 
     /// A bounded data type name, e.g. VARCHAR(1, 10)
-    BoundedDataType(String, String, String),
+    BoundedDataType(DataTypeName, String, String),
 }
 
-/// A unary matching expression type
+/// An unary matching expression type
 #[derive(Debug, PartialEq, Clone)]
 pub enum UnaryMatchingExpression {
     /// Is Null

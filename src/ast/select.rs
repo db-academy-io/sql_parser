@@ -1,7 +1,7 @@
 use super::{Expression, Identifier, NamedWindowDefinition, OrderingTerm};
 use std::fmt::Display;
 
-/// An enum representing the possible types of SELECT statements
+/// An enum representing the possible types of [SELECT](https://www.sqlite.org/lang_select.html) statements
 #[derive(Debug, PartialEq, Clone)]
 pub enum SelectStatementType {
     /// A normal SELECT statement
@@ -12,7 +12,7 @@ pub enum SelectStatementType {
     Union(UnionStatement),
 }
 
-/// An AST for [SELECT](https://www.sqlite.org/lang_select.html) SQL statement.
+/// An AST for [SELECT](https://www.sqlite.org/lang_select.html) SQL statement
 #[derive(Debug, PartialEq, Default, Clone)]
 pub struct SelectStatement {
     /// Whether the SELECT statement is distinct
@@ -43,7 +43,8 @@ pub struct SelectStatement {
     pub limit: Option<LimitClause>,
 }
 
-/// An enum representing the possible distinct types
+/// An enum representing the possible distinct options in the
+/// [SELECT](https://www.sqlite.org/lang_select.html) statement
 #[derive(Debug, PartialEq, Clone, Default)]
 pub enum DistinctType {
     Distinct,
@@ -52,7 +53,8 @@ pub enum DistinctType {
     None,
 }
 
-/// An enum representing the possible items in a SELECT statement
+/// An enum representing the possible column representations in a
+/// [SELECT](https://www.sqlite.org/lang_select.html) statement
 #[derive(Debug, PartialEq, Clone)]
 pub enum SelectItem {
     /// A single expression
@@ -62,27 +64,36 @@ pub enum SelectItem {
     ExpressionWithAlias(Expression, String),
 }
 
-/// An AST for representing a FROM clause
+/// An AST for representing a FROM clause in the
+/// [SELECT](https://www.sqlite.org/lang_select.html) statement
 #[derive(Debug, PartialEq, Clone)]
 pub enum SelectFrom {
+    /// Select from a table
     Table(QualifiedTableName),
 
+    /// Select from a function
     Function(SelectFromFunction),
 
+    /// Select from a subquery
     Subquery(SelectFromSubquery),
 
+    /// Select from cartesian product of tables
     Froms(Vec<SelectFrom>),
 
+    /// Select from a JOIN clause
     Join(JoinClause),
 }
 
 /// A [Qualified Table Name](https://www.sqlite.org/syntax/qualified-table-name.html)
 #[derive(Debug, PartialEq, Clone)]
 pub struct QualifiedTableName {
+    /// The table name
     pub table_id: Identifier,
 
+    /// The alias for the table
     pub alias: Option<String>,
 
+    /// The table index option
     pub indexed_type: Option<IndexedType>,
 }
 
@@ -96,7 +107,7 @@ impl From<Identifier> for QualifiedTableName {
     }
 }
 
-/// An enum representing the possible indexed types
+/// An enum representing the possible table index types
 #[derive(Debug, PartialEq, Clone)]
 pub enum IndexedType {
     /// Indexed by a specific index
@@ -198,6 +209,7 @@ pub struct ValuesStatement {
     pub values: Vec<Vec<Expression>>,
 }
 
+/// An union statement type, based on the [compound-operator](https://www.sqlite.org/syntax/compound-operator.html)
 #[derive(Debug, PartialEq, Clone)]
 pub enum UnionStatementType {
     Union,
@@ -217,6 +229,10 @@ impl Display for UnionStatementType {
     }
 }
 
+/// A [UNION](https://www.sqlite.org/lang_select.html#union) statement
+///
+/// A union statement is a statement that combines the results of two SELECT
+/// statements with the `union_type`.
 #[derive(Debug, PartialEq, Clone)]
 pub struct UnionStatement {
     pub union_type: UnionStatementType,
