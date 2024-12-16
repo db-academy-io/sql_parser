@@ -22,6 +22,8 @@ impl<'a> DeleteStatementParser for Parser<'a> {
             table_name: self.parse_qualified_table_name()?,
             where_clause: self.parse_where_clause()?,
             returning_clause: self.parse_returning_clause()?,
+            order_by: self.parse_order_by_clause()?,
+            limit: self.parse_limit_clause()?,
         })
     }
 
@@ -65,8 +67,8 @@ impl<'a> DeleteStatementParser for Parser<'a> {
 mod test_utils {
 
     use crate::{
-        CteExpression, DeleteStatement, Expression, QualifiedTableName, ReturningClause, Statement,
-        WithCteStatement,
+        CteExpression, DeleteStatement, Expression, LimitClause, OrderingTerm, QualifiedTableName,
+        ReturningClause, Statement, WithCteStatement,
     };
 
     pub fn delete_statement(table_name: QualifiedTableName) -> Statement {
@@ -74,6 +76,8 @@ mod test_utils {
             table_name,
             where_clause: None,
             returning_clause: vec![],
+            order_by: None,
+            limit: None,
         })
     }
 
@@ -85,6 +89,8 @@ mod test_utils {
             table_name,
             where_clause: Some(Box::new(where_clause)),
             returning_clause: vec![],
+            order_by: None,
+            limit: None,
         })
     }
 
@@ -96,6 +102,8 @@ mod test_utils {
             table_name,
             where_clause: None,
             returning_clause,
+            order_by: None,
+            limit: None,
         })
     }
 
@@ -111,7 +119,35 @@ mod test_utils {
                 table_name,
                 where_clause: None,
                 returning_clause: vec![],
+                order_by: None,
+                limit: None,
             })),
+        })
+    }
+
+    pub fn delete_statement_with_order_by_clause(
+        table_name: QualifiedTableName,
+        order_by: Vec<OrderingTerm>,
+    ) -> Statement {
+        Statement::Delete(DeleteStatement {
+            table_name,
+            where_clause: None,
+            returning_clause: vec![],
+            order_by: Some(order_by),
+            limit: None,
+        })
+    }
+
+    pub fn delete_statement_with_limit_clause(
+        table_name: QualifiedTableName,
+        limit: LimitClause,
+    ) -> Statement {
+        Statement::Delete(DeleteStatement {
+            table_name,
+            where_clause: None,
+            returning_clause: vec![],
+            order_by: None,
+            limit: Some(limit),
         })
     }
 }
@@ -119,17 +155,19 @@ mod test_utils {
 #[cfg(test)]
 mod tests_delete_statements {
     use test_utils::{
-        delete_statement, delete_statement_with_returning_clause,
+        delete_statement, delete_statement_with_limit_clause,
+        delete_statement_with_order_by_clause, delete_statement_with_returning_clause,
         delete_statement_with_where_clause,
     };
 
     use crate::{
         expression::test_utils::{
-            binary_op_expression, identifier_expression, numeric_literal_expression,
-            string_literal_expression,
+            binary_op_expression, collate_expression, identifier_expression,
+            numeric_literal_expression, string_literal_expression,
         },
         parser::test_utils::run_sunny_day_test,
-        BinaryOp, Identifier, IndexedType, Statement,
+        BinaryOp, Identifier, IndexedType, LimitClause, NullsOrdering, Ordering, OrderingTerm,
+        Statement,
     };
 
     use super::*;
@@ -251,6 +289,65 @@ mod tests_delete_statements {
     }
 
     #[test]
+    fn test_parse_delete_statement_with_order_by_clause() {
+        let expected_statement = delete_statement_with_order_by_clause(
+            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
+            vec![
+                OrderingTerm {
+                    expression: Box::new(identifier_expression(&["column_1"])),
+                    ordering: Some(Ordering::Asc),
+                    nulls_ordering: None,
+                },
+                OrderingTerm {
+                    expression: Box::new(collate_expression(
+                        identifier_expression(&["column_2"]),
+                        "binary".to_string(),
+                    )),
+                    ordering: None,
+                    nulls_ordering: Some(NullsOrdering::Last),
+                },
+            ],
+        );
+        run_sunny_day_test(
+            "DELETE FROM table_1 ORDER BY column_1 ASC, column_2 COLLATE binary NULLS LAST",
+            expected_statement,
+        );
+    }
+
+    #[test]
+    fn test_parse_delete_statement_with_limit_clause() {
+        let expected_statement = delete_statement_with_limit_clause(
+            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
+            LimitClause {
+                limit: Box::new(numeric_literal_expression("10")),
+                offset: None,
+                additional_limit: None,
+            },
+        );
+        run_sunny_day_test("DELETE FROM table_1 LIMIT 10", expected_statement);
+
+        let expected_statement = delete_statement_with_limit_clause(
+            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
+            LimitClause {
+                limit: Box::new(numeric_literal_expression("10")),
+                offset: Some(Box::new(numeric_literal_expression("4"))),
+                additional_limit: None,
+            },
+        );
+        run_sunny_day_test("DELETE FROM table_1 LIMIT 10 OFFSET 4", expected_statement);
+
+        let expected_statement = delete_statement_with_limit_clause(
+            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
+            LimitClause {
+                limit: Box::new(numeric_literal_expression("10")),
+                offset: None,
+                additional_limit: Some(Box::new(numeric_literal_expression("40"))),
+            },
+        );
+        run_sunny_day_test("DELETE FROM table_1 LIMIT 10, 40", expected_statement);
+    }
+
+    #[test]
     fn test_parse_delete_statement_with_all_clauses() {
         let expected_statement = Statement::Delete(DeleteStatement {
             table_name: QualifiedTableName {
@@ -271,6 +368,8 @@ mod tests_delete_statements {
                     "alias_1".to_string(),
                 ),
             ],
+            order_by: None,
+            limit: None,
         });
 
         run_sunny_day_test(

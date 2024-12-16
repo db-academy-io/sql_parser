@@ -27,13 +27,8 @@ impl<'a> CollateExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 mod collate_expression_tests {
-    use crate::{BinaryOp, Expression};
-
     use crate::parser::expression::test_utils::*;
-
-    fn collate_expression(expression: Expression, name: String) -> Expression {
-        Expression::CollateExpression(Box::new(expression), name)
-    }
+    use crate::BinaryOp;
 
     #[test]
     fn test_expression_collate_basic() {

@@ -71,10 +71,10 @@ The items were taken from the official SQLite documentation
 1. [order-by-and-limit-clause](https://www.sqlite.org/lang_select.html#orderby) &#9989;
 1. [common-table-expressions](https://www.sqlite.org/syntax/common-table-expression.html) &#9989;
 
-#### DELETE Statements ![progress](https://progress-bar.xyz/2/?scale=3&suffix=%%%20(2%20of%203)&width=140)
+#### DELETE Statements ![progress](https://progress-bar.xyz/3/?scale=3&suffix=%%%20(3%20of%203)&width=140)
 1. [delete-stmt-core](https://www.sqlite.org/syntax/delete-stmt.html) &#9989;
 1. [delete-stmt-with-cte](https://www.sqlite.org/syntax/delete-stmt.html) &#9989;
-1. [delete-stmt-limited](https://www.sqlite.org/syntax/delete-stmt-limited.html)
+1. [delete-stmt-limited](https://www.sqlite.org/syntax/delete-stmt-limited.html) &#9989;
 
 #### UPDATE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
 1. [update-stmt](https://www.sqlite.org/syntax/update-stmt.html)

@@ -3,8 +3,8 @@ mod values;
 use crate::expression::IdentifierParser;
 use crate::{
     DistinctType, Expression, Identifier, JoinClause, JoinConstraint, JoinTable, JoinType, Keyword,
-    LimitClause, NamedWindowDefinition, QualifiedTableName, SelectFrom, SelectFromFunction,
-    SelectFromSubquery, TokenType, UnionStatement, UnionStatementType,
+    NamedWindowDefinition, QualifiedTableName, SelectFrom, SelectFromFunction, SelectFromSubquery,
+    TokenType, UnionStatement, UnionStatementType,
 };
 
 use super::expression::ExpressionParser;
@@ -49,8 +49,6 @@ pub trait SelectStatementParser {
     fn parse_having_clause(&mut self) -> Result<Option<Box<Expression>>, ParsingError>;
 
     fn parse_window_clause(&mut self) -> Result<Option<Vec<NamedWindowDefinition>>, ParsingError>;
-
-    fn parse_limit_clause(&mut self) -> Result<Option<LimitClause>, ParsingError>;
 
     fn parse_named_window_definition(&mut self) -> Result<NamedWindowDefinition, ParsingError>;
 
@@ -382,36 +380,6 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 }
             }
             Ok(Some(windows))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn parse_limit_clause(&mut self) -> Result<Option<LimitClause>, ParsingError> {
-        if self.consume_as_keyword(Keyword::Limit).is_ok() {
-            let limit = self.parse_expression()?;
-
-            if self.consume_as_keyword(Keyword::Offset).is_ok() {
-                let offset = self.parse_expression()?;
-                Ok(Some(LimitClause {
-                    limit: Box::new(limit),
-                    offset: Some(Box::new(offset)),
-                    additional_limit: None,
-                }))
-            } else if self.consume_as(TokenType::Comma).is_ok() {
-                let additional_limit = self.parse_expression()?;
-                Ok(Some(LimitClause {
-                    limit: Box::new(limit),
-                    offset: None,
-                    additional_limit: Some(Box::new(additional_limit)),
-                }))
-            } else {
-                Ok(Some(LimitClause {
-                    limit: Box::new(limit),
-                    offset: None,
-                    additional_limit: None,
-                }))
-            }
         } else {
             Ok(None)
         }

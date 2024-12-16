@@ -10,8 +10,6 @@ pub trait WindowDefinitionParser {
 
     fn parse_ordering_terms(&mut self) -> Result<Vec<OrderingTerm>, ParsingError>;
 
-    fn parse_order_by_clause(&mut self) -> Result<Option<Vec<OrderingTerm>>, ParsingError>;
-
     fn parser_partition_by_clause(&mut self) -> Result<Option<Vec<Expression>>, ParsingError>;
 
     fn parse_over_clause_frame_spec(&mut self) -> Result<FrameSpec, ParsingError>;
@@ -41,17 +39,6 @@ impl<'a> WindowDefinitionParser for Parser<'a> {
         self.consume_as(TokenType::RightParen)?;
 
         Ok(over_clause)
-    }
-
-    fn parse_order_by_clause(&mut self) -> Result<Option<Vec<OrderingTerm>>, ParsingError> {
-        if let Ok(Keyword::Order) = self.peek_as_keyword() {
-            self.consume_as_keyword(Keyword::Order)?;
-
-            self.consume_as_keyword(Keyword::By)?;
-            let ordering_terms = self.parse_ordering_terms()?;
-            return Ok(Some(ordering_terms));
-        }
-        Ok(None)
     }
 
     fn parser_partition_by_clause(&mut self) -> Result<Option<Vec<Expression>>, ParsingError> {

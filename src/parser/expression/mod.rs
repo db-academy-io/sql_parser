@@ -514,6 +514,10 @@ pub(crate) mod test_utils {
     pub fn cast_expression(expression: Expression, data_type: DataType) -> Expression {
         Expression::Cast(Box::new(expression), data_type)
     }
+
+    pub fn collate_expression(expression: Expression, name: String) -> Expression {
+        Expression::CollateExpression(Box::new(expression), name)
+    }
 }
 
 #[cfg(test)]

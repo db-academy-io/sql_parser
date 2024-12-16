@@ -15,15 +15,20 @@ mod window_definition;
 #[cfg(test)]
 mod test_utils;
 
-use crate::{IndexedType, Keyword, SelectStatement, Statement, Token, TokenType, Tokenizer};
+use crate::{
+    IndexedType, Keyword, LimitClause, OrderingTerm, SelectStatement, Statement, Token, TokenType,
+    Tokenizer,
+};
 use alter::AlterTableStatementParser;
 use cte::CteStatementParser;
 use delete::DeleteStatementParser;
 use drop::DropStatementParser;
 pub use errors::*;
+use expression::ExpressionParser;
 use select::{SelectStatementParser, ValuesStatementParser};
 use sqlite::SQLite3StatementParser;
 use trx::TransactionStatementParser;
+use window_definition::WindowDefinitionParser;
 /// A parser for SQLite SQL statements
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,
@@ -239,6 +244,47 @@ impl<'a> Parser<'a> {
         } else if self.consume_as_keyword(Keyword::Not).is_ok() {
             self.consume_as_keyword(Keyword::Indexed)?;
             Ok(Some(IndexedType::NotIndexed))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn parse_order_by_clause(&mut self) -> Result<Option<Vec<OrderingTerm>>, ParsingError> {
+        if let Ok(Keyword::Order) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Order)?;
+
+            self.consume_as_keyword(Keyword::By)?;
+            let ordering_terms = self.parse_ordering_terms()?;
+            return Ok(Some(ordering_terms));
+        }
+        Ok(None)
+    }
+
+    fn parse_limit_clause(&mut self) -> Result<Option<LimitClause>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Limit).is_ok() {
+            let limit = self.parse_expression()?;
+
+            if self.consume_as_keyword(Keyword::Offset).is_ok() {
+                let offset = self.parse_expression()?;
+                Ok(Some(LimitClause {
+                    limit: Box::new(limit),
+                    offset: Some(Box::new(offset)),
+                    additional_limit: None,
+                }))
+            } else if self.consume_as(TokenType::Comma).is_ok() {
+                let additional_limit = self.parse_expression()?;
+                Ok(Some(LimitClause {
+                    limit: Box::new(limit),
+                    offset: None,
+                    additional_limit: Some(Box::new(additional_limit)),
+                }))
+            } else {
+                Ok(Some(LimitClause {
+                    limit: Box::new(limit),
+                    offset: None,
+                    additional_limit: None,
+                }))
+            }
         } else {
             Ok(None)
         }
