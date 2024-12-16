@@ -2,6 +2,7 @@ use std::iter::Peekable;
 
 mod alter;
 mod column_definition;
+mod cte;
 mod drop;
 mod errors;
 pub(crate) mod expression;
@@ -15,12 +16,12 @@ mod test_utils;
 
 use crate::{Keyword, SelectStatement, Statement, Token, TokenType, Tokenizer};
 use alter::AlterTableStatementParser;
+use cte::CteStatementParser;
 use drop::DropStatementParser;
 pub use errors::*;
 use select::{SelectStatementParser, ValuesStatementParser};
 use sqlite::SQLite3StatementParser;
 use trx::TransactionStatementParser;
-
 /// A parser for SQLite SQL statements
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,
@@ -240,7 +241,7 @@ impl<'a> Parser<'a> {
             }
             Keyword::Values => ValuesStatementParser::parse_values_statement(self)
                 .map(|stmt| Statement::Select(SelectStatement::Values(stmt))),
-
+            Keyword::With => CteStatementParser::parse_cte_statement(self).map(Statement::WithCte),
             Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
                 .map(Statement::AlterTable),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),

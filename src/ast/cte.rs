@@ -9,7 +9,7 @@ pub struct WithCteStatement {
 
     pub cte_expressions: Vec<CteExpression>,
 
-    pub statement: Statement,
+    pub statement: Box<Statement>,
 }
 
 /// An AST for a single CTE expression.
@@ -19,7 +19,13 @@ pub struct CteExpression {
 
     pub column_names: Vec<Identifier>,
 
-    pub materialized: Option<bool>,
+    pub materialized: Option<MaterializationType>,
 
-    pub select: Vec<SelectStatement>,
+    pub select: SelectStatement,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum MaterializationType {
+    Materialized,
+    NotMaterialized,
 }

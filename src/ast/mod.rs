@@ -20,6 +20,7 @@ pub use create::{
     CreateIndexStatement, CreateTableStatement, CreateTriggerStatement, CreateViewStatement,
     CreateVirtualTableStatement,
 };
+pub use cte::{CteExpression, MaterializationType, WithCteStatement};
 pub use delete::DeleteStatement;
 pub use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
 pub use explain::ExplainStatement;
@@ -93,6 +94,9 @@ pub enum Statement {
     Analyze(AnalyzeStatement),
     /// SQLite Administrative statements, see [ReindexStatement]
     Reindex(ReindexStatement),
+
+    /// WITH statement, see [WithCteStatement]
+    WithCte(WithCteStatement),
 
     /// EXPLAIN statement (can wrap another statement), see [ExplainStatement]
     Explain(ExplainStatement),

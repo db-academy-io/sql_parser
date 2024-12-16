@@ -476,9 +476,9 @@ impl<'a> SelectStatementParser for Parser<'a> {
 #[cfg(test)]
 mod test_utils {
     use crate::{
-        DistinctType, Expression, Identifier, LimitClause, NamedWindowDefinition, OrderingTerm,
-        QualifiedTableName, Select, SelectFrom, SelectItem, SelectStatement, UnionStatement,
-        UnionStatementType,
+        CteExpression, DistinctType, Expression, Identifier, LimitClause, NamedWindowDefinition,
+        OrderingTerm, QualifiedTableName, Select, SelectFrom, SelectItem, SelectStatement,
+        Statement, UnionStatement, UnionStatementType, WithCteStatement,
     };
 
     pub fn select_statement_with_columns(
@@ -611,6 +611,28 @@ mod test_utils {
             })),
             limit: Some(limit),
             ..Default::default()
+        })
+    }
+
+    pub fn select_statement_with_cte_clause(
+        recursive: bool,
+        expressions: Vec<CteExpression>,
+    ) -> Statement {
+        Statement::WithCte(WithCteStatement {
+            recursive,
+            cte_expressions: expressions,
+            statement: Box::new(Statement::Select(SelectStatement::Select(Select {
+                distinct_type: DistinctType::None,
+                columns: vec![SelectItem::Expression(Expression::Identifier(
+                    Identifier::Wildcard,
+                ))],
+                from: Some(SelectFrom::Table(QualifiedTableName {
+                    table_id: Identifier::Single("table_1".to_string()),
+                    alias: None,
+                    indexed_type: None,
+                })),
+                ..Default::default()
+            }))),
         })
     }
 }
@@ -1823,6 +1845,64 @@ mod test_select_limit_clause {
         run_sunny_day_test(
             "SELECT * FROM table_1 LIMIT 1, 2",
             Statement::Select(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_select_cte_clause {
+    use super::super::cte::test_utils::cte_expression;
+    use super::test_utils::{select_statement_with_cte_clause, select_statement_with_from};
+    use crate::parser::test_utils::*;
+    use crate::{Identifier, QualifiedTableName, SelectFrom};
+
+    #[test]
+    fn test_select_cte_clause() {
+        let expected_statement = select_statement_with_cte_clause(
+            true,
+            vec![cte_expression(
+                Identifier::Single("cte_1".to_string()),
+                vec![],
+                None,
+                select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+                    Identifier::Single("cte_table".to_string()),
+                ))),
+            )],
+        );
+
+        run_sunny_day_test(
+            "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) SELECT * FROM table_1",
+            expected_statement,
+        );
+    }
+
+    #[test]
+    fn test_select_with_multiple_ctes() {
+        let expected_statement = select_statement_with_cte_clause(
+            true,
+            vec![
+                cte_expression(
+                    Identifier::Single("cte_1".to_string()),
+                    vec![],
+                    None,
+                    select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+                        Identifier::Single("cte_table1".to_string()),
+                    ))),
+                ),
+                cte_expression(
+                    Identifier::Single("cte_2".to_string()),
+                    vec![],
+                    None,
+                    select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(
+                        Identifier::Single("cte_table2".to_string()),
+                    ))),
+                ),
+            ],
+        );
+
+        run_sunny_day_test(
+            "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_table2) SELECT * FROM table_1",
+            expected_statement,
         );
     }
 }
