@@ -100,6 +100,15 @@ pub enum Identifier {
     NameWithWildcard(String),
 }
 
+impl From<&str> for Identifier {
+    fn from(s: &str) -> Self {
+        if s == "*" {
+            return Identifier::Wildcard;
+        }
+        Identifier::Single(s.to_string())
+    }
+}
+
 /// A binary operation
 #[derive(Debug, PartialEq, Clone)]
 pub enum BinaryOp {

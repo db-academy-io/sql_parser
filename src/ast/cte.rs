@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::{Identifier, SelectStatement, Statement};
 
 /// An AST for [WITH](https://www.sqlite.org/lang_with.html) SQL statement.
@@ -24,8 +26,17 @@ pub struct CteExpression {
     pub select: SelectStatement,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum MaterializationType {
     Materialized,
     NotMaterialized,
+}
+
+impl Display for MaterializationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MaterializationType::Materialized => write!(f, "MATERIALIZED"),
+            MaterializationType::NotMaterialized => write!(f, "NOT MATERIALIZED"),
+        }
+    }
 }

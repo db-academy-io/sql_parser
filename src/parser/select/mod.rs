@@ -474,7 +474,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
-mod test_utils {
+pub mod test_utils {
     use crate::{
         CteExpression, DistinctType, Expression, Identifier, LimitClause, NamedWindowDefinition,
         OrderingTerm, QualifiedTableName, Select, SelectFrom, SelectItem, SelectStatement,
@@ -501,6 +501,10 @@ mod test_utils {
             from: Some(from),
             ..Default::default()
         })
+    }
+
+    pub fn select_star_from(table_name: Identifier) -> SelectStatement {
+        select_statement_with_from(SelectFrom::Table(QualifiedTableName::from(table_name)))
     }
 
     pub fn select_statement_with_where_clause(where_clause: Expression) -> SelectStatement {
