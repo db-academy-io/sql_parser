@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{ParsingError, TokenType};
 
-use super::{OrderingTerm, SelectStatementType};
+use super::{OrderingTerm, SelectStatement};
 
 /// An SQLite3 [expr](https://www.sqlite.org/lang_expr.html) expression
 #[derive(Debug, PartialEq, Clone)]
@@ -445,7 +445,7 @@ pub enum InExpression {
     Empty,
 
     /// Select
-    Select(SelectStatementType),
+    Select(SelectStatement),
 
     /// Expressions
     Expression(Vec<Expression>),
@@ -461,10 +461,10 @@ pub enum InExpression {
 #[derive(Debug, PartialEq, Clone)]
 pub enum ExistsStatement {
     /// Exists
-    Exists(SelectStatementType),
+    Exists(SelectStatement),
 
     /// Not Exists
-    NotExists(SelectStatementType),
+    NotExists(SelectStatement),
 }
 
 /// A case expression

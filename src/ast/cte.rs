@@ -5,8 +5,6 @@ use super::{Identifier, SelectStatement, Statement};
 /// statements to define Common Table Expressions (CTEs).
 #[derive(Debug, PartialEq)]
 pub struct WithCteStatement {
-    pub cte_name: String,
-
     pub recursive: bool,
 
     pub cte_expressions: Vec<CteExpression>,

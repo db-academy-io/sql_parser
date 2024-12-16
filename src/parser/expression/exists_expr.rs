@@ -33,12 +33,12 @@ impl<'a> ExistsExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 mod exists_expression_tests {
-    use crate::{SelectItem, SelectStatement, SelectStatementType};
+    use crate::{Select, SelectItem, SelectStatement};
 
     use crate::parser::expression::test_utils::*;
 
-    fn select_statement(columns: Vec<SelectItem>) -> SelectStatementType {
-        SelectStatementType::Select(SelectStatement {
+    fn select_statement(columns: Vec<SelectItem>) -> SelectStatement {
+        SelectStatement::Select(Select {
             columns,
             ..Default::default()
         })

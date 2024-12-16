@@ -40,7 +40,7 @@ pub use update::UpdateStatement;
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     /// Data Query Language (DQL), see [SelectStatement]
-    Select(SelectStatementType),
+    Select(SelectStatement),
 
     /// Data Manipulation Language (DML), see [InsertStatement]
     Insert(InsertStatement),

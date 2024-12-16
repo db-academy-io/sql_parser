@@ -91,8 +91,8 @@ impl<'a> InExpressionParser for Parser<'a> {
 #[cfg(test)]
 mod expression_with_in_statement_tests {
     use crate::{
-        BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression, SelectItem,
-        SelectStatement, SelectStatementType,
+        BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression, Select,
+        SelectItem, SelectStatement,
     };
 
     use crate::parser::expression::test_utils::*;
@@ -134,14 +134,14 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_select_statement() {
-        let mut select_statement = SelectStatement::default();
+        let mut select_statement = Select::default();
         select_statement.columns = vec![SelectItem::Expression(numeric_literal_expression("2"))];
 
         run_sunny_day_expression_test(
             "SELECT 1 IN (SELECT 2);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
-                InExpression::Select(SelectStatementType::Select(select_statement)),
+                InExpression::Select(SelectStatement::Select(select_statement)),
                 false,
             ),
         );
@@ -169,14 +169,14 @@ mod expression_with_in_statement_tests {
 
     #[test]
     fn test_expression_with_not_in_expression() {
-        let mut select_statement = SelectStatement::default();
+        let mut select_statement = Select::default();
         select_statement.columns = vec![SelectItem::Expression(numeric_literal_expression("2"))];
 
         run_sunny_day_expression_test(
             "SELECT 1 NOT IN (SELECT 2);",
             &expression_with_in_statement(
                 numeric_literal_expression("1"),
-                InExpression::Select(SelectStatementType::Select(select_statement)),
+                InExpression::Select(SelectStatement::Select(select_statement)),
                 true,
             ),
         );

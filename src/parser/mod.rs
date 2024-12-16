@@ -13,7 +13,7 @@ mod window_definition;
 #[cfg(test)]
 mod test_utils;
 
-use crate::{Keyword, SelectStatementType, Statement, Token, TokenType, Tokenizer};
+use crate::{Keyword, SelectStatement, Statement, Token, TokenType, Tokenizer};
 use alter::AlterTableStatementParser;
 use drop::DropStatementParser;
 pub use errors::*;
@@ -239,7 +239,7 @@ impl<'a> Parser<'a> {
                 SelectStatementParser::parse_select_statement(self).map(Statement::Select)
             }
             Keyword::Values => ValuesStatementParser::parse_values_statement(self)
-                .map(|stmt| Statement::Select(SelectStatementType::Values(stmt))),
+                .map(|stmt| Statement::Select(SelectStatement::Values(stmt))),
 
             Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
                 .map(Statement::AlterTable),

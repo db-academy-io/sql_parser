@@ -10,16 +10,16 @@ use crate::{
 use super::expression::ExpressionParser;
 use super::window_definition::WindowDefinitionParser;
 use super::{Parser, ParsingError};
-use crate::ast::{SelectItem, SelectStatement, SelectStatementType};
+use crate::ast::{Select, SelectItem, SelectStatement};
 pub use values::ValuesStatementParser;
 
 /// Trait for parsing SELECT statements
 /// The SELECT statement documentation can be found here:
 /// https://www.sqlite.org/lang_select.html
 pub trait SelectStatementParser {
-    fn parse_select_statement(&mut self) -> Result<SelectStatementType, ParsingError>;
+    fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError>;
 
-    fn parse_select_statement_core(&mut self) -> Result<SelectStatementType, ParsingError>;
+    fn parse_select_statement_core(&mut self) -> Result<SelectStatement, ParsingError>;
 
     fn parse_distinct_type(&mut self) -> Result<DistinctType, ParsingError>;
 
@@ -63,9 +63,9 @@ pub trait SelectStatementParser {
 }
 
 impl<'a> SelectStatementParser for Parser<'a> {
-    fn parse_select_statement(&mut self) -> Result<SelectStatementType, ParsingError> {
+    fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError> {
         if let Ok(Keyword::Values) = self.peek_as_keyword() {
-            return Ok(SelectStatementType::Values(self.parse_values_statement()?));
+            return Ok(SelectStatement::Values(self.parse_values_statement()?));
         }
 
         let select_statement = self.parse_select_statement_core()?;
@@ -73,17 +73,17 @@ impl<'a> SelectStatementParser for Parser<'a> {
         let select_statement1 = if let Some(union_type) = self.parse_union_clause()? {
             let left = Box::new(select_statement);
             let right = Box::new(self.parse_select_statement()?);
-            SelectStatementType::Union(UnionStatement {
+            SelectStatement::Union(UnionStatement {
                 union_type,
                 left,
                 right,
             })
         } else {
             match select_statement {
-                SelectStatementType::Select(mut select_statement) => {
+                SelectStatement::Select(mut select_statement) => {
                     select_statement.order_by = self.parse_order_by_clause()?;
                     select_statement.limit = self.parse_limit_clause()?;
-                    SelectStatementType::Select(select_statement)
+                    SelectStatement::Select(select_statement)
                 }
                 _ => select_statement,
             }
@@ -92,11 +92,11 @@ impl<'a> SelectStatementParser for Parser<'a> {
         Ok(select_statement1)
     }
 
-    fn parse_select_statement_core(&mut self) -> Result<SelectStatementType, ParsingError> {
+    fn parse_select_statement_core(&mut self) -> Result<SelectStatement, ParsingError> {
         // Consume the SELECT keyword
         self.consume_as_keyword(Keyword::Select)?;
 
-        Ok(SelectStatementType::Select(SelectStatement {
+        Ok(SelectStatement::Select(Select {
             distinct_type: self.parse_distinct_type()?,
             columns: self.parse_select_columns()?,
             from: self.parse_select_from_clause()?,
@@ -477,23 +477,23 @@ impl<'a> SelectStatementParser for Parser<'a> {
 mod test_utils {
     use crate::{
         DistinctType, Expression, Identifier, LimitClause, NamedWindowDefinition, OrderingTerm,
-        QualifiedTableName, SelectFrom, SelectItem, SelectStatement, SelectStatementType,
-        UnionStatement, UnionStatementType,
+        QualifiedTableName, Select, SelectFrom, SelectItem, SelectStatement, UnionStatement,
+        UnionStatementType,
     };
 
     pub fn select_statement_with_columns(
         distinct_type: DistinctType,
         columns: Vec<SelectItem>,
-    ) -> SelectStatement {
-        SelectStatement {
+    ) -> Select {
+        Select {
             distinct_type,
             columns,
             ..Default::default()
         }
     }
 
-    pub fn select_statement_with_from(from: SelectFrom) -> SelectStatementType {
-        SelectStatementType::Select(SelectStatement {
+    pub fn select_statement_with_from(from: SelectFrom) -> SelectStatement {
+        SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
@@ -503,8 +503,8 @@ mod test_utils {
         })
     }
 
-    pub fn select_statement_with_where_clause(where_clause: Expression) -> SelectStatementType {
-        SelectStatementType::Select(SelectStatement {
+    pub fn select_statement_with_where_clause(where_clause: Expression) -> SelectStatement {
+        SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
@@ -519,8 +519,8 @@ mod test_utils {
         })
     }
 
-    pub fn select_statement_with_group_by_clause(group_by: Vec<Expression>) -> SelectStatementType {
-        SelectStatementType::Select(SelectStatement {
+    pub fn select_statement_with_group_by_clause(group_by: Vec<Expression>) -> SelectStatement {
+        SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
@@ -536,8 +536,8 @@ mod test_utils {
         })
     }
 
-    pub fn select_statement_with_having_clause(having: Expression) -> SelectStatementType {
-        SelectStatementType::Select(SelectStatement {
+    pub fn select_statement_with_having_clause(having: Expression) -> SelectStatement {
+        SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
@@ -554,8 +554,8 @@ mod test_utils {
 
     pub fn select_statement_with_window_clause(
         windows: Vec<NamedWindowDefinition>,
-    ) -> SelectStatementType {
-        SelectStatementType::Select(SelectStatement {
+    ) -> SelectStatement {
+        SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
@@ -572,20 +572,18 @@ mod test_utils {
 
     pub fn select_statement_with_union_clause(
         union_type: UnionStatementType,
-        left: SelectStatementType,
-        right: SelectStatementType,
-    ) -> SelectStatementType {
-        SelectStatementType::Union(UnionStatement {
+        left: SelectStatement,
+        right: SelectStatement,
+    ) -> SelectStatement {
+        SelectStatement::Union(UnionStatement {
             union_type,
             left: Box::new(left),
             right: Box::new(right),
         })
     }
 
-    pub fn select_statement_with_order_by_clause(
-        order_by: Vec<OrderingTerm>,
-    ) -> SelectStatementType {
-        SelectStatementType::Select(SelectStatement {
+    pub fn select_statement_with_order_by_clause(order_by: Vec<OrderingTerm>) -> SelectStatement {
+        SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
@@ -600,8 +598,8 @@ mod test_utils {
         })
     }
 
-    pub fn select_statement_with_limit_clause(limit: LimitClause) -> SelectStatementType {
-        SelectStatementType::Select(SelectStatement {
+    pub fn select_statement_with_limit_clause(limit: LimitClause) -> SelectStatement {
+        SelectStatement::Select(Select {
             distinct_type: DistinctType::None,
             columns: vec![SelectItem::Expression(Expression::Identifier(
                 Identifier::Wildcard,
@@ -620,8 +618,8 @@ mod test_utils {
 #[cfg(test)]
 mod test_select_result_columns {
     use crate::{
-        BinaryOp, DistinctType, Expression, Identifier, ParsingError, SelectItem,
-        SelectStatementType, Statement,
+        BinaryOp, DistinctType, Expression, Identifier, ParsingError, SelectItem, SelectStatement,
+        Statement,
     };
 
     use super::test_utils::*;
@@ -632,7 +630,7 @@ mod test_select_result_columns {
     fn test_select_distinct() {
         run_sunny_day_test(
             "SELECT DISTINCT column1",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::Distinct,
                 vec![SelectItem::Expression(identifier_expression(&["column1"]))],
             ))),
@@ -643,7 +641,7 @@ mod test_select_result_columns {
     fn test_select_all() {
         run_sunny_day_test(
             "SELECT ALL column1",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::All,
                 vec![SelectItem::Expression(identifier_expression(&["column1"]))],
             ))),
@@ -667,7 +665,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_single_literal_value() {
         run_sunny_day_test(
             "SELECT 1",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(numeric_literal_expression("1"))],
             ))),
@@ -678,7 +676,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_single_identifier() {
         run_sunny_day_test(
             "SELECT id",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(identifier_expression(&["id"]))],
             ))),
@@ -689,7 +687,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_multiple_literal_values() {
         run_sunny_day_test(
             "SELECT 1, 2, 3",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![
                     SelectItem::Expression(numeric_literal_expression("1")),
@@ -704,7 +702,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_multiple_identifiers() {
         run_sunny_day_test(
             "SELECT id, name, age",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![
                     SelectItem::Expression(identifier_expression(&["id"])),
@@ -719,7 +717,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_wildcard() {
         run_sunny_day_test(
             "SELECT *",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(Expression::Identifier(
                     Identifier::Wildcard,
@@ -732,7 +730,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_table_name_and_wildcard() {
         run_sunny_day_test(
             "SELECT table_1.*",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::Expression(Expression::Identifier(
                     Identifier::NameWithWildcard("table_1".to_string()),
@@ -753,7 +751,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_alias() {
         run_sunny_day_test(
             "SELECT column1 AS alias",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::ExpressionWithAlias(
                     identifier_expression(&["column1"]),
@@ -767,7 +765,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_alias_without_as_keyword() {
         run_sunny_day_test(
             "SELECT column1 alias",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![SelectItem::ExpressionWithAlias(
                     identifier_expression(&["column1"]),
@@ -781,7 +779,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_multiple_columns_and_aliases() {
         run_sunny_day_test(
             "SELECT column1, column2 AS alias2",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![
                     SelectItem::Expression(identifier_expression(&["column1"])),
@@ -798,7 +796,7 @@ mod test_select_result_columns {
     fn test_select_statement_parser_with_expression_and_alias() {
         run_sunny_day_test(
             "SELECT 1 + col1 as incremented, column2 * 2 - 1 as doubled",
-            Statement::Select(SelectStatementType::Select(select_statement_with_columns(
+            Statement::Select(SelectStatement::Select(select_statement_with_columns(
                 DistinctType::None,
                 vec![
                     SelectItem::ExpressionWithAlias(
@@ -925,14 +923,14 @@ mod test_select_from_subquery {
     use crate::parser::test_utils::*;
     use crate::{
         DistinctType, Expression, Identifier, SelectFrom, SelectFromSubquery, SelectItem,
-        SelectStatementType, Statement,
+        SelectStatement, Statement,
     };
 
     #[test]
     fn test_select_from_subquery() {
         let expected_statement =
             select_statement_with_from(SelectFrom::Subquery(SelectFromSubquery {
-                subquery: Box::new(SelectStatementType::Select(select_statement_with_columns(
+                subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
                     DistinctType::None,
                     vec![SelectItem::Expression(Expression::Identifier(
                         Identifier::Single("col1".to_string()),
@@ -951,7 +949,7 @@ mod test_select_from_subquery {
     fn test_select_from_subquery_aliased() {
         let expected_statement =
             select_statement_with_from(SelectFrom::Subquery(SelectFromSubquery {
-                subquery: Box::new(SelectStatementType::Select(select_statement_with_columns(
+                subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
                     DistinctType::None,
                     vec![SelectItem::Expression(Expression::Identifier(
                         Identifier::NameWithWildcard("t".to_string()),

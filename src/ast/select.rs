@@ -3,9 +3,9 @@ use std::fmt::Display;
 
 /// An enum representing the possible types of [SELECT](https://www.sqlite.org/lang_select.html) statements
 #[derive(Debug, PartialEq, Clone)]
-pub enum SelectStatementType {
+pub enum SelectStatement {
     /// A normal SELECT statement
-    Select(SelectStatement),
+    Select(Select),
     /// A VALUES statement
     Values(ValuesStatement),
     /// Union statement
@@ -14,7 +14,7 @@ pub enum SelectStatementType {
 
 /// An AST for [SELECT](https://www.sqlite.org/lang_select.html) SQL statement
 #[derive(Debug, PartialEq, Default, Clone)]
-pub struct SelectStatement {
+pub struct Select {
     /// Whether the SELECT statement is distinct
     pub distinct_type: DistinctType,
 
@@ -127,7 +127,7 @@ pub struct SelectFromFunction {
 /// A subquery in a FROM clause
 #[derive(Debug, PartialEq, Clone)]
 pub struct SelectFromSubquery {
-    pub subquery: Box<SelectStatementType>,
+    pub subquery: Box<SelectStatement>,
     pub alias: Option<String>,
 }
 
@@ -236,6 +236,6 @@ impl Display for UnionStatementType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct UnionStatement {
     pub union_type: UnionStatementType,
-    pub left: Box<SelectStatementType>,
-    pub right: Box<SelectStatementType>,
+    pub left: Box<SelectStatement>,
+    pub right: Box<SelectStatement>,
 }
