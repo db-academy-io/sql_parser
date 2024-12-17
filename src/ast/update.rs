@@ -1,5 +1,6 @@
 use super::{
-    ConflictClause, Expression, FromClause, Identifier, QualifiedTableName, ReturningClause,
+    ConflictClause, Expression, FromClause, Identifier, LimitClause, OrderingTerm,
+    QualifiedTableName, ReturningClause,
 };
 
 /// An AST for [UPDATE SQL](https://www.sqlite.org/lang_update.html) statement.
@@ -23,6 +24,12 @@ pub struct UpdateStatement {
 
     // The returning clause to return the updated rows.
     pub returning_clause: Vec<ReturningClause>,
+
+    // The order by clause to sort the rows to update.
+    pub order_by: Option<Vec<OrderingTerm>>,
+
+    // The limit clause to limit the number of rows to update.
+    pub limit: Option<LimitClause>,
 }
 
 /// A [SetClause](https://www.sqlite.org/syntax/set-clause.html)

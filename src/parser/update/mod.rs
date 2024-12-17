@@ -28,6 +28,8 @@ impl<'a> UpdateStatementParser for Parser<'a> {
             from_clause: self.parse_from_clause()?,
             where_clause: self.parse_where_clause()?,
             returning_clause: self.parse_returning_clause()?,
+            order_by: self.parse_order_by_clause()?,
+            limit: self.parse_limit_clause()?,
         })
     }
 
@@ -96,8 +98,8 @@ impl<'a> UpdateStatementParser for Parser<'a> {
 mod test_utils {
     use crate::{
         expression::test_utils::numeric_literal_expression, ConflictClause, CteExpression,
-        Expression, FromClause, Identifier, QualifiedTableName, ReturningClause, SetClause,
-        Statement, UpdateStatement, WithCteStatement,
+        Expression, FromClause, Identifier, LimitClause, OrderingTerm, QualifiedTableName,
+        ReturningClause, SetClause, Statement, UpdateStatement, WithCteStatement,
     };
 
     pub fn update_statement(
@@ -111,6 +113,8 @@ mod test_utils {
             from_clause: None,
             where_clause: None,
             returning_clause: vec![],
+            order_by: None,
+            limit: None,
         })
     }
 
@@ -125,6 +129,8 @@ mod test_utils {
             from_clause: None,
             where_clause: None,
             returning_clause: vec![],
+            order_by: None,
+            limit: None,
         })
     }
 
@@ -139,6 +145,8 @@ mod test_utils {
             from_clause: None,
             where_clause: Some(Box::new(where_clause)),
             returning_clause: vec![],
+            order_by: None,
+            limit: None,
         })
     }
 
@@ -155,6 +163,8 @@ mod test_utils {
             from_clause: None,
             where_clause: None,
             returning_clause: returning_clause,
+            order_by: None,
+            limit: None,
         })
     }
 
@@ -169,7 +179,41 @@ mod test_utils {
             from_clause: Some(from_clause),
             where_clause: None,
             returning_clause: vec![],
+            order_by: None,
+            limit: None,
         }
+    }
+
+    pub fn update_statement_with_order_by_clause(order_by_clause: Vec<OrderingTerm>) -> Statement {
+        Statement::Update(UpdateStatement {
+            conflict_clause: ConflictClause::None,
+            table_name: QualifiedTableName::from(Identifier::from("table1")),
+            set_clause: vec![SetClause::ColumnAssignment(
+                Identifier::from("column1"),
+                numeric_literal_expression("1"),
+            )],
+            from_clause: None,
+            where_clause: None,
+            returning_clause: vec![],
+            order_by: Some(order_by_clause),
+            limit: None,
+        })
+    }
+
+    pub fn update_statement_with_limit_clause(limit_clause: LimitClause) -> Statement {
+        Statement::Update(UpdateStatement {
+            conflict_clause: ConflictClause::None,
+            table_name: QualifiedTableName::from(Identifier::from("table1")),
+            set_clause: vec![SetClause::ColumnAssignment(
+                Identifier::from("column1"),
+                numeric_literal_expression("1"),
+            )],
+            from_clause: None,
+            where_clause: None,
+            returning_clause: vec![],
+            order_by: None,
+            limit: Some(limit_clause),
+        })
     }
 
     pub fn update_statement_with_cte_clause(
@@ -190,6 +234,8 @@ mod test_utils {
                 from_clause: None,
                 where_clause: None,
                 returning_clause: vec![],
+                order_by: None,
+                limit: None,
             })),
         })
     }
@@ -202,12 +248,12 @@ mod test_update_statement_parser {
     use super::test_utils::*;
     use crate::{
         expression::test_utils::{
-            binary_op_expression, identifier_expression, numeric_literal_expression,
-            string_literal_expression,
+            binary_op_expression, collate_expression, identifier_expression,
+            numeric_literal_expression, string_literal_expression,
         },
         parser::test_utils::run_sunny_day_test,
-        BinaryOp, ConflictClause, Identifier, IndexedType, QualifiedTableName, ReturningClause,
-        SetClause,
+        BinaryOp, ConflictClause, Identifier, IndexedType, LimitClause, NullsOrdering, Ordering,
+        OrderingTerm, QualifiedTableName, ReturningClause, SetClause,
     };
 
     #[test]
@@ -417,6 +463,59 @@ mod test_update_statement_parser {
 
         run_sunny_day_test(
             "UPDATE table1 SET column1 = 1 RETURNING *, 1, column1 AS alias1",
+            expected_statement,
+        );
+    }
+
+    #[test]
+    fn test_parse_update_statement_with_order_by_clause() {
+        let expected_statement = update_statement_with_order_by_clause(vec![
+            OrderingTerm {
+                expression: Box::new(identifier_expression(&["column_1"])),
+                ordering: Some(Ordering::Asc),
+                nulls_ordering: None,
+            },
+            OrderingTerm {
+                expression: Box::new(collate_expression(
+                    identifier_expression(&["column_2"]),
+                    "binary".to_string(),
+                )),
+                ordering: None,
+                nulls_ordering: Some(NullsOrdering::Last),
+            },
+        ]);
+        run_sunny_day_test(
+            "UPDATE table1 SET column1 = 1 ORDER BY column_1 ASC, column_2 COLLATE binary NULLS LAST",
+            expected_statement,
+        );
+    }
+
+    #[test]
+    fn test_parse_update_statement_with_limit_clause() {
+        let expected_statement = update_statement_with_limit_clause(LimitClause {
+            limit: Box::new(numeric_literal_expression("10")),
+            offset: None,
+            additional_limit: None,
+        });
+        run_sunny_day_test("UPDATE table1 SET column1 = 1 LIMIT 10", expected_statement);
+
+        let expected_statement = update_statement_with_limit_clause(LimitClause {
+            limit: Box::new(numeric_literal_expression("10")),
+            offset: Some(Box::new(numeric_literal_expression("4"))),
+            additional_limit: None,
+        });
+        run_sunny_day_test(
+            "UPDATE table1 SET column1 = 1 LIMIT 10 OFFSET 4",
+            expected_statement,
+        );
+
+        let expected_statement = update_statement_with_limit_clause(LimitClause {
+            limit: Box::new(numeric_literal_expression("10")),
+            offset: None,
+            additional_limit: Some(Box::new(numeric_literal_expression("40"))),
+        });
+        run_sunny_day_test(
+            "UPDATE table1 SET column1 = 1 LIMIT 10, 40",
             expected_statement,
         );
     }

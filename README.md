@@ -76,9 +76,9 @@ The items were taken from the official SQLite documentation
 1. [delete-stmt-with-cte](https://www.sqlite.org/syntax/delete-stmt.html) &#9989;
 1. [delete-stmt-limited](https://www.sqlite.org/syntax/delete-stmt-limited.html) &#9989;
 
-#### UPDATE Statements ![progress](https://progress-bar.xyz/0/?scale=2&suffix=%%%20(0%20of%202)&width=140)
-1. [update-stmt](https://www.sqlite.org/syntax/update-stmt.html)
-1. [update-stmt-limited](https://www.sqlite.org/syntax/update-stmt-limited.html)
+#### UPDATE Statements ![progress](https://progress-bar.xyz/2/?scale=2&suffix=%%%20(2%20of%202)&width=140)
+1. [update-stmt](https://www.sqlite.org/syntax/update-stmt.html) &#9989;
+1. [update-stmt-limited](https://www.sqlite.org/syntax/update-stmt-limited.html) &#9989;
 
 #### INSERT Statement ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%208)&width=140)
 1. insert-with-values
