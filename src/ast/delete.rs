@@ -1,7 +1,7 @@
 use super::{Expression, LimitClause, OrderingTerm, QualifiedTableName};
 
 /// An AST for [DELETE](https://www.sqlite.org/lang_delete.html) SQL statement.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct DeleteStatement {
     /// The table name to delete from
     pub table_name: QualifiedTableName,
@@ -20,7 +20,7 @@ pub struct DeleteStatement {
 }
 
 /// A [RETURNING](https://www.sqlite.org/lang_returning.html) clause types
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ReturningClause {
     /// A single expression
     Expr(Expression),

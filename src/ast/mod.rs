@@ -35,7 +35,7 @@ pub use trx::{
     BeginTransactionStatement, CommitTransactionStatement, ReleaseStatement,
     RollbackTransactionStatement, SavepointStatement, TransactionType,
 };
-pub use update::UpdateStatement;
+pub use update::*;
 
 /// Top-level AST node representing any SQLite statement
 #[derive(Debug, PartialEq)]

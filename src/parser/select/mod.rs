@@ -27,18 +27,15 @@ pub trait SelectStatementParser {
 
     fn parse_select_column(&mut self) -> Result<SelectItem, ParsingError>;
 
-    fn parse_select_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError>;
+    fn parse_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError>;
 
-    fn parse_select_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError>;
+    fn parse_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError>;
 
-    fn parse_select_from_join_clause(
-        &mut self,
-        lhs: FromClause,
-    ) -> Result<FromClause, ParsingError>;
+    fn parse_from_join_clause(&mut self, lhs: FromClause) -> Result<FromClause, ParsingError>;
 
-    fn parse_select_from_clause_join_type(&mut self) -> Result<JoinType, ParsingError>;
+    fn parse_from_clause_join_type(&mut self) -> Result<JoinType, ParsingError>;
 
-    fn parse_select_from_clause_join_constraints(
+    fn parse_from_clause_join_constraints(
         &mut self,
     ) -> Result<Option<JoinConstraint>, ParsingError>;
 
@@ -92,7 +89,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
         Ok(SelectStatement::Select(Select {
             distinct_type: self.parse_distinct_type()?,
             columns: self.parse_select_columns()?,
-            from: self.parse_select_from_clause()?,
+            from: self.parse_from_clause()?,
             where_clause: self.parse_where_clause()?,
             group_by: self.parse_group_by_clause()?,
             having: self.parse_having_clause()?,
@@ -157,15 +154,15 @@ impl<'a> SelectStatementParser for Parser<'a> {
         ))
     }
 
-    fn parse_select_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError> {
+    fn parse_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError> {
         if let Ok(Keyword::From) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::From)?;
-            return Ok(Some(self.parse_select_from_clause_subquery()?));
+            return Ok(Some(self.parse_from_clause_subquery()?));
         }
         Ok(None)
     }
 
-    fn parse_select_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError> {
+    fn parse_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError> {
         dbg!("parse_select_from_clause");
 
         dbg!(&self.peek_token());
@@ -186,7 +183,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 let mut froms = Vec::new();
                 loop {
                     dbg!("parse_select_from_clause");
-                    let table_or_subquery = self.parse_select_from_clause_subquery()?;
+                    let table_or_subquery = self.parse_from_clause_subquery()?;
                     dbg!(&table_or_subquery);
                     froms.push(table_or_subquery);
 
@@ -224,7 +221,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
                     indexed_type,
                 });
 
-                return self.parse_select_from_join_clause(lhs);
+                return self.parse_from_join_clause(lhs);
             }
         }
         // TODO: improve this error message
@@ -233,19 +230,16 @@ impl<'a> SelectStatementParser for Parser<'a> {
         ))
     }
 
-    fn parse_select_from_join_clause(
-        &mut self,
-        lhs: FromClause,
-    ) -> Result<FromClause, ParsingError> {
+    fn parse_from_join_clause(&mut self, lhs: FromClause) -> Result<FromClause, ParsingError> {
         dbg!("parse_select_from_join_clause");
         let mut join_tables = Vec::new();
 
-        while let Ok(join_type) = self.parse_select_from_clause_join_type() {
-            let rhs = self.parse_select_from_clause_subquery()?;
+        while let Ok(join_type) = self.parse_from_clause_join_type() {
+            let rhs = self.parse_from_clause_subquery()?;
             join_tables.push(JoinTable {
                 join_type,
                 table: Box::new(rhs),
-                constraints: self.parse_select_from_clause_join_constraints()?,
+                constraints: self.parse_from_clause_join_constraints()?,
             });
         }
 
@@ -259,7 +253,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
         }))
     }
 
-    fn parse_select_from_clause_join_type(&mut self) -> Result<JoinType, ParsingError> {
+    fn parse_from_clause_join_type(&mut self) -> Result<JoinType, ParsingError> {
         let natural_join = self.consume_as_keyword(Keyword::Natural).is_ok();
 
         if self.consume_as(TokenType::Comma).is_ok() {
@@ -316,7 +310,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
         }
     }
 
-    fn parse_select_from_clause_join_constraints(
+    fn parse_from_clause_join_constraints(
         &mut self,
     ) -> Result<Option<JoinConstraint>, ParsingError> {
         if self.consume_as_keyword(Keyword::On).is_ok() {

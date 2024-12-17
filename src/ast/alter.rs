@@ -69,7 +69,7 @@ pub struct PrimaryKeyConstraint {
 /// Do not get confused with the conflict clause in the
 /// [RaiseFunction](https://www.sqlite.org/lang_raise.html) as they look similar
 /// but they are different.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ConflictClause {
     /// No conflict clause
     None,
