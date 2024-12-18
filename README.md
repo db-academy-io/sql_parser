@@ -80,14 +80,14 @@ The items were taken from the official SQLite documentation
 1. [update-stmt](https://www.sqlite.org/syntax/update-stmt.html) &#9989;
 1. [update-stmt-limited](https://www.sqlite.org/syntax/update-stmt-limited.html) &#9989;
 
-#### INSERT Statement ![progress](https://progress-bar.xyz/0/?scale=7&suffix=%%%20(0%20of%207)&width=140)
-1. [insert-with-values](https://www.sqlite.org/lang_insert.html)
-1. [insert-as-select](https://www.sqlite.org/lang_insert.html)
-1. [insert-with-upsert](https://www.sqlite.org/lang_insert.html)
-1. [insert-as-default](https://www.sqlite.org/lang_insert.html)
-1. [insert-with-returning](https://www.sqlite.org/lang_insert.html)
-1. [insert-with-cte](https://www.sqlite.org/lang_insert.html)
-1. [replace-stmt](https://www.sqlite.org/lang_replace.html)
+#### INSERT Statement ![progress](https://progress-bar.xyz/7/?scale=7&suffix=%%%20(7%20of%207)&width=140)
+1. [insert-with-values](https://www.sqlite.org/lang_insert.html) &#9989;
+1. [insert-as-select](https://www.sqlite.org/lang_insert.html) &#9989;
+1. [insert-with-upsert](https://www.sqlite.org/lang_insert.html) &#9989;
+1. [insert-as-default](https://www.sqlite.org/lang_insert.html) &#9989;
+1. [insert-with-returning](https://www.sqlite.org/lang_insert.html) &#9989;
+1. [insert-with-cte](https://www.sqlite.org/lang_insert.html) &#9989;
+1. [replace-stmt](https://www.sqlite.org/lang_replace.html) &#9989;
 
 #### CREATE Statements ![progress](https://progress-bar.xyz/0/?scale=45&suffix=%%%20(0%20of%205)&width=140)
 1. create-virtual-table-stmt

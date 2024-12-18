@@ -1,6 +1,7 @@
 use crate::{
-    parser::select::SelectStatementParser, Identifier, InsertStatement, InsertValues, Keyword,
-    QualifiedTableName, TokenType, UpsertAction, UpsertClause, UpsertConflictTarget, UpsertUpdate,
+    parser::select::SelectStatementParser, ConflictClause, Identifier, InsertStatement,
+    InsertValues, Keyword, QualifiedTableName, TokenType, UpsertAction, UpsertClause,
+    UpsertConflictTarget, UpsertUpdate,
 };
 
 use super::{
@@ -32,6 +33,17 @@ pub trait InsertStatementParser {
 
 impl<'a> InsertStatementParser for Parser<'a> {
     fn parse_insert_statement(&mut self) -> Result<InsertStatement, ParsingError> {
+        if self.consume_as_keyword(Keyword::Replace).is_ok() {
+            return Ok(InsertStatement {
+                conflict_clause: ConflictClause::None,
+                table_name: self.parse_table_name()?,
+                columns: self.parse_insert_columns()?,
+                values: self.parse_insert_values()?,
+                upsert_clause: self.parse_upsert_clauses()?,
+                returning_clause: self.parse_returning_clause()?,
+            });
+        }
+
         self.consume_as_keyword(Keyword::Insert)?;
 
         Ok(InsertStatement {
@@ -45,13 +57,11 @@ impl<'a> InsertStatementParser for Parser<'a> {
     }
 
     fn parse_table_name(&mut self) -> Result<QualifiedTableName, ParsingError> {
-        dbg!("parse_table_name");
         self.consume_as_keyword(Keyword::Into)?;
         self.parse_qualified_table_name()
     }
 
     fn parse_insert_columns(&mut self) -> Result<Vec<Identifier>, ParsingError> {
-        dbg!("parse_insert_columns");
         let mut columns = vec![];
 
         if self.consume_as(TokenType::LeftParen).is_ok() {
@@ -69,7 +79,6 @@ impl<'a> InsertStatementParser for Parser<'a> {
     }
 
     fn parse_insert_values(&mut self) -> Result<InsertValues, ParsingError> {
-        dbg!("parse_insert_values");
         if self.consume_as_keyword(Keyword::Values).is_ok() {
             let mut values = vec![];
 
@@ -131,12 +140,7 @@ impl<'a> InsertStatementParser for Parser<'a> {
         self.consume_as_keyword(Keyword::Conflict)?;
 
         let conflict_target = self.parse_upsert_conflict_target()?;
-        dbg!("conflict_target", &conflict_target);
-
-        dbg!("parse_upsert_action");
-        dbg!("self.peek_token()", self.peek_token()?);
         let action = self.parse_upsert_action()?;
-        dbg!("action", &action);
 
         Ok(UpsertClause {
             conflict_target,
@@ -176,10 +180,6 @@ impl<'a> InsertStatementParser for Parser<'a> {
         }
 
         if self.consume_as_keyword(Keyword::Update).is_ok() {
-            dbg!("parse_upsert_action update");
-            dbg!("self.peek_token()", self.peek_token()?);
-            // self.consume_as_keyword(Keyword::Set)?;
-
             let set_clauses = self.parse_set_clauses()?;
 
             let where_clause = self.parse_where_clause()?;
@@ -507,6 +507,16 @@ mod tests_insert_statement {
         run_sunny_day_test(
             "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_1) INSERT INTO cte_2 DEFAULT VALUES",
             Statement::WithCte(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_parse_insert_statement_with_replace() {
+        let mut expected_statement = insert_statement();
+        expected_statement.conflict_clause = ConflictClause::None;
+        run_sunny_day_test(
+            "REPLACE INTO table1 DEFAULT VALUES",
+            Statement::Insert(expected_statement),
         );
     }
 }

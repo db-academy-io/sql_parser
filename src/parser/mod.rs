@@ -323,7 +323,7 @@ impl<'a> Parser<'a> {
             Keyword::Update => {
                 UpdateStatementParser::parse_update_statement(self).map(Statement::Update)
             }
-            Keyword::Insert => {
+            Keyword::Insert | Keyword::Replace => {
                 InsertStatementParser::parse_insert_statement(self).map(Statement::Insert)
             }
             Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
