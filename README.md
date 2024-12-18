@@ -80,15 +80,14 @@ The items were taken from the official SQLite documentation
 1. [update-stmt](https://www.sqlite.org/syntax/update-stmt.html) &#9989;
 1. [update-stmt-limited](https://www.sqlite.org/syntax/update-stmt-limited.html) &#9989;
 
-#### INSERT Statement ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%208)&width=140)
-1. insert-with-values
-1. insert-with-select
-1. insert-with-upsert
-1. insert-with-returning
-1. insert-with-default
-1. insert-with-cte
-1. replace-stmt
-1. common-table-expressions
+#### INSERT Statement ![progress](https://progress-bar.xyz/0/?scale=7&suffix=%%%20(0%20of%207)&width=140)
+1. [insert-with-values](https://www.sqlite.org/lang_insert.html)
+1. [insert-as-select](https://www.sqlite.org/lang_insert.html)
+1. [insert-with-upsert](https://www.sqlite.org/lang_insert.html)
+1. [insert-as-default](https://www.sqlite.org/lang_insert.html)
+1. [insert-with-returning](https://www.sqlite.org/lang_insert.html)
+1. [insert-with-cte](https://www.sqlite.org/lang_insert.html)
+1. [replace-stmt](https://www.sqlite.org/lang_replace.html)
 
 #### CREATE Statements ![progress](https://progress-bar.xyz/0/?scale=45&suffix=%%%20(0%20of%205)&width=140)
 1. create-virtual-table-stmt

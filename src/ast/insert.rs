@@ -1,3 +1,67 @@
+use super::{
+    ConflictClause, Expression, Identifier, QualifiedTableName, ReturningClause, SelectStatement,
+    SetClause,
+};
+
 /// An AST for [INSERT](https://www.sqlite.org/lang_insert.html) SQL statement.
 #[derive(Debug, PartialEq)]
-pub struct InsertStatement {}
+pub struct InsertStatement {
+    pub conflict_clause: ConflictClause,
+
+    /// TODO: Change the type, as QualifiedTableName contains indexing type
+    /// which is not applicable for insert statements
+    pub table_name: QualifiedTableName,
+
+    pub columns: Vec<Identifier>,
+
+    pub values: InsertValues,
+
+    pub upsert_clause: Option<Vec<UpsertClause>>,
+
+    pub returning_clause: Vec<ReturningClause>,
+}
+
+/// The values to insert into the table.
+#[derive(Debug, PartialEq)]
+pub enum InsertValues {
+    /// The values to insert into the table.
+    Values(Vec<Expression>),
+
+    /// The values to insert into the table from a select statement.
+    Select(SelectStatement),
+
+    /// The values to insert into the table from a default value.
+    DefaultValues,
+}
+
+/// The upsert clause to update the table with the new values.
+#[derive(Debug, PartialEq)]
+pub struct UpsertClause {
+    pub conflict_target: Option<UpsertConflictTarget>,
+    pub action: UpsertAction,
+}
+
+/// The [conflict target](https://www.sqlite.org/lang_upsert.html#upsert_conflict_target)
+/// to update the table with the new values.
+#[derive(Debug, PartialEq)]
+pub struct UpsertConflictTarget {
+    pub columns: Vec<Identifier>,
+    pub where_clause: Option<Expression>,
+}
+
+/// The [action](https://www.sqlite.org/lang_upsert.html#upsert_action) to take when a conflict occurs.
+#[derive(Debug, PartialEq)]
+pub enum UpsertAction {
+    /// The action to take when a conflict occurs.
+    Nothing,
+
+    /// The action to take when a conflict occurs.
+    Update(UpsertUpdate),
+}
+
+/// The [update set](https://www.sqlite.org/lang_upsert.html) action to take when a conflict occurs.
+#[derive(Debug, PartialEq)]
+pub struct UpsertUpdate {
+    pub set_clauses: Vec<SetClause>,
+    pub where_clause: Option<Expression>,
+}
