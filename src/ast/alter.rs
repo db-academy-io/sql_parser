@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::{DataType, Expression, Identifier, Ordering};
 
 /// An AST for [ALTER TABLE](https://www.sqlite.org/lang_altertable.html) SQL statement.
@@ -130,6 +132,19 @@ pub enum ConflictClause {
     /// satisfy a constraint, delete triggers fire if and only if recursive
     /// triggers are enabled.
     Replace,
+}
+
+impl Display for ConflictClause {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConflictClause::None => write!(f, ""),
+            ConflictClause::Replace => write!(f, "OR REPLACE"),
+            ConflictClause::Rollback => write!(f, "OR ROLLBACK"),
+            ConflictClause::Abort => write!(f, "OR ABORT"),
+            ConflictClause::Fail => write!(f, "OR FAIL"),
+            ConflictClause::Ignore => write!(f, "OR IGNORE"),
+        }
+    }
 }
 
 /// A [ForeignKeyConstraint](https://www.sqlite.org/syntax/foreign-key-clause.html)

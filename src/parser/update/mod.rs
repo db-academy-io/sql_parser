@@ -243,7 +243,6 @@ mod test_utils {
 
 #[cfg(test)]
 mod test_update_statement_parser {
-    use std::fmt::Display;
 
     use super::test_utils::*;
     use crate::{
@@ -278,19 +277,6 @@ mod test_update_statement_parser {
             ConflictClause::Fail,
             ConflictClause::Ignore,
         ];
-
-        impl Display for ConflictClause {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    ConflictClause::None => write!(f, ""),
-                    ConflictClause::Replace => write!(f, "OR REPLACE"),
-                    ConflictClause::Rollback => write!(f, "OR ROLLBACK"),
-                    ConflictClause::Abort => write!(f, "OR ABORT"),
-                    ConflictClause::Fail => write!(f, "OR FAIL"),
-                    ConflictClause::Ignore => write!(f, "OR IGNORE"),
-                }
-            }
-        }
 
         for conflict_option in conflict_options {
             let expected = update_statement_with_conflict_clause(conflict_option.clone());

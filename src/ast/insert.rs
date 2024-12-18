@@ -25,7 +25,7 @@ pub struct InsertStatement {
 #[derive(Debug, PartialEq)]
 pub enum InsertValues {
     /// The values to insert into the table.
-    Values(Vec<Expression>),
+    Values(Vec<Vec<Expression>>),
 
     /// The values to insert into the table from a select statement.
     Select(SelectStatement),
@@ -46,7 +46,7 @@ pub struct UpsertClause {
 #[derive(Debug, PartialEq)]
 pub struct UpsertConflictTarget {
     pub columns: Vec<Identifier>,
-    pub where_clause: Option<Expression>,
+    pub where_clause: Option<Box<Expression>>,
 }
 
 /// The [action](https://www.sqlite.org/lang_upsert.html#upsert_action) to take when a conflict occurs.
@@ -63,5 +63,5 @@ pub enum UpsertAction {
 #[derive(Debug, PartialEq)]
 pub struct UpsertUpdate {
     pub set_clauses: Vec<SetClause>,
-    pub where_clause: Option<Expression>,
+    pub where_clause: Option<Box<Expression>>,
 }

@@ -25,7 +25,7 @@ pub use delete::{DeleteStatement, ReturningClause};
 pub use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
 pub use explain::ExplainStatement;
 pub use expression::*;
-pub use insert::InsertStatement;
+pub use insert::*;
 pub use select::*;
 pub use sqlite::{
     AnalyzeStatement, AttachStatement, DetachStatement, PragmaStatement, ReindexStatement,

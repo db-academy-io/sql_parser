@@ -518,6 +518,10 @@ pub(crate) mod test_utils {
     pub fn collate_expression(expression: Expression, name: String) -> Expression {
         Expression::CollateExpression(Box::new(expression), name)
     }
+
+    pub fn expression_list(expressions: Vec<Expression>) -> Expression {
+        Expression::ExpressionList(expressions)
+    }
 }
 
 #[cfg(test)]

@@ -7,6 +7,7 @@ mod delete;
 mod drop;
 mod errors;
 pub(crate) mod expression;
+mod insert;
 mod select;
 mod sqlite;
 mod trx;
@@ -26,6 +27,7 @@ use delete::DeleteStatementParser;
 use drop::DropStatementParser;
 pub use errors::*;
 use expression::ExpressionParser;
+use insert::InsertStatementParser;
 use select::{SelectStatementParser, ValuesStatementParser};
 use sqlite::SQLite3StatementParser;
 use trx::TransactionStatementParser;
@@ -320,6 +322,9 @@ impl<'a> Parser<'a> {
             }
             Keyword::Update => {
                 UpdateStatementParser::parse_update_statement(self).map(Statement::Update)
+            }
+            Keyword::Insert => {
+                InsertStatementParser::parse_insert_statement(self).map(Statement::Insert)
             }
             Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
                 .map(Statement::AlterTable),
