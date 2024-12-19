@@ -1,6 +1,6 @@
 use super::{
-    ColumnDefinition, ConflictClause, Expression, ForeignKeyClause, Identifier, IndexedColumn,
-    SelectStatement,
+    ColumnDefinition, ConflictClause, DeleteStatement, Expression, ForeignKeyClause, Identifier,
+    IndexedColumn, InsertStatement, SelectStatement, UpdateStatement,
 };
 
 /// An AST for [CREATE VIRTUAL TABLE](https://www.sqlite.org/lang_createvtab.html) SQL statement.
@@ -100,4 +100,54 @@ pub enum TableOption {
 
 /// An AST for [CREATE TRIGGER](https://www.sqlite.org/lang_createtrigger.html) SQL statement.
 #[derive(Debug, PartialEq)]
-pub struct CreateTriggerStatement {}
+pub struct CreateTriggerStatement {
+    pub temporary: bool,
+
+    pub if_not_exists: bool,
+
+    pub trigger_name: Identifier,
+
+    pub trigger_pre_condition: Option<TriggerPreCondition>,
+
+    pub trigger_event: TriggerEvent,
+
+    pub for_each_row: bool,
+
+    pub when_clause: Option<Expression>,
+
+    pub trigger_statements: Vec<TriggerStatement>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum TriggerPreCondition {
+    Before,
+
+    After,
+
+    InsteadOf,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct TriggerEvent {
+    pub event_type: TriggerEventType,
+
+    pub table_name: Identifier,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum TriggerEventType {
+    Delete,
+    Insert,
+    Update(Option<Vec<Identifier>>),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum TriggerStatement {
+    Update(UpdateStatement),
+
+    Insert(InsertStatement),
+
+    Delete(DeleteStatement),
+
+    Select(SelectStatement),
+}
