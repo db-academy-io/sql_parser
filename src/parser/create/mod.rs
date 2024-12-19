@@ -4,6 +4,7 @@ mod create_trigger;
 mod create_view;
 mod create_virtual_table;
 
+use create_index::CreateIndexStatementParser;
 pub use create_virtual_table::*;
 
 use crate::{Keyword, Statement};
@@ -25,6 +26,13 @@ impl<'a> CreateStatementParser for Parser<'a> {
                 CreateVirtualTableStatementParser::parse_create_virtual_table_statement(self)
                     .map(Statement::CreateVirtualTable)
             }
+            Keyword::Unique => {
+                self.consume_as_keyword(Keyword::Unique)?;
+                CreateIndexStatementParser::parse_create_index_statement(self, true)
+                    .map(Statement::CreateIndex)
+            }
+            Keyword::Index => CreateIndexStatementParser::parse_create_index_statement(self, false)
+                .map(Statement::CreateIndex),
             _ => Err(ParsingError::UnexpectedParsingState(
                 "Unimplemented".to_string(),
             )),

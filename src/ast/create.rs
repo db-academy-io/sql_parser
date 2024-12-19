@@ -26,9 +26,9 @@ pub struct CreateIndexStatement {
 
     pub table_name: Identifier,
 
-    pub columns: Vec<Identifier>,
+    pub columns: Vec<IndexedColumn>,
 
-    pub where_clause: Option<Expression>,
+    pub where_clause: Option<Box<Expression>>,
 }
 
 /// An AST for [CREATE VIEW](https://www.sqlite.org/lang_createview.html) SQL statement.

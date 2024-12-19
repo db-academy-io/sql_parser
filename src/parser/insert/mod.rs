@@ -30,6 +30,8 @@ pub trait InsertStatementParser {
 
     fn parse_upsert_action(&mut self) -> Result<UpsertAction, ParsingError>;
 
+    fn parse_indexed_columns(&mut self) -> Result<Vec<IndexedColumn>, ParsingError>;
+
     fn parse_indexed_column(&mut self) -> Result<IndexedColumn, ParsingError>;
 
     fn parse_ordering(&mut self) -> Result<Option<Ordering>, ParsingError>;
@@ -155,18 +157,9 @@ impl<'a> InsertStatementParser for Parser<'a> {
     fn parse_upsert_conflict_target(
         &mut self,
     ) -> Result<Option<UpsertConflictTarget>, ParsingError> {
-        if self.consume_as(TokenType::LeftParen).is_ok() {
-            let mut columns = vec![];
-            loop {
-                columns.push(self.parse_indexed_column()?);
-                if self.consume_as(TokenType::Comma).is_err() {
-                    break;
-                }
-            }
-            self.consume_as(TokenType::RightParen)?;
-
+        if self.peek_as(TokenType::LeftParen).is_ok() {
+            let columns = self.parse_indexed_columns()?;
             let where_clause = self.parse_where_clause()?;
-
             Ok(Some(UpsertConflictTarget {
                 columns,
                 where_clause,
@@ -197,6 +190,20 @@ impl<'a> InsertStatementParser for Parser<'a> {
         Err(ParsingError::UnexpectedToken(
             self.peek_token()?.to_string(),
         ))
+    }
+
+    fn parse_indexed_columns(&mut self) -> Result<Vec<IndexedColumn>, ParsingError> {
+        self.consume_as(TokenType::LeftParen)?;
+
+        let mut columns = vec![];
+        loop {
+            columns.push(self.parse_indexed_column()?);
+            if self.consume_as(TokenType::Comma).is_err() {
+                break;
+            }
+        }
+        self.consume_as(TokenType::RightParen)?;
+        Ok(columns)
     }
 
     fn parse_indexed_column(&mut self) -> Result<IndexedColumn, ParsingError> {
