@@ -89,12 +89,12 @@ The items were taken from the official SQLite documentation
 1. [insert-with-cte](https://www.sqlite.org/lang_insert.html) &#9989;
 1. [replace-stmt](https://www.sqlite.org/lang_replace.html) &#9989;
 
-#### CREATE Statements ![progress](https://progress-bar.xyz/4/?scale=5&suffix=%%%20(4%20of%205)&width=140)
+#### CREATE Statements ![progress](https://progress-bar.xyz/5/?scale=5&suffix=%%%20(5%20of%205)&width=140)
 1. [create-virtual-table-stmt](https://www.sqlite.org/lang_createvtab.html) &#9989;
 1. [create-index-stmt](https://www.sqlite.org/lang_createindex.html) &#9989;
 1. [create-view-stmt](https://www.sqlite.org/lang_createview.html) &#9989;
 1. [create-table-stmt](https://www.sqlite.org/lang_createtable.html) &#9989;
-1. [create-trigger-stmt](https://www.sqlite.org/lang_createtrigger.html) 
+1. [create-trigger-stmt](https://www.sqlite.org/lang_createtrigger.html) &#9989;
 
 #### EXPLAIN Statements ![progress](https://progress-bar.xyz/0/?scale=1&suffix=%%%20(0%20of%201)&width=140)
 1. explain-stmt 
