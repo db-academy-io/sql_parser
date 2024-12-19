@@ -1,6 +1,6 @@
 use super::{
-    ConflictClause, Expression, Identifier, QualifiedTableName, ReturningClause, SelectStatement,
-    SetClause,
+    ConflictClause, Expression, Identifier, Ordering, QualifiedTableName, ReturningClause,
+    SelectStatement, SetClause,
 };
 
 /// An AST for [INSERT](https://www.sqlite.org/lang_insert.html) SQL statement.
@@ -45,8 +45,16 @@ pub struct UpsertClause {
 /// to update the table with the new values.
 #[derive(Debug, PartialEq)]
 pub struct UpsertConflictTarget {
-    pub columns: Vec<Identifier>,
+    pub columns: Vec<IndexedColumn>,
     pub where_clause: Option<Box<Expression>>,
+}
+
+/// An indexed column
+#[derive(Debug, PartialEq)]
+pub struct IndexedColumn {
+    pub column: Expression,
+
+    pub ordering: Option<Ordering>,
 }
 
 /// The [action](https://www.sqlite.org/lang_upsert.html#upsert_action) to take when a conflict occurs.

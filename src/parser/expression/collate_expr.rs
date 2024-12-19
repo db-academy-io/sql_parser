@@ -1,4 +1,4 @@
-use crate::{Expression, Keyword, Parser, ParsingError};
+use crate::{CollateExpressionStatement, Expression, Keyword, Parser, ParsingError};
 
 pub trait CollateExpressionParser {
     /// Parse a COLLATE expression, i.e. an expression followed by the COLLATE keyword and a string literal
@@ -18,10 +18,10 @@ impl<'a> CollateExpressionParser for Parser<'a> {
         let name = self.peek_as_string()?;
         self.consume_token()?;
 
-        Ok(Expression::CollateExpression(
-            Box::new(expression),
-            name.to_string(),
-        ))
+        Ok(Expression::CollateExpression(CollateExpressionStatement {
+            expression: Box::new(expression),
+            collation_name: name.to_string(),
+        }))
     }
 }
 

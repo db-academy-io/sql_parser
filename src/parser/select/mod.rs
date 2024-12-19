@@ -1489,12 +1489,14 @@ mod test_select_having_clause {
 #[cfg(test)]
 mod test_select_window_clause {
     use super::test_utils::select_statement_with_window_clause;
-    use crate::expression::test_utils::{identifier_expression, numeric_literal_expression};
+    use crate::expression::test_utils::{
+        collate_expression, identifier_expression, numeric_literal_expression,
+    };
     use crate::parser::test_utils::*;
     use crate::{
-        BetweenFrameSpec, BetweenFrameSpecType, Expression, FrameSpec, FrameSpecExclude,
-        FrameSpecType, FrameType, NamedWindowDefinition, NullsOrdering, Ordering, OrderingTerm,
-        Statement, WindowDefinition,
+        BetweenFrameSpec, BetweenFrameSpecType, FrameSpec, FrameSpecExclude, FrameSpecType,
+        FrameType, NamedWindowDefinition, NullsOrdering, Ordering, OrderingTerm, Statement,
+        WindowDefinition,
     };
 
     #[test]
@@ -1526,8 +1528,8 @@ mod test_select_window_clause {
                         nulls_ordering: None,
                     },
                     OrderingTerm {
-                        expression: Box::new(Expression::CollateExpression(
-                            Box::new(identifier_expression(&["col4"])),
+                        expression: Box::new(collate_expression(
+                            identifier_expression(&["col4"]),
                             "binary".to_string(),
                         )),
                         ordering: Some(Ordering::Asc),
@@ -1623,9 +1625,9 @@ mod test_select_union_clause {
 #[cfg(test)]
 mod test_select_order_by_clause {
     use super::test_utils::select_statement_with_order_by_clause;
-    use crate::expression::test_utils::identifier_expression;
+    use crate::expression::test_utils::{collate_expression, identifier_expression};
     use crate::parser::test_utils::*;
-    use crate::{Expression, NullsOrdering, Ordering, OrderingTerm, Statement};
+    use crate::{NullsOrdering, Ordering, OrderingTerm, Statement};
 
     #[test]
     fn test_select_order_by_clause() {
@@ -1680,16 +1682,16 @@ mod test_select_order_by_clause {
     fn test_select_order_by_clause_with_collation_and_nulls_ordering() {
         let expected_statement = select_statement_with_order_by_clause(vec![
             OrderingTerm {
-                expression: Box::new(Expression::CollateExpression(
-                    Box::new(identifier_expression(&["col1"])),
+                expression: Box::new(collate_expression(
+                    identifier_expression(&["col1"]),
                     "binary".to_string(),
                 )),
                 ordering: Some(Ordering::Asc),
                 nulls_ordering: Some(NullsOrdering::Last),
             },
             OrderingTerm {
-                expression: Box::new(Expression::CollateExpression(
-                    Box::new(identifier_expression(&["col2"])),
+                expression: Box::new(collate_expression(
+                    identifier_expression(&["col2"]),
                     "utf8".to_string(),
                 )),
                 ordering: Some(Ordering::Desc),

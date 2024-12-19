@@ -32,7 +32,7 @@ pub enum Expression {
     Cast(Box<Expression>, DataType),
 
     /// A collate expression (e.g. expression COLLATE collation_name)
-    CollateExpression(Box<Expression>, String),
+    CollateExpression(CollateExpressionStatement),
 
     /// A binary matching expressions (e.g. $expr1 NOT MATCH $expr2)
     BinaryMatchingExpression(Box<Expression>, BinaryMatchingExpression),
@@ -487,6 +487,16 @@ pub struct CaseExpression {
 
     /// The else expression
     pub else_expression: Option<Box<Expression>>,
+}
+
+/// A collate expression
+#[derive(Debug, PartialEq, Clone)]
+pub struct CollateExpressionStatement {
+    /// The expression
+    pub expression: Box<Expression>,
+
+    /// The collation name
+    pub collation_name: String,
 }
 
 /// A when expression

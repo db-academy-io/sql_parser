@@ -395,8 +395,9 @@ impl<'a> ExpressionParser for Parser<'a> {
 pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
-        BinaryOp, DataType, ExistsStatement, Function, FunctionArg, Identifier, LiteralValue,
-        OverClause, Parser, RaiseFunction, SelectStatement, Statement, UnaryOp,
+        BinaryOp, CollateExpressionStatement, DataType, ExistsStatement, Function, FunctionArg,
+        Identifier, LiteralValue, OverClause, Parser, RaiseFunction, SelectStatement, Statement,
+        UnaryOp,
     };
 
     pub fn run_sunny_day_test_with_multiple_expressions(
@@ -516,7 +517,10 @@ pub(crate) mod test_utils {
     }
 
     pub fn collate_expression(expression: Expression, name: String) -> Expression {
-        Expression::CollateExpression(Box::new(expression), name)
+        Expression::CollateExpression(CollateExpressionStatement {
+            expression: Box::new(expression),
+            collation_name: name,
+        })
     }
 
     pub fn expression_list(expressions: Vec<Expression>) -> Expression {

@@ -1,7 +1,7 @@
 use crate::{
-    parser::select::SelectStatementParser, ConflictClause, Identifier, InsertStatement,
-    InsertValues, Keyword, QualifiedTableName, TokenType, UpsertAction, UpsertClause,
-    UpsertConflictTarget, UpsertUpdate,
+    parser::select::SelectStatementParser, ConflictClause, Identifier, IndexedColumn,
+    InsertStatement, InsertValues, Keyword, Ordering, QualifiedTableName, TokenType, UpsertAction,
+    UpsertClause, UpsertConflictTarget, UpsertUpdate,
 };
 
 use super::{
@@ -29,6 +29,10 @@ pub trait InsertStatementParser {
     ) -> Result<Option<UpsertConflictTarget>, ParsingError>;
 
     fn parse_upsert_action(&mut self) -> Result<UpsertAction, ParsingError>;
+
+    fn parse_indexed_column(&mut self) -> Result<IndexedColumn, ParsingError>;
+
+    fn parse_ordering(&mut self) -> Result<Option<Ordering>, ParsingError>;
 }
 
 impl<'a> InsertStatementParser for Parser<'a> {
@@ -154,7 +158,7 @@ impl<'a> InsertStatementParser for Parser<'a> {
         if self.consume_as(TokenType::LeftParen).is_ok() {
             let mut columns = vec![];
             loop {
-                columns.push(self.parse_identifier()?);
+                columns.push(self.parse_indexed_column()?);
                 if self.consume_as(TokenType::Comma).is_err() {
                     break;
                 }
@@ -194,6 +198,21 @@ impl<'a> InsertStatementParser for Parser<'a> {
             self.peek_token()?.to_string(),
         ))
     }
+
+    fn parse_indexed_column(&mut self) -> Result<IndexedColumn, ParsingError> {
+        let column = self.parse_expression()?;
+        let ordering = self.parse_ordering()?;
+        Ok(IndexedColumn { column, ordering })
+    }
+
+    fn parse_ordering(&mut self) -> Result<Option<Ordering>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Asc).is_ok() {
+            return Ok(Some(Ordering::Asc));
+        } else if self.consume_as_keyword(Keyword::Desc).is_ok() {
+            return Ok(Some(Ordering::Desc));
+        }
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
@@ -212,12 +231,6 @@ mod test_utils {
             returning_clause: vec![],
         }
     }
-
-    // pub fn insert_statement_with_values(values: InsertValues) -> InsertStatement {
-    //     let mut statement = insert_statement();
-    //     statement.values = values;
-    //     statement
-    // }
 }
 
 #[cfg(test)]
@@ -225,16 +238,16 @@ mod tests_insert_statement {
     use super::test_utils::*;
     use crate::{
         expression::test_utils::{
-            binary_op_expression, expression_list, identifier_expression,
+            binary_op_expression, collate_expression, expression_list, identifier_expression,
             numeric_literal_expression,
         },
         parser::{
             cte::test_utils::cte_expression, select::test_utils::select_from,
             test_utils::run_sunny_day_test,
         },
-        BinaryOp, ConflictClause, CteExpression, FromClause, Identifier, InsertValues,
-        QualifiedTableName, ReturningClause, SetClause, Statement, UpsertAction, UpsertClause,
-        UpsertConflictTarget, UpsertUpdate, WithCteStatement,
+        BinaryOp, ConflictClause, CteExpression, FromClause, Identifier, IndexedColumn,
+        InsertValues, QualifiedTableName, ReturningClause, SetClause, Statement, UpsertAction,
+        UpsertClause, UpsertConflictTarget, UpsertUpdate, WithCteStatement,
     };
 
     #[test]
@@ -299,6 +312,7 @@ mod tests_insert_statement {
             Identifier::Single("col1".to_string()),
             Identifier::Single("col2".to_string()),
         ];
+
         statement.values = InsertValues::Values(vec![
             vec![
                 numeric_literal_expression("1"),
@@ -352,7 +366,7 @@ mod tests_insert_statement {
         let sql = r#"
             INSERT INTO table1 DEFAULT VALUES 
                 ON CONFLICT (col1) DO NOTHING 
-                ON CONFLICT (col2) 
+                ON CONFLICT (col2 COLLATE utf8) 
                     WHERE col2 > 10
                     DO UPDATE SET col2 = col2 + 1
                 ON CONFLICT (col3, col4)
@@ -365,14 +379,23 @@ mod tests_insert_statement {
         expected_statement.upsert_clause = Some(vec![
             UpsertClause {
                 conflict_target: Some(UpsertConflictTarget {
-                    columns: vec![Identifier::Single("col1".to_string())],
+                    columns: vec![IndexedColumn {
+                        column: identifier_expression(&["col1"]),
+                        ordering: None,
+                    }],
                     where_clause: None,
                 }),
                 action: UpsertAction::Nothing,
             },
             UpsertClause {
                 conflict_target: Some(UpsertConflictTarget {
-                    columns: vec![Identifier::Single("col2".to_string())],
+                    columns: vec![IndexedColumn {
+                        column: collate_expression(
+                            identifier_expression(&["col2"]),
+                            "utf8".to_string(),
+                        ),
+                        ordering: None,
+                    }],
                     where_clause: Some(Box::new(binary_op_expression(
                         BinaryOp::GreaterThan,
                         identifier_expression(&["col2"]),
@@ -394,8 +417,14 @@ mod tests_insert_statement {
             UpsertClause {
                 conflict_target: Some(UpsertConflictTarget {
                     columns: vec![
-                        Identifier::Single("col3".to_string()),
-                        Identifier::Single("col4".to_string()),
+                        IndexedColumn {
+                            column: identifier_expression(&["col3"]),
+                            ordering: None,
+                        },
+                        IndexedColumn {
+                            column: identifier_expression(&["col4"]),
+                            ordering: None,
+                        },
                     ],
                     where_clause: Some(Box::new(binary_op_expression(
                         BinaryOp::EqualsEquals,
