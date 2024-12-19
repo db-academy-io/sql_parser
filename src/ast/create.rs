@@ -32,7 +32,7 @@ pub struct CreateIndexStatement {
 }
 
 /// An AST for [CREATE VIEW](https://www.sqlite.org/lang_createview.html) SQL statement.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CreateViewStatement {
     pub temporary: bool,
 

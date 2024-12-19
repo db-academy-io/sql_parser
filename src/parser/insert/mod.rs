@@ -16,7 +16,7 @@ pub trait InsertStatementParser {
 
     fn parse_table_name(&mut self) -> Result<QualifiedTableName, ParsingError>;
 
-    fn parse_insert_columns(&mut self) -> Result<Vec<Identifier>, ParsingError>;
+    fn parse_columns(&mut self) -> Result<Vec<Identifier>, ParsingError>;
 
     fn parse_insert_values(&mut self) -> Result<InsertValues, ParsingError>;
 
@@ -43,7 +43,7 @@ impl<'a> InsertStatementParser for Parser<'a> {
             return Ok(InsertStatement {
                 conflict_clause: ConflictClause::None,
                 table_name: self.parse_table_name()?,
-                columns: self.parse_insert_columns()?,
+                columns: self.parse_columns()?,
                 values: self.parse_insert_values()?,
                 upsert_clause: self.parse_upsert_clauses()?,
                 returning_clause: self.parse_returning_clause()?,
@@ -55,7 +55,7 @@ impl<'a> InsertStatementParser for Parser<'a> {
         Ok(InsertStatement {
             conflict_clause: self.parse_on_conflict_clause()?,
             table_name: self.parse_table_name()?,
-            columns: self.parse_insert_columns()?,
+            columns: self.parse_columns()?,
             values: self.parse_insert_values()?,
             upsert_clause: self.parse_upsert_clauses()?,
             returning_clause: self.parse_returning_clause()?,
@@ -67,7 +67,7 @@ impl<'a> InsertStatementParser for Parser<'a> {
         self.parse_qualified_table_name()
     }
 
-    fn parse_insert_columns(&mut self) -> Result<Vec<Identifier>, ParsingError> {
+    fn parse_columns(&mut self) -> Result<Vec<Identifier>, ParsingError> {
         let mut columns = vec![];
 
         if self.consume_as(TokenType::LeftParen).is_ok() {
