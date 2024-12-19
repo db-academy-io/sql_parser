@@ -27,7 +27,7 @@ pub enum AlterTableStatementType {
 }
 
 /// A ColumnDefinition, used in ALTER TABLE ADD COLUMN statement
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ColumnDefinition {
     pub column_name: Identifier,
     pub column_type: Option<DataType>,
@@ -35,7 +35,7 @@ pub struct ColumnDefinition {
 }
 
 /// A ColumnConstraint, used in ALTER TABLE ADD COLUMN statement
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ColumnConstraint {
     /// An optional name for the constraint
     pub name: Option<Identifier>,
@@ -45,7 +45,7 @@ pub struct ColumnConstraint {
 }
 
 /// A constraint type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ColumnConstraintType {
     PrimaryKey(PrimaryKeyConstraint),
     NotNull(ConflictClause),
@@ -58,7 +58,7 @@ pub enum ColumnConstraintType {
 }
 
 /// A PrimaryKeyConstraint, used in ALTER TABLE ADD COLUMN statement
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PrimaryKeyConstraint {
     pub ordering: Option<Ordering>,
     pub conflict_clause: ConflictClause,
@@ -148,7 +148,7 @@ impl Display for ConflictClause {
 }
 
 /// A [ForeignKeyConstraint](https://www.sqlite.org/syntax/foreign-key-clause.html)
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ForeignKeyClause {
     /// The name of the table that the foreign key constraint is defined on
     pub table_name: Identifier,
@@ -165,7 +165,7 @@ pub struct ForeignKeyClause {
 }
 
 /// A FKConstraintAction, used in ALTER TABLE ADD COLUMN statement
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FKConstraintAction {
     OnDelete(FKAction),
     OnUpdate(FKAction),
@@ -173,7 +173,7 @@ pub enum FKConstraintAction {
 }
 
 /// A FKAction, used in ALTER TABLE ADD COLUMN statement
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FKAction {
     SetNull,
     SetDefault,
@@ -184,7 +184,7 @@ pub enum FKAction {
 
 /// A [Deferrable](https://www.sqlite.org/syntax/foreign-key-clause.html)
 /// clause in a ForeignKeyConstraint
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum FKDeferrableType {
     Deferrable,
     InitiallyImmediate,
@@ -193,14 +193,14 @@ pub enum FKDeferrableType {
 }
 
 /// A GeneratedColumnConstraint, used in ALTER TABLE ADD COLUMN statement
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct GeneratedColumnConstraint {
     pub expression: Expression,
     pub generated_type: Option<GeneratedColumnType>,
 }
 
 /// A GeneratedColumnType, used in ALTER TABLE ADD COLUMN statement
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum GeneratedColumnType {
     Virtual,
     Stored,

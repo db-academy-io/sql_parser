@@ -50,7 +50,7 @@ pub struct UpsertConflictTarget {
 }
 
 /// An indexed column
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct IndexedColumn {
     pub column: Expression,
 

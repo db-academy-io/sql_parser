@@ -5,6 +5,7 @@ mod create_view;
 mod create_virtual_table;
 
 use create_index::CreateIndexStatementParser;
+use create_table::CreateTableStatementParser;
 use create_view::CreateViewStatementParser;
 pub use create_virtual_table::*;
 
@@ -38,11 +39,17 @@ impl<'a> CreateStatementParser for Parser<'a> {
             Keyword::View => CreateViewStatementParser::parse_create_view_statement(self, false)
                 .map(Statement::CreateView),
 
+            Keyword::Table => CreateTableStatementParser::parse_create_table_statement(self, false)
+                .map(Statement::CreateTable),
+
             Keyword::Temp => {
                 self.consume_as_keyword(Keyword::Temp)?;
                 if let Ok(Keyword::View) = self.peek_as_keyword() {
                     CreateViewStatementParser::parse_create_view_statement(self, true)
                         .map(Statement::CreateView)
+                } else if let Ok(Keyword::Table) = self.peek_as_keyword() {
+                    CreateTableStatementParser::parse_create_table_statement(self, true)
+                        .map(Statement::CreateTable)
                 } else {
                     Err(ParsingError::UnexpectedParsingState(
                         "Expected table name after TEMP keyword".to_string(),
@@ -55,6 +62,9 @@ impl<'a> CreateStatementParser for Parser<'a> {
                 if let Ok(Keyword::View) = self.peek_as_keyword() {
                     CreateViewStatementParser::parse_create_view_statement(self, true)
                         .map(Statement::CreateView)
+                } else if let Ok(Keyword::Table) = self.peek_as_keyword() {
+                    CreateTableStatementParser::parse_create_table_statement(self, true)
+                        .map(Statement::CreateTable)
                 } else {
                     Err(ParsingError::UnexpectedParsingState(
                         "Expected table name after TEMP keyword".to_string(),

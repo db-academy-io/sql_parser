@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::{
     ColumnDefinition, ConflictClause, DeleteStatement, Expression, ForeignKeyClause, Identifier,
     IndexedColumn, InsertStatement, SelectStatement, UpdateStatement,
@@ -46,7 +48,7 @@ pub struct CreateViewStatement {
 }
 
 /// An AST for [CREATE TABLE](https://www.sqlite.org/lang_createtable.html) SQL statement.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CreateTableStatement {
     pub temporary: bool,
 
@@ -57,14 +59,14 @@ pub struct CreateTableStatement {
     pub create_table_option: CreateTableOption,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum CreateTableOption {
-    ColumnDefinitions(Vec<CreateTableColumnDef>),
+    ColumnDefinitions(CreateTableColumnDef),
 
     SelectStatement(SelectStatement),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CreateTableColumnDef {
     pub columns: Vec<ColumnDefinition>,
 
@@ -73,14 +75,14 @@ pub struct CreateTableColumnDef {
     pub table_options: Vec<TableOption>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TableConstraint {
     pub constraint_name: Option<Identifier>,
 
     pub constraint_type: TableConstraintType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TableConstraintType {
     PrimaryKey(Vec<IndexedColumn>, ConflictClause),
 
@@ -91,11 +93,20 @@ pub enum TableConstraintType {
     ForeignKey(Vec<Identifier>, ForeignKeyClause),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TableOption {
     Strict,
 
     WithoutRowId,
+}
+
+impl Display for TableOption {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TableOption::Strict => write!(f, "STRICT"),
+            TableOption::WithoutRowId => write!(f, "WITHOUT ROWID"),
+        }
+    }
 }
 
 /// An AST for [CREATE TRIGGER](https://www.sqlite.org/lang_createtrigger.html) SQL statement.

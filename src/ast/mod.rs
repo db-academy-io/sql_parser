@@ -11,30 +11,17 @@ mod sqlite;
 mod trx;
 mod update;
 
-pub use alter::{
-    AlterTableStatement, AlterTableStatementType, ColumnConstraint, ColumnConstraintType,
-    ColumnDefinition, ConflictClause, FKAction, FKConstraintAction, FKDeferrableType,
-    ForeignKeyClause, GeneratedColumnConstraint, GeneratedColumnType, PrimaryKeyConstraint,
-};
-pub use create::{
-    CreateIndexStatement, CreateTableStatement, CreateTriggerStatement, CreateViewStatement,
-    CreateVirtualTableStatement,
-};
-pub use cte::{CteExpression, MaterializationType, WithCteStatement};
-pub use delete::{DeleteStatement, ReturningClause};
-pub use drop::{DropIndexStatement, DropTableStatement, DropTriggerStatement, DropViewStatement};
-pub use explain::ExplainStatement;
+pub use alter::*;
+pub use create::*;
+pub use cte::*;
+pub use delete::*;
+pub use drop::*;
+pub use explain::*;
 pub use expression::*;
 pub use insert::*;
 pub use select::*;
-pub use sqlite::{
-    AnalyzeStatement, AttachStatement, DetachStatement, PragmaStatement, ReindexStatement,
-    VacuumStatement,
-};
-pub use trx::{
-    BeginTransactionStatement, CommitTransactionStatement, ReleaseStatement,
-    RollbackTransactionStatement, SavepointStatement, TransactionType,
-};
+pub use sqlite::*;
+pub use trx::*;
 pub use update::*;
 
 /// Top-level AST node representing any SQLite statement
