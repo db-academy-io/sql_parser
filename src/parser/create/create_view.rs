@@ -23,7 +23,7 @@ impl<'a> CreateViewStatementParser for Parser<'a> {
         let if_not_exists = self.parse_if_not_exists()?;
 
         let view_name = self.parse_identifier()?;
-        let columns = self.parse_columns()?;
+        let columns = self.parse_columns_names()?;
 
         self.consume_as_keyword(Keyword::As)?;
         let select_statement = SelectStatementParser::parse_select_statement(self)?;

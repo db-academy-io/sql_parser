@@ -152,7 +152,7 @@ impl<'a> CreateTableStatementParser for Parser<'a> {
             Keyword::Foreign => {
                 self.consume_as_keyword(Keyword::Foreign)?;
                 self.consume_as_keyword(Keyword::Key)?;
-                let columns = self.parse_columns()?;
+                let columns = self.parse_columns_names()?;
                 let foreign_key_clause = self.parse_foreign_key_clause()?;
                 Ok(TableConstraintType::ForeignKey(columns, foreign_key_clause))
             }

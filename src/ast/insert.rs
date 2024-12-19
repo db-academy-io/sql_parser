@@ -4,7 +4,7 @@ use super::{
 };
 
 /// An AST for [INSERT](https://www.sqlite.org/lang_insert.html) SQL statement.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct InsertStatement {
     pub conflict_clause: ConflictClause,
 
@@ -22,7 +22,7 @@ pub struct InsertStatement {
 }
 
 /// The values to insert into the table.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum InsertValues {
     /// The values to insert into the table.
     Values(Vec<Vec<Expression>>),
@@ -35,7 +35,7 @@ pub enum InsertValues {
 }
 
 /// The upsert clause to update the table with the new values.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct UpsertClause {
     pub conflict_target: Option<UpsertConflictTarget>,
     pub action: UpsertAction,
@@ -43,7 +43,7 @@ pub struct UpsertClause {
 
 /// The [conflict target](https://www.sqlite.org/lang_upsert.html#upsert_conflict_target)
 /// to update the table with the new values.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct UpsertConflictTarget {
     pub columns: Vec<IndexedColumn>,
     pub where_clause: Option<Box<Expression>>,
@@ -58,7 +58,7 @@ pub struct IndexedColumn {
 }
 
 /// The [action](https://www.sqlite.org/lang_upsert.html#upsert_action) to take when a conflict occurs.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UpsertAction {
     /// The action to take when a conflict occurs.
     Nothing,
@@ -68,7 +68,7 @@ pub enum UpsertAction {
 }
 
 /// The [update set](https://www.sqlite.org/lang_upsert.html) action to take when a conflict occurs.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct UpsertUpdate {
     pub set_clauses: Vec<SetClause>,
     pub where_clause: Option<Box<Expression>>,

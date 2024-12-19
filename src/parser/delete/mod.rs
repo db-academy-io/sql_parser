@@ -64,11 +64,11 @@ impl<'a> DeleteStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
-mod test_utils {
+pub mod test_utils {
 
     use crate::{
-        CteExpression, DeleteStatement, Expression, LimitClause, OrderingTerm, QualifiedTableName,
-        ReturningClause, Statement, WithCteStatement,
+        CteExpression, DeleteStatement, Expression, Identifier, LimitClause, OrderingTerm,
+        QualifiedTableName, ReturningClause, Statement, WithCteStatement,
     };
 
     pub fn delete_statement(table_name: QualifiedTableName) -> Statement {
@@ -79,6 +79,16 @@ mod test_utils {
             order_by: None,
             limit: None,
         })
+    }
+
+    pub fn delete_statement2() -> DeleteStatement {
+        DeleteStatement {
+            table_name: QualifiedTableName::from(Identifier::from("table_name1")),
+            where_clause: None,
+            returning_clause: vec![],
+            order_by: None,
+            limit: None,
+        }
     }
 
     pub fn delete_statement_with_where_clause(

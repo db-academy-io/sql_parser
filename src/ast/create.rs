@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
+use crate::ParsingError;
+
 use super::{
     ColumnDefinition, ConflictClause, DeleteStatement, Expression, ForeignKeyClause, Identifier,
-    IndexedColumn, InsertStatement, SelectStatement, UpdateStatement,
+    IndexedColumn, InsertStatement, SelectStatement, Statement, UpdateStatement,
 };
 
 /// An AST for [CREATE VIRTUAL TABLE](https://www.sqlite.org/lang_createvtab.html) SQL statement.
@@ -110,7 +112,7 @@ impl Display for TableOption {
 }
 
 /// An AST for [CREATE TRIGGER](https://www.sqlite.org/lang_createtrigger.html) SQL statement.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CreateTriggerStatement {
     pub temporary: bool,
 
@@ -129,7 +131,7 @@ pub struct CreateTriggerStatement {
     pub trigger_statements: Vec<TriggerStatement>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TriggerPreCondition {
     Before,
 
@@ -138,21 +140,31 @@ pub enum TriggerPreCondition {
     InsteadOf,
 }
 
-#[derive(Debug, PartialEq)]
+impl Display for TriggerPreCondition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TriggerPreCondition::Before => write!(f, "BEFORE"),
+            TriggerPreCondition::After => write!(f, "AFTER"),
+            TriggerPreCondition::InsteadOf => write!(f, "INSTEAD OF"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct TriggerEvent {
     pub event_type: TriggerEventType,
 
     pub table_name: Identifier,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TriggerEventType {
     Delete,
     Insert,
     Update(Option<Vec<Identifier>>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TriggerStatement {
     Update(UpdateStatement),
 
@@ -161,4 +173,21 @@ pub enum TriggerStatement {
     Delete(DeleteStatement),
 
     Select(SelectStatement),
+}
+
+impl TryFrom<Statement> for TriggerStatement {
+    type Error = ParsingError;
+
+    fn try_from(statement: Statement) -> Result<Self, Self::Error> {
+        match statement {
+            Statement::Update(update_statement) => Ok(TriggerStatement::Update(update_statement)),
+            Statement::Insert(insert_statement) => Ok(TriggerStatement::Insert(insert_statement)),
+            Statement::Delete(delete_statement) => Ok(TriggerStatement::Delete(delete_statement)),
+            Statement::Select(select_statement) => Ok(TriggerStatement::Select(select_statement)),
+            _ => Err(ParsingError::UnexpectedParsingState(format!(
+                "Expected UPDATE, INSERT, DELETE or SELECT statement, got: {:?}",
+                statement
+            ))),
+        }
+    }
 }

@@ -425,6 +425,21 @@ pub mod test_utils {
         }
     }
 
+    pub fn select_statement() -> SelectStatement {
+        SelectStatement::Select(Select {
+            distinct_type: DistinctType::None,
+            columns: vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Wildcard,
+            ))],
+            from: Some(FromClause::Table(QualifiedTableName {
+                table_id: Identifier::Single("table_name1".to_string()),
+                alias: None,
+                indexed_type: None,
+            })),
+            ..Default::default()
+        })
+    }
+
     pub fn select_from(from: FromClause) -> SelectStatement {
         SelectStatement::Select(Select {
             distinct_type: DistinctType::None,

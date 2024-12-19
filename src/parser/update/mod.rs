@@ -95,7 +95,7 @@ impl<'a> UpdateStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
-mod test_utils {
+pub mod test_utils {
     use crate::{
         expression::test_utils::numeric_literal_expression, ConflictClause, CteExpression,
         Expression, FromClause, Identifier, LimitClause, OrderingTerm, QualifiedTableName,
@@ -116,6 +116,22 @@ mod test_utils {
             order_by: None,
             limit: None,
         })
+    }
+
+    pub fn update_statement2() -> UpdateStatement {
+        UpdateStatement {
+            conflict_clause: ConflictClause::None,
+            table_name: QualifiedTableName::from(Identifier::from("table_name1")),
+            set_clause: vec![SetClause::ColumnAssignment(
+                Identifier::from("col1"),
+                numeric_literal_expression("1"),
+            )],
+            from_clause: None,
+            where_clause: None,
+            returning_clause: vec![],
+            order_by: None,
+            limit: None,
+        }
     }
 
     pub fn update_statement_with_conflict_clause(conflict_clause: ConflictClause) -> Statement {

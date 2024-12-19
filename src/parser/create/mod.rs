@@ -6,6 +6,7 @@ mod create_virtual_table;
 
 use create_index::CreateIndexStatementParser;
 use create_table::CreateTableStatementParser;
+use create_trigger::CreateTriggerStatementParser;
 use create_view::CreateViewStatementParser;
 pub use create_virtual_table::*;
 
@@ -42,6 +43,11 @@ impl<'a> CreateStatementParser for Parser<'a> {
             Keyword::Table => CreateTableStatementParser::parse_create_table_statement(self, false)
                 .map(Statement::CreateTable),
 
+            Keyword::Trigger => {
+                CreateTriggerStatementParser::parse_create_trigger_statement(self, false)
+                    .map(Statement::CreateTrigger)
+            }
+
             Keyword::Temp => {
                 self.consume_as_keyword(Keyword::Temp)?;
                 if let Ok(Keyword::View) = self.peek_as_keyword() {
@@ -50,6 +56,9 @@ impl<'a> CreateStatementParser for Parser<'a> {
                 } else if let Ok(Keyword::Table) = self.peek_as_keyword() {
                     CreateTableStatementParser::parse_create_table_statement(self, true)
                         .map(Statement::CreateTable)
+                } else if let Ok(Keyword::Trigger) = self.peek_as_keyword() {
+                    CreateTriggerStatementParser::parse_create_trigger_statement(self, true)
+                        .map(Statement::CreateTrigger)
                 } else {
                     Err(ParsingError::UnexpectedParsingState(
                         "Expected table name after TEMP keyword".to_string(),
@@ -65,6 +74,9 @@ impl<'a> CreateStatementParser for Parser<'a> {
                 } else if let Ok(Keyword::Table) = self.peek_as_keyword() {
                     CreateTableStatementParser::parse_create_table_statement(self, true)
                         .map(Statement::CreateTable)
+                } else if let Ok(Keyword::Trigger) = self.peek_as_keyword() {
+                    CreateTriggerStatementParser::parse_create_trigger_statement(self, true)
+                        .map(Statement::CreateTrigger)
                 } else {
                     Err(ParsingError::UnexpectedParsingState(
                         "Expected table name after TEMP keyword".to_string(),
