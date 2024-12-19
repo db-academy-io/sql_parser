@@ -2,6 +2,7 @@ use std::iter::Peekable;
 
 mod alter;
 mod column_definition;
+mod create;
 mod cte;
 mod delete;
 mod drop;
@@ -22,6 +23,7 @@ use crate::{
     Tokenizer,
 };
 use alter::AlterTableStatementParser;
+pub use create::*;
 use cte::CteStatementParser;
 use delete::DeleteStatementParser;
 use drop::DropStatementParser;
@@ -33,6 +35,7 @@ use sqlite::SQLite3StatementParser;
 use trx::TransactionStatementParser;
 use update::UpdateStatementParser;
 use window_definition::WindowDefinitionParser;
+
 /// A parser for SQLite SQL statements
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,
@@ -308,6 +311,7 @@ impl<'a> Parser<'a> {
             Keyword::Commit | Keyword::End => {
                 TransactionStatementParser::parse_commit_statement(self)
             }
+            Keyword::Create => CreateStatementParser::parse_create_statement(self),
             Keyword::Rollback => TransactionStatementParser::parse_rollback_statement(self),
             Keyword::Release => TransactionStatementParser::parse_release_statement(self),
             Keyword::Savepoint => TransactionStatementParser::parse_savepoint_statement(self),
