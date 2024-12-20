@@ -16,27 +16,23 @@ pub mod trx;
 pub mod update;
 pub mod window;
 
-use crate::{
-    IndexedType, Keyword, LimitClause, OrderingTerm, SelectStatement, Statement, Token, TokenType,
-    Tokenizer,
-};
-use alter::AlterTableStatementParser;
+use alter::*;
 use create::*;
-use cte::CteStatementParser;
-use delete::DeleteStatementParser;
-use drop::DropStatementParser;
+use cte::*;
+use delete::*;
+use drop::*;
 use errors::*;
-use explain::ExplainStatementParser;
-use expression::ExpressionParser;
-use insert::InsertStatementParser;
-use select::{SelectStatementParser, ValuesStatementParser};
-use sqlite::SQLite3StatementParser;
-use trx::TransactionStatementParser;
-use update::UpdateStatementParser;
-use window::WindowDefinitionParser;
+use explain::*;
+use expression::*;
+use insert::*;
+use select::*;
+use sqlite::*;
+use trx::*;
+use update::*;
+use window::*;
 
-#[cfg(test)]
-mod test_utils;
+use crate::ast::{IndexedType, LimitClause, OrderingTerm, SelectStatement, Statement};
+use crate::{Keyword, Token, TokenType, Tokenizer};
 
 /// A parser for SQLite SQL statements
 pub struct Parser<'a> {
@@ -347,5 +343,38 @@ impl<'a> From<&'a str> for Parser<'a> {
         Self {
             tokenizer: Tokenizer::from(value).peekable(),
         }
+    }
+}
+
+#[cfg(test)]
+mod test_utils {
+    use crate::{Parser, Statement};
+
+    use super::ParsingError;
+
+    pub fn run_sunny_day_test(sql: &str, expected_statement: Statement) {
+        let mut parser = Parser::from(sql);
+        let actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+
+        assert_eq!(
+            expected_statement, actual_statement,
+            "Expected statement {:?}, got {:?}",
+            expected_statement, actual_statement
+        );
+    }
+
+    pub fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
+        let mut parser = Parser::from(sql);
+        let actual_error = parser
+            .parse_statement()
+            .expect_err("Expected Parsing Error, got parsed Statement");
+
+        assert_eq!(
+            expected_error, actual_error,
+            "Expected error {:?}, got {:?}",
+            expected_error, actual_error,
+        );
     }
 }
