@@ -1,11 +1,8 @@
 use std::fmt::Display;
 
-use crate::{Keyword, Token};
-
-/// The [TokenizerError] enum represents the various types of errors that can
-/// occur during the parsing of SQL input. Each variant corresponds to a
-/// specific parsing error that the parser might encounter.
-
+/// The [TokenizerError] enum represents the various error types of the
+/// tokenizer that can occur during the parsing of SQL input. Each variant
+/// corresponds to a specific error that the tokenizer might encounter.
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenizerError<'input> {
     /// Token is not recognized by the parser
@@ -26,11 +23,8 @@ pub enum TokenizerError<'input> {
     /// Variable name is invalid or malformed
     BadVariableName,
 
-    /// Number is invalid or improperly formatted
+    /// Number is invalid or formatted incorrectly
     BadNumber,
-
-    /// Expected an equals sign but found something else
-    ExpectedEqualsSign,
 
     /// Blob literal is malformed (&str, position)
     MalformedBlobLiteral(&'input str, usize),
@@ -40,15 +34,6 @@ pub enum TokenizerError<'input> {
 
     /// An empty ID is given
     EmptyId,
-
-    /// Expected a [Keyword], something else was given
-    ExpectedKeyword(Keyword),
-
-    /// Unexpected [Keyword]
-    UnexpectedKeyword(Keyword),
-
-    /// Unexpected token
-    UnexpectedToken(Token<'input>),
 }
 
 impl<'a> Display for TokenizerError<'a> {
@@ -63,15 +48,11 @@ impl<'a> Display for TokenizerError<'a> {
             TokenizerError::UnterminatedCommentBlock => write!(f, "UnterminatedCommentBlock"),
             TokenizerError::BadVariableName => write!(f, "BadVariableName"),
             TokenizerError::BadNumber => write!(f, "BadNumber"),
-            TokenizerError::ExpectedEqualsSign => write!(f, "ExpectedEqualsSign"),
             TokenizerError::MalformedBlobLiteral(blob, pos) => {
                 write!(f, "MalformedBlobLiteral {blob} at {pos}")
             }
             TokenizerError::MalformedHexInteger => write!(f, "MalformedHexInteger"),
             TokenizerError::EmptyId => write!(f, "EmptyId"),
-            TokenizerError::ExpectedKeyword(keyword) => write!(f, "ExpectedKeyword {keyword}"),
-            TokenizerError::UnexpectedKeyword(keyword) => write!(f, "UnexpectedKeyword {keyword}"),
-            TokenizerError::UnexpectedToken(token) => write!(f, "UnexpectedToken {token}"),
         }
     }
 }
