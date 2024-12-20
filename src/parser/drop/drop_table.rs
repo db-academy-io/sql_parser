@@ -20,6 +20,18 @@ impl<'a> DropTableStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::{ast::DropTableStatement, Identifier};
+
+    pub fn drop_table_statement() -> DropTableStatement {
+        DropTableStatement {
+            if_exists: false,
+            identifier: Identifier::Single("my_table".to_string()),
+        }
+    }
+}
+
+#[cfg(test)]
 mod drop_table_tests {
     use crate::ast::DropTableStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

@@ -159,7 +159,7 @@ impl<'a> CreateTriggerStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
-mod test_utils {
+pub mod test_utils {
     use crate::{
         parser::select::test_utils::select_from, CreateTriggerStatement, FromClause, Identifier,
         QualifiedTableName, TriggerEvent, TriggerEventType, TriggerStatement,

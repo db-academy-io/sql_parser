@@ -1,8 +1,8 @@
-mod begin;
-mod commit;
-mod release;
-mod rollback;
-mod savepoint;
+pub mod begin;
+pub mod commit;
+pub mod release;
+pub mod rollback;
+pub mod savepoint;
 
 use begin::BeginStatementParser;
 use commit::CommitStatementParser;

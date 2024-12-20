@@ -20,6 +20,18 @@ impl<'a> DropIndexStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::{ast::DropIndexStatement, Identifier};
+
+    pub fn drop_index_statement() -> DropIndexStatement {
+        DropIndexStatement {
+            if_exists: false,
+            identifier: Identifier::Single("my_index".to_string()),
+        }
+    }
+}
+
+#[cfg(test)]
 mod drop_index_tests {
     use crate::ast::DropIndexStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

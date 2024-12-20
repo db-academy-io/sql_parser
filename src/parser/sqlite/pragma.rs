@@ -85,6 +85,19 @@ impl<'a> PragmaStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::ast::PragmaStatement;
+
+    pub fn pragma_statement() -> PragmaStatement {
+        PragmaStatement {
+            schema_name: None,
+            pragma_name: "cache_size".to_string(),
+            pragma_value: None,
+        }
+    }
+}
+
+#[cfg(test)]
 mod pragma_statements_tests {
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Parser, ParsingError, PragmaStatement, Statement};

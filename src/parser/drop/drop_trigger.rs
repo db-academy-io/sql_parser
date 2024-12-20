@@ -20,6 +20,18 @@ impl<'a> DropTriggerStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::{ast::DropTriggerStatement, Identifier};
+
+    pub fn drop_trigger_statement() -> DropTriggerStatement {
+        DropTriggerStatement {
+            if_exists: false,
+            identifier: Identifier::Single("my_trigger".to_string()),
+        }
+    }
+}
+
+#[cfg(test)]
 mod drop_trigger_tests {
     use crate::ast::DropTriggerStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

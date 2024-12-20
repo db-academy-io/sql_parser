@@ -107,6 +107,24 @@ impl<'a> AlterTableStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::{
+        AlterTableStatement, AlterTableStatementType, ColumnDefinition, DataType, Identifier,
+    };
+
+    pub fn alter_table_statement2() -> AlterTableStatement {
+        AlterTableStatement {
+            table_name: Identifier::Single("table_name".to_string()),
+            statement_type: AlterTableStatementType::AddColumn(ColumnDefinition {
+                column_name: Identifier::Single("column_name".to_string()),
+                column_type: Some(DataType::PlainDataType("integer".to_string())),
+                column_constraints: vec![],
+            }),
+        }
+    }
+}
+
+#[cfg(test)]
 mod alter_table_statement_tests {
     use crate::expression::test_utils::*;
     use crate::{

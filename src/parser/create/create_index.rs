@@ -41,7 +41,7 @@ impl<'a> CreateIndexStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
-mod test_utils {
+pub mod test_utils {
     use crate::{
         expression::test_utils::identifier_expression, CreateIndexStatement, Identifier,
         IndexedColumn,

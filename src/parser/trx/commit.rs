@@ -23,10 +23,18 @@ impl<'a> CommitStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::CommitTransactionStatement;
+
+    pub fn commit_statement() -> CommitTransactionStatement {
+        CommitTransactionStatement {}
+    }
+}
+
+#[cfg(test)]
 mod commit_statements_tests {
-    use crate::ast::CommitTransactionStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{CommitTransactionStatement, Parser, ParsingError, Statement};
 
     #[test]
     fn test_commit_transaction_basic() {

@@ -19,6 +19,17 @@ impl<'a> ReleaseStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::ast::ReleaseStatement;
+
+    pub fn release_statement() -> ReleaseStatement {
+        ReleaseStatement {
+            savepoint_name: "my_savepoint".to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
 mod release_statements_tests {
     use crate::ast::ReleaseStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

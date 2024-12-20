@@ -1,15 +1,15 @@
-mod analyze;
-mod attach;
-mod pragma;
-mod reindex;
-mod sqlite3_name;
-mod vacuum;
+pub mod analyze;
+pub mod attach;
+pub mod pragma;
+pub mod reindex;
+pub mod sqlite3_name;
+pub mod vacuum;
 
-use analyze::AnalyzeStatementParser;
-use attach::AttachStatementParser;
-use pragma::PragmaStatementParser;
-use reindex::ReindexStatementParser;
-use vacuum::VacuumStatementParser;
+use analyze::*;
+use attach::*;
+use pragma::*;
+use reindex::*;
+use vacuum::*;
 
 use super::Parser;
 use crate::{ParsingError, Statement};

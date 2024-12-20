@@ -56,7 +56,7 @@ impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
-mod test_utils {
+pub mod test_utils {
     use crate::{CreateVirtualTableStatement, Identifier};
 
     pub fn create_virtual_table_statement() -> CreateVirtualTableStatement {

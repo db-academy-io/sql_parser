@@ -43,6 +43,15 @@ impl<'a> VacuumStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::ast::VacuumStatement;
+
+    pub fn vacuum_statement() -> VacuumStatement {
+        VacuumStatement::default()
+    }
+}
+
+#[cfg(test)]
 mod vacuum_statements_tests {
     use crate::ast::VacuumStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

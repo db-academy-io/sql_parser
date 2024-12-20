@@ -96,8 +96,8 @@ The items were taken from the official SQLite documentation
 1. [create-table-stmt](https://www.sqlite.org/lang_createtable.html) &#9989;
 1. [create-trigger-stmt](https://www.sqlite.org/lang_createtrigger.html) &#9989;
 
-#### EXPLAIN Statements ![progress](https://progress-bar.xyz/0/?scale=1&suffix=%%%20(0%20of%201)&width=140)
-1. explain-stmt 
+#### EXPLAIN Statements ![progress](https://progress-bar.xyz/1/?scale=1&suffix=%%%20(1%20of%201)&width=140)
+1. [explain-stmt](https://www.sqlite.org/lang_explain.html) &#9989;
 
 #### Optional statements ![progress](https://progress-bar.xyz/0/?scale=5&suffix=%%%20(0%20of%205)&width=140)
 1. [math-functions](https://www.sqlite.org/lang_mathfunc.html)

@@ -181,7 +181,7 @@ impl<'a> CreateTableStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
-mod test_utils {
+pub mod test_utils {
     use crate::{
         parser::select::test_utils::select_from, CreateTableOption, CreateTableStatement,
         FromClause, Identifier, QualifiedTableName,

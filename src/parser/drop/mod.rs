@@ -1,8 +1,8 @@
-mod drop_generic;
-mod drop_index;
-mod drop_table;
-mod drop_trigger;
-mod drop_view;
+pub mod drop_generic;
+pub mod drop_index;
+pub mod drop_table;
+pub mod drop_trigger;
+pub mod drop_view;
 
 use drop_generic::*;
 use drop_index::*;

@@ -32,10 +32,20 @@ impl<'a> BeginStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::BeginTransactionStatement;
+
+    pub fn begin_statement() -> BeginTransactionStatement {
+        BeginTransactionStatement {
+            transaction_type: None,
+        }
+    }
+}
+
+#[cfg(test)]
 mod begin_statements_tests {
-    use crate::ast::BeginTransactionStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement, TransactionType};
+    use crate::{BeginTransactionStatement, Parser, ParsingError, Statement, TransactionType};
 
     #[test]
     fn test_begin_transaction_basic() {

@@ -45,6 +45,15 @@ impl<'a> ReindexStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::ast::ReindexStatement;
+
+    pub fn reindex_statement() -> ReindexStatement {
+        ReindexStatement::default()
+    }
+}
+
+#[cfg(test)]
 mod reindex_statements_tests {
     use crate::ast::ReindexStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

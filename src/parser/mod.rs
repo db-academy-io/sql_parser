@@ -1,19 +1,20 @@
 use std::iter::Peekable;
 
-mod alter;
-mod column_definition;
-mod create;
-mod cte;
-mod delete;
-mod drop;
-mod errors;
-pub(crate) mod expression;
-mod insert;
-mod select;
-mod sqlite;
-mod trx;
-mod update;
-mod window_definition;
+pub mod alter;
+pub mod column_definition;
+pub mod create;
+pub mod cte;
+pub mod delete;
+pub mod drop;
+pub mod errors;
+pub mod explain;
+pub mod expression;
+pub mod insert;
+pub mod select;
+pub mod sqlite;
+pub mod trx;
+pub mod update;
+pub mod window_definition;
 
 #[cfg(test)]
 mod test_utils;
@@ -23,11 +24,12 @@ use crate::{
     Tokenizer,
 };
 use alter::AlterTableStatementParser;
-pub use create::*;
+use create::*;
 use cte::CteStatementParser;
 use delete::DeleteStatementParser;
 use drop::DropStatementParser;
 pub use errors::*;
+use explain::ExplainStatementParser;
 use expression::ExpressionParser;
 use insert::InsertStatementParser;
 use select::{SelectStatementParser, ValuesStatementParser};
@@ -300,6 +302,9 @@ impl<'a> Parser<'a> {
     /// Parse a single statement from the tokenizer [Tokenizer]
     pub fn parse_statement(&mut self) -> Result<Statement, ParsingError> {
         match self.peek_as_keyword()? {
+            Keyword::Explain => {
+                ExplainStatementParser::parse_explain_statement(self).map(Statement::Explain)
+            }
             Keyword::Drop => DropStatementParser::parse_drop_statement(self),
             Keyword::Vacuum => SQLite3StatementParser::parse_vacuum_statement(self),
             Keyword::Attach => SQLite3StatementParser::parse_attach_statement(self),

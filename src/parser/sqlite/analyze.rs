@@ -43,21 +43,29 @@ impl<'a> AnalyzeStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::AnalyzeStatement;
+
+    pub fn analyze_statement() -> AnalyzeStatement {
+        AnalyzeStatement {
+            schema_name: None,
+            table_or_index_name: None,
+        }
+    }
+}
+
+#[cfg(test)]
 mod analyze_statements_tests {
     use crate::ast::AnalyzeStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Parser, ParsingError, Statement};
 
+    use super::test_utils::analyze_statement;
+
     #[test]
     fn test_analyze_basic() {
         let sql = "ANALYZE;";
-        run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: None,
-                table_or_index_name: None,
-            }),
-        );
+        run_sunny_day_test(sql, Statement::Analyze(analyze_statement()));
     }
 
     #[test]

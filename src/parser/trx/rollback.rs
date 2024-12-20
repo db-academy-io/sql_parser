@@ -32,6 +32,15 @@ impl<'a> RollbackStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::ast::RollbackTransactionStatement;
+
+    pub fn rollback_statement() -> RollbackTransactionStatement {
+        RollbackTransactionStatement::default()
+    }
+}
+
+#[cfg(test)]
 mod rollback_statements_tests {
     use crate::ast::RollbackTransactionStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

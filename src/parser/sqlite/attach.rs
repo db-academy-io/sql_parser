@@ -50,6 +50,24 @@ impl<'a> AttachStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::{AttachStatement, DetachStatement, Expression, Identifier, LiteralValue};
+
+    pub fn attach_statement() -> AttachStatement {
+        AttachStatement {
+            expression: Expression::LiteralValue(LiteralValue::String("'test.db'".to_string())),
+            schema_name: Identifier::Single("test_db".to_string()),
+        }
+    }
+
+    pub fn detach_statement() -> DetachStatement {
+        DetachStatement {
+            schema_name: "test_db".to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
 mod detach_statements_tests {
     use crate::ast::DetachStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

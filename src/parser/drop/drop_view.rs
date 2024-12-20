@@ -20,6 +20,18 @@ impl<'a> DropViewStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::{ast::DropViewStatement, Identifier};
+
+    pub fn drop_view_statement() -> DropViewStatement {
+        DropViewStatement {
+            if_exists: false,
+            identifier: Identifier::Single("my_view".to_string()),
+        }
+    }
+}
+
+#[cfg(test)]
 mod drop_view_tests {
     use crate::ast::DropViewStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

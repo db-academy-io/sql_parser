@@ -36,6 +36,17 @@ impl<'a> SavepointStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::ast::SavepointStatement;
+
+    pub fn savepoint_statement() -> SavepointStatement {
+        SavepointStatement {
+            savepoint_name: "my_savepoint".to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
 mod savepoint_statements_tests {
     use crate::ast::SavepointStatement;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};

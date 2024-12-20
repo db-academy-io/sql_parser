@@ -1,8 +1,8 @@
-mod create_index;
-mod create_table;
-mod create_trigger;
-mod create_view;
-mod create_virtual_table;
+pub mod create_index;
+pub mod create_table;
+pub mod create_trigger;
+pub mod create_view;
+pub mod create_virtual_table;
 
 use create_index::CreateIndexStatementParser;
 use create_table::CreateTableStatementParser;
