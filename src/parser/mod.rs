@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 
 pub mod alter;
-pub mod column_definition;
+pub mod column;
 pub mod create;
 pub mod cte;
 pub mod delete;
@@ -14,10 +14,7 @@ pub mod select;
 pub mod sqlite;
 pub mod trx;
 pub mod update;
-pub mod window_definition;
-
-#[cfg(test)]
-mod test_utils;
+pub mod window;
 
 use crate::{
     IndexedType, Keyword, LimitClause, OrderingTerm, SelectStatement, Statement, Token, TokenType,
@@ -28,7 +25,7 @@ use create::*;
 use cte::CteStatementParser;
 use delete::DeleteStatementParser;
 use drop::DropStatementParser;
-pub use errors::*;
+use errors::*;
 use explain::ExplainStatementParser;
 use expression::ExpressionParser;
 use insert::InsertStatementParser;
@@ -36,7 +33,10 @@ use select::{SelectStatementParser, ValuesStatementParser};
 use sqlite::SQLite3StatementParser;
 use trx::TransactionStatementParser;
 use update::UpdateStatementParser;
-use window_definition::WindowDefinitionParser;
+use window::WindowDefinitionParser;
+
+#[cfg(test)]
+mod test_utils;
 
 /// A parser for SQLite SQL statements
 pub struct Parser<'a> {

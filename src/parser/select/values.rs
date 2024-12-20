@@ -1,6 +1,6 @@
+use crate::parser::errors::ParsingError;
 use crate::{
-    expression::ExpressionParser, Expression, Keyword, Parser, ParsingError, TokenType,
-    ValuesStatement,
+    expression::ExpressionParser, Expression, Keyword, Parser, TokenType, ValuesStatement,
 };
 
 pub trait ValuesStatementParser {

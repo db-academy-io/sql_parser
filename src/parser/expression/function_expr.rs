@@ -1,6 +1,7 @@
+use crate::parser::errors::ParsingError;
 use crate::{
-    parser::window_definition::WindowDefinitionParser, Expression, Function, FunctionArg,
-    FunctionArgType, Identifier, Keyword, OverClause, Parser, ParsingError, TokenType,
+    parser::window::WindowDefinitionParser, Expression, Function, FunctionArg, FunctionArgType,
+    Identifier, Keyword, OverClause, Parser, TokenType,
 };
 
 use super::ExpressionParser;

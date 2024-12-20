@@ -1,4 +1,5 @@
-use crate::{CollateExpressionStatement, Expression, Keyword, Parser, ParsingError};
+use crate::parser::errors::ParsingError;
+use crate::{CollateExpressionStatement, Expression, Keyword, Parser};
 
 pub trait CollateExpressionParser {
     /// Parse a COLLATE expression, i.e. an expression followed by the COLLATE keyword and a string literal

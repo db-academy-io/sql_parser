@@ -8,9 +8,10 @@ use crate::{
 };
 
 use super::expression::ExpressionParser;
-use super::window_definition::WindowDefinitionParser;
-use super::{Parser, ParsingError};
+use super::window::WindowDefinitionParser;
+use super::Parser;
 use crate::ast::{Select, SelectItem, SelectStatement};
+use crate::parser::errors::ParsingError;
 pub use values::ValuesStatementParser;
 
 /// Trait for parsing SELECT statements
@@ -592,13 +593,12 @@ pub mod test_utils {
 #[cfg(test)]
 mod test_select_result_columns {
     use crate::{
-        BinaryOp, DistinctType, Expression, Identifier, ParsingError, SelectItem, SelectStatement,
-        Statement,
+        BinaryOp, DistinctType, Expression, Identifier, SelectItem, SelectStatement, Statement,
     };
 
     use super::test_utils::*;
     use crate::parser::expression::test_utils::*;
-    use crate::parser::test_utils::*;
+    use crate::parser::{test_utils::*, ParsingError};
 
     #[test]
     fn test_select_distinct() {

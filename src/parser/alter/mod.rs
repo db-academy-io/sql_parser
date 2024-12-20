@@ -1,8 +1,7 @@
-use crate::{AlterTableStatement, AlterTableStatementType, Identifier, Keyword};
-
-use super::{
-    column_definition::ColumnDefinitionParser, expression::IdentifierParser, Parser, ParsingError,
-};
+use crate::column::ColumnDefinitionParser;
+use crate::expression::IdentifierParser;
+use crate::parser::errors::ParsingError;
+use crate::{AlterTableStatement, AlterTableStatementType, Identifier, Keyword, Parser};
 
 pub trait AlterTableStatementParser {
     fn parse_alter_table_statement(&mut self) -> Result<AlterTableStatement, ParsingError>;

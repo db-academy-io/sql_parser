@@ -1,6 +1,5 @@
-use crate::{
-    BetweenExpression, BinaryMatchingExpression, Expression, Keyword, Parser, ParsingError,
-};
+use crate::parser::errors::ParsingError;
+use crate::{BetweenExpression, BinaryMatchingExpression, Expression, Keyword, Parser};
 
 use super::ExpressionParser;
 

@@ -1,6 +1,6 @@
-use crate::{DropIndexStatement, Keyword, Parser, ParsingError, Statement};
-
 use super::DropGenericStatementParser;
+use crate::parser::errors::ParsingError;
+use crate::{DropIndexStatement, Keyword, Parser, Statement};
 
 pub trait DropIndexStatementParser {
     fn parse_drop_index_statement(&mut self) -> Result<Statement, ParsingError>;
@@ -34,8 +34,9 @@ pub mod test_utils {
 #[cfg(test)]
 mod drop_index_tests {
     use crate::ast::DropIndexStatement;
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Identifier, Parser, ParsingError, Statement};
+    use crate::{Identifier, Parser, Statement};
 
     #[test]
     fn test_drop_index_valid() {

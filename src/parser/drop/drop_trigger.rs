@@ -1,6 +1,6 @@
-use crate::{DropTriggerStatement, Keyword, Parser, ParsingError, Statement};
-
 use super::DropGenericStatementParser;
+use crate::parser::errors::ParsingError;
+use crate::{DropTriggerStatement, Keyword, Parser, Statement};
 
 pub trait DropTriggerStatementParser {
     fn parse_drop_trigger_statement(&mut self) -> Result<Statement, ParsingError>;
@@ -34,8 +34,9 @@ pub mod test_utils {
 #[cfg(test)]
 mod drop_trigger_tests {
     use crate::ast::DropTriggerStatement;
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Identifier, Parser, ParsingError, Statement};
+    use crate::{Identifier, Parser, Statement};
 
     #[test]
     fn test_drop_trigger_valid() {

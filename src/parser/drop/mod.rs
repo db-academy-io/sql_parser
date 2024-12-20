@@ -10,7 +10,8 @@ use drop_table::*;
 use drop_trigger::*;
 use drop_view::*;
 
-use crate::{Keyword, Parser, ParsingError, Statement};
+use crate::parser::errors::ParsingError;
+use crate::{Keyword, Parser, Statement};
 
 pub trait DropStatementParser {
     fn parse_drop_statement(&mut self) -> Result<Statement, ParsingError>;

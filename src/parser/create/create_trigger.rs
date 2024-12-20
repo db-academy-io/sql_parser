@@ -1,10 +1,10 @@
-use crate::{
-    expression::{ExpressionParser, IdentifierParser},
-    CreateTriggerStatement, Expression, Keyword, Parser, ParsingError, TokenType, TriggerEvent,
-    TriggerEventType, TriggerPreCondition, TriggerStatement,
-};
-
 use super::CreateStatementParser;
+use crate::expression::{ExpressionParser, IdentifierParser};
+use crate::parser::errors::ParsingError;
+use crate::{
+    CreateTriggerStatement, Expression, Keyword, Parser, TokenType, TriggerEvent, TriggerEventType,
+    TriggerPreCondition, TriggerStatement,
+};
 
 pub trait CreateTriggerStatementParser {
     fn parse_create_trigger_statement(

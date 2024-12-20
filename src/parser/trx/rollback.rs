@@ -1,6 +1,6 @@
-use crate::{Keyword, Parser, ParsingError, RollbackTransactionStatement, Statement};
-
 use super::savepoint::SavepointStatementParser;
+use crate::parser::errors::ParsingError;
+use crate::{Keyword, Parser, RollbackTransactionStatement, Statement};
 
 pub trait RollbackStatementParser {
     fn parse_rollback_statement(&mut self) -> Result<Statement, ParsingError>;
@@ -43,8 +43,9 @@ pub mod test_utils {
 #[cfg(test)]
 mod rollback_statements_tests {
     use crate::ast::RollbackTransactionStatement;
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Parser, Statement};
 
     #[test]
     fn test_rollback_transaction_basic() {

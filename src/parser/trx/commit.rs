@@ -1,4 +1,5 @@
-use crate::{CommitTransactionStatement, Keyword, Parser, ParsingError, Statement};
+use crate::parser::errors::ParsingError;
+use crate::{CommitTransactionStatement, Keyword, Parser, Statement};
 
 pub trait CommitStatementParser {
     fn parse_commit_statement(&mut self) -> Result<Statement, ParsingError>;
@@ -33,8 +34,9 @@ pub mod test_utils {
 
 #[cfg(test)]
 mod commit_statements_tests {
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{CommitTransactionStatement, Parser, ParsingError, Statement};
+    use crate::{CommitTransactionStatement, Parser, Statement};
 
     #[test]
     fn test_commit_transaction_basic() {

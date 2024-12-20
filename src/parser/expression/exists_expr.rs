@@ -1,5 +1,6 @@
+use crate::parser::errors::ParsingError;
 use crate::parser::select::SelectStatementParser;
-use crate::{ExistsStatement, Expression, Keyword, Parser, ParsingError, TokenType};
+use crate::{ExistsStatement, Expression, Keyword, Parser, TokenType};
 
 pub trait ExistsExpressionParser {
     fn parse_exists_expression(&mut self, is_not: bool) -> Result<Expression, ParsingError>;

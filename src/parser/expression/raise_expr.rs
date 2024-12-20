@@ -1,4 +1,5 @@
-use crate::{Expression, Keyword, Parser, ParsingError, RaiseFunction, TokenType};
+use crate::parser::errors::ParsingError;
+use crate::{Expression, Keyword, Parser, RaiseFunction, TokenType};
 
 pub trait RaiseExpressionParser {
     fn parse_raise_expression(&mut self) -> Result<Expression, ParsingError>;
@@ -58,7 +59,8 @@ impl<'a> RaiseExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 mod raise_expression_tests {
-    use crate::{parser::test_utils::run_rainy_day_test, ParsingError, RaiseFunction};
+    use crate::parser::ParsingError;
+    use crate::{parser::test_utils::run_rainy_day_test, RaiseFunction};
 
     use crate::expression::test_utils::*;
 

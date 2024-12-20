@@ -1,4 +1,5 @@
-use crate::{Expression, Keyword, Parser, ParsingError, TokenType};
+use crate::parser::errors::ParsingError;
+use crate::{Expression, Keyword, Parser, TokenType};
 
 use super::{data_type::DataTypeParser, ExpressionParser};
 

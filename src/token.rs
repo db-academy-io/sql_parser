@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{Keyword, ParsingError};
+use crate::{parser::errors::ParsingError, Keyword};
 
 /// Represents a single lexical token identified by the tokenizer.
 ///

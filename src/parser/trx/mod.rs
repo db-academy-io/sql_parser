@@ -11,7 +11,8 @@ use rollback::RollbackStatementParser;
 use savepoint::SavepointStatementParser;
 
 use super::Parser;
-use crate::{ParsingError, Statement};
+use crate::parser::errors::ParsingError;
+use crate::Statement;
 
 /// Defines the interface for parsing SQL transaction statements
 pub trait TransactionStatementParser {

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::ParsingError;
+use crate::parser::errors::ParsingError;
 
 use super::{
     ColumnDefinition, ConflictClause, DeleteStatement, Expression, ForeignKeyClause, Identifier,

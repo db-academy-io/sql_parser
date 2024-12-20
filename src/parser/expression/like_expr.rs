@@ -1,6 +1,6 @@
+use crate::parser::errors::ParsingError;
 use crate::{
     BinaryMatchingExpression, EscapeExpression, Expression, Keyword, LikeExpressionType, Parser,
-    ParsingError,
 };
 
 use super::ExpressionParser;

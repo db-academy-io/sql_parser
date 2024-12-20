@@ -12,7 +12,8 @@ use reindex::*;
 use vacuum::*;
 
 use super::Parser;
-use crate::{ParsingError, Statement};
+use crate::parser::errors::ParsingError;
+use crate::Statement;
 
 pub trait SQLite3StatementParser {
     /// Parses a VACUUM statement

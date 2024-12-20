@@ -1,4 +1,5 @@
-use crate::{DropViewStatement, Keyword, Parser, ParsingError, Statement};
+use crate::parser::errors::ParsingError;
+use crate::{DropViewStatement, Keyword, Parser, Statement};
 
 use super::DropGenericStatementParser;
 
@@ -34,8 +35,9 @@ pub mod test_utils {
 #[cfg(test)]
 mod drop_view_tests {
     use crate::ast::DropViewStatement;
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Identifier, Parser, ParsingError, Statement};
+    use crate::{Identifier, Parser, Statement};
 
     #[test]
     fn test_drop_view_valid() {

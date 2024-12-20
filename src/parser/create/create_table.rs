@@ -1,11 +1,11 @@
+use crate::parser::errors::ParsingError;
 use crate::parser::{
-    column_definition::ColumnDefinitionParser, insert::InsertStatementParser,
-    select::SelectStatementParser,
+    column::ColumnDefinitionParser, insert::InsertStatementParser, select::SelectStatementParser,
 };
 use crate::{
     expression::{ExpressionParser, IdentifierParser},
     ColumnDefinition, CreateTableColumnDef, CreateTableOption, CreateTableStatement, Keyword,
-    Parser, ParsingError, TableConstraint, TableConstraintType, TableOption, TokenType,
+    Parser, TableConstraint, TableConstraintType, TableOption, TokenType,
 };
 
 use super::CreateStatementParser;

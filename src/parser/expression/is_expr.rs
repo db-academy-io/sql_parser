@@ -1,4 +1,5 @@
-use crate::{AnIsExpression, BinaryMatchingExpression, Expression, Keyword, Parser, ParsingError};
+use crate::parser::errors::ParsingError;
+use crate::{AnIsExpression, BinaryMatchingExpression, Expression, Keyword, Parser};
 
 use super::ExpressionParser;
 

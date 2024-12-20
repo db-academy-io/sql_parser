@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{ParsingError, TokenType};
+use crate::{errors::ParsingError, TokenType};
 
 use super::{OrderingTerm, SelectStatement};
 

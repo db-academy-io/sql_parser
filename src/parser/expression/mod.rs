@@ -12,9 +12,10 @@ mod like_expr;
 mod raise_expr;
 mod regexp_match_expr;
 
+use crate::parser::errors::ParsingError;
 use crate::{
-    BinaryOp, Expression, Keyword, LiteralValue, Parser, ParsingError, TokenType,
-    UnaryMatchingExpression, UnaryOp,
+    BinaryOp, Expression, Keyword, LiteralValue, Parser, TokenType, UnaryMatchingExpression,
+    UnaryOp,
 };
 use between_expr::BetweenExpressionParser;
 use case_expr::CaseExpressionParser;

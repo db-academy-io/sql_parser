@@ -1,4 +1,5 @@
-use crate::{Keyword, Parser, ParsingError, PragmaStatement, Statement, TokenType};
+use crate::parser::errors::ParsingError;
+use crate::{Keyword, Parser, PragmaStatement, Statement, TokenType};
 
 pub trait PragmaStatementParser {
     /// Parses a PRAGMA statement
@@ -99,8 +100,9 @@ pub mod test_utils {
 
 #[cfg(test)]
 mod pragma_statements_tests {
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, PragmaStatement, Statement};
+    use crate::{Parser, PragmaStatement, Statement};
 
     #[test]
     fn test_pragma_basic() {

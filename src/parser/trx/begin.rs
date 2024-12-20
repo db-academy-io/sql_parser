@@ -1,4 +1,5 @@
-use crate::{BeginTransactionStatement, Keyword, Parser, ParsingError, Statement, TransactionType};
+use crate::parser::ParsingError;
+use crate::{BeginTransactionStatement, Keyword, Parser, Statement, TransactionType};
 
 pub trait BeginStatementParser {
     fn parse_begin_statement(&mut self) -> Result<Statement, ParsingError>;
@@ -44,8 +45,9 @@ pub mod test_utils {
 
 #[cfg(test)]
 mod begin_statements_tests {
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{BeginTransactionStatement, Parser, ParsingError, Statement, TransactionType};
+    use crate::{BeginTransactionStatement, Parser, Statement, TransactionType};
 
     #[test]
     fn test_begin_transaction_basic() {

@@ -1,4 +1,5 @@
-use crate::{CaseExpression, Expression, Keyword, Parser, ParsingError, WhenExpression};
+use crate::parser::errors::ParsingError;
+use crate::{CaseExpression, Expression, Keyword, Parser, WhenExpression};
 
 use super::ExpressionParser;
 

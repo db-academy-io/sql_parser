@@ -1,6 +1,7 @@
 use crate::{DataType, TokenType};
 
-use super::{Parser, ParsingError};
+use super::Parser;
+use crate::parser::errors::ParsingError;
 
 /// Trait for parsing a [DataType](https://www.sqlite.org/syntax/type-name.html)
 pub trait DataTypeParser {

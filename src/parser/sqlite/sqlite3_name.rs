@@ -1,4 +1,5 @@
-use crate::{Parser, ParsingError};
+use crate::parser::errors::ParsingError;
+use crate::Parser;
 
 pub trait SQLite3NameParser {
     /// Parses a name

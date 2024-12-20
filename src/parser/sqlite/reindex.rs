@@ -1,4 +1,5 @@
-use crate::{Keyword, Parser, ParsingError, ReindexStatement, Statement, TokenType};
+use crate::parser::errors::ParsingError;
+use crate::{Keyword, Parser, ReindexStatement, Statement, TokenType};
 
 use super::sqlite3_name::SQLite3NameParser;
 
@@ -56,8 +57,9 @@ pub mod test_utils {
 #[cfg(test)]
 mod reindex_statements_tests {
     use crate::ast::ReindexStatement;
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Parser, Statement};
 
     #[test]
     fn test_reindex_basic() {

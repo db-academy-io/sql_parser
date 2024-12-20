@@ -1,9 +1,6 @@
-use crate::{
-    expression::ExpressionParser, AttachStatement, DetachStatement, Keyword, Parser, ParsingError,
-    Statement,
-};
-
-use crate::expression::IdentifierParser;
+use crate::expression::{ExpressionParser, IdentifierParser};
+use crate::parser::errors::ParsingError;
+use crate::{AttachStatement, DetachStatement, Keyword, Parser, Statement};
 
 use super::sqlite3_name::SQLite3NameParser;
 
@@ -70,8 +67,9 @@ pub mod test_utils {
 #[cfg(test)]
 mod detach_statements_tests {
     use crate::ast::DetachStatement;
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Parser, Statement};
 
     #[test]
     fn test_detach_basic() {

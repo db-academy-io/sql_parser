@@ -1,4 +1,5 @@
-use crate::{AnalyzeStatement, Keyword, Parser, ParsingError, Statement, TokenType};
+use crate::parser::errors::ParsingError;
+use crate::{AnalyzeStatement, Keyword, Parser, Statement, TokenType};
 
 use super::sqlite3_name::SQLite3NameParser;
 
@@ -57,8 +58,9 @@ pub mod test_utils {
 #[cfg(test)]
 mod analyze_statements_tests {
     use crate::ast::AnalyzeStatement;
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Parser, Statement};
 
     use super::test_utils::analyze_statement;
 

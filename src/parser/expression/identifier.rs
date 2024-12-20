@@ -1,4 +1,5 @@
-use crate::{Identifier, Parser, ParsingError, TokenType};
+use crate::parser::errors::ParsingError;
+use crate::{Identifier, Parser, TokenType};
 
 pub trait IdentifierParser {
     /// Parse an identifier

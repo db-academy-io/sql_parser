@@ -1,4 +1,5 @@
-use crate::{Keyword, Parser, ParsingError, ReleaseStatement, Statement};
+use crate::parser::errors::ParsingError;
+use crate::{Keyword, Parser, ReleaseStatement, Statement};
 
 use super::savepoint::SavepointStatementParser;
 
@@ -32,8 +33,9 @@ pub mod test_utils {
 #[cfg(test)]
 mod release_statements_tests {
     use crate::ast::ReleaseStatement;
+    use crate::parser::errors::ParsingError;
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
-    use crate::{Parser, ParsingError, Statement};
+    use crate::{Parser, Statement};
 
     #[test]
     fn test_release_savepoint_basic() {
