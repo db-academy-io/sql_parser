@@ -397,8 +397,8 @@ pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
         BinaryOp, CollateExpressionStatement, DataType, ExistsStatement, Function, FunctionArg,
-        Identifier, LiteralValue, OverClause, Parser, RaiseFunction, SelectStatement, Statement,
-        UnaryOp,
+        Identifier, LiteralValue, OverClause, Parser, RaiseFunction, SelectBody, SelectStatement,
+        Statement, UnaryOp,
     };
 
     pub fn run_sunny_day_test_with_multiple_expressions(
@@ -413,7 +413,12 @@ pub(crate) mod test_utils {
         dbg!("actual_expression: {:?}", &actual_statement);
 
         match actual_statement {
-            Statement::Select(SelectStatement::Select(select_statement)) => {
+            Statement::Select(SelectStatement {
+                with_cte: None,
+                select: SelectBody::Select(select_statement),
+                order_by: None,
+                limit: None,
+            }) => {
                 assert_eq!(
                     expected_expressions.len(),
                     select_statement.columns.len(),

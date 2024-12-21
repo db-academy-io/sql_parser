@@ -19,6 +19,7 @@ impl<'a> DeleteStatementParser for Parser<'a> {
         self.consume_as_keyword(Keyword::From)?;
 
         Ok(DeleteStatement {
+            with_cte: None,
             table_name: self.parse_qualified_table_name()?,
             where_clause: self.parse_where_clause()?,
             returning_clause: self.parse_returning_clause()?,
@@ -73,6 +74,7 @@ pub mod test_utils {
 
     pub fn delete_statement(table_name: QualifiedTableName) -> Statement {
         Statement::Delete(DeleteStatement {
+            with_cte: None,
             table_name,
             where_clause: None,
             returning_clause: vec![],
@@ -83,6 +85,7 @@ pub mod test_utils {
 
     pub fn delete_statement2() -> DeleteStatement {
         DeleteStatement {
+            with_cte: None,
             table_name: QualifiedTableName::from(Identifier::from("table_name1")),
             where_clause: None,
             returning_clause: vec![],
@@ -96,6 +99,7 @@ pub mod test_utils {
         where_clause: Expression,
     ) -> Statement {
         Statement::Delete(DeleteStatement {
+            with_cte: None,
             table_name,
             where_clause: Some(Box::new(where_clause)),
             returning_clause: vec![],
@@ -109,6 +113,7 @@ pub mod test_utils {
         returning_clause: Vec<ReturningClause>,
     ) -> Statement {
         Statement::Delete(DeleteStatement {
+            with_cte: None,
             table_name,
             where_clause: None,
             returning_clause,
@@ -122,16 +127,16 @@ pub mod test_utils {
         cte_expressions: Vec<CteExpression>,
         table_name: QualifiedTableName,
     ) -> Statement {
-        Statement::WithCte(WithCteStatement {
-            recursive,
-            cte_expressions,
-            statement: Box::new(Statement::Delete(DeleteStatement {
-                table_name,
-                where_clause: None,
-                returning_clause: vec![],
-                order_by: None,
-                limit: None,
-            })),
+        Statement::Delete(DeleteStatement {
+            with_cte: Some(WithCteStatement {
+                recursive,
+                cte_expressions,
+            }),
+            table_name,
+            where_clause: None,
+            returning_clause: vec![],
+            order_by: None,
+            limit: None,
         })
     }
 
@@ -140,6 +145,7 @@ pub mod test_utils {
         order_by: Vec<OrderingTerm>,
     ) -> Statement {
         Statement::Delete(DeleteStatement {
+            with_cte: None,
             table_name,
             where_clause: None,
             returning_clause: vec![],
@@ -153,6 +159,7 @@ pub mod test_utils {
         limit: LimitClause,
     ) -> Statement {
         Statement::Delete(DeleteStatement {
+            with_cte: None,
             table_name,
             where_clause: None,
             returning_clause: vec![],
@@ -360,6 +367,7 @@ mod tests_delete_statements {
     #[test]
     fn test_parse_delete_statement_with_all_clauses() {
         let expected_statement = Statement::Delete(DeleteStatement {
+            with_cte: None,
             table_name: QualifiedTableName {
                 table_id: Identifier::Single("table_1".to_string()),
                 alias: Some("alias_1".to_string()),

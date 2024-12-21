@@ -1,11 +1,13 @@
 use super::{
     ConflictClause, Expression, FromClause, Identifier, LimitClause, OrderingTerm,
-    QualifiedTableName, ReturningClause,
+    QualifiedTableName, ReturningClause, WithCteStatement,
 };
 
 /// An AST for [UPDATE SQL](https://www.sqlite.org/lang_update.html) statement.
 #[derive(Debug, PartialEq, Clone)]
 pub struct UpdateStatement {
+    pub with_cte: Option<WithCteStatement>,
+
     // The conflict clause defined after the OR keyword is used to specify the
     // behavior of the UPDATE statement when a constraint violation occurs.
     pub conflict_clause: ConflictClause,

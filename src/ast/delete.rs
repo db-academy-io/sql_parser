@@ -1,8 +1,10 @@
-use super::{Expression, LimitClause, OrderingTerm, QualifiedTableName};
+use super::{Expression, LimitClause, OrderingTerm, QualifiedTableName, WithCteStatement};
 
 /// An AST for [DELETE](https://www.sqlite.org/lang_delete.html) SQL statement.
 #[derive(Debug, PartialEq, Clone)]
 pub struct DeleteStatement {
+    pub with_cte: Option<WithCteStatement>,
+
     /// The table name to delete from
     pub table_name: QualifiedTableName,
 

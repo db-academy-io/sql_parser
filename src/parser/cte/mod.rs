@@ -1,12 +1,12 @@
 use crate::{
     expression::IdentifierParser, CteExpression, Identifier, Keyword, MaterializationType,
-    TokenType, WithCteStatement,
+    Statement, TokenType, WithCteStatement,
 };
 
 use super::{select::SelectStatementParser, Parser, ParsingError};
 
 pub trait CteStatementParser {
-    fn parse_cte_statement(&mut self) -> Result<WithCteStatement, ParsingError>;
+    fn parse_cte_statement(&mut self) -> Result<Statement, ParsingError>;
 
     fn parse_cte_expression(&mut self) -> Result<CteExpression, ParsingError>;
 
@@ -16,7 +16,7 @@ pub trait CteStatementParser {
 }
 
 impl<'a> CteStatementParser for Parser<'a> {
-    fn parse_cte_statement(&mut self) -> Result<WithCteStatement, ParsingError> {
+    fn parse_cte_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::With)?;
 
         let recursive = self.consume_as_keyword(Keyword::Recursive).is_ok();
@@ -32,12 +32,37 @@ impl<'a> CteStatementParser for Parser<'a> {
         }
 
         let statement = self.parse_statement()?;
-
-        Ok(WithCteStatement {
-            recursive,
-            cte_expressions,
-            statement: Box::new(statement),
-        })
+        match statement {
+            Statement::Delete(mut delete_statement) => {
+                delete_statement.with_cte = Some(WithCteStatement {
+                    recursive,
+                    cte_expressions,
+                });
+                Ok(Statement::Delete(delete_statement))
+            }
+            Statement::Select(mut select_statement) => {
+                select_statement.with_cte = Some(WithCteStatement {
+                    recursive,
+                    cte_expressions,
+                });
+                Ok(Statement::Select(select_statement))
+            }
+            Statement::Insert(mut insert_statement) => {
+                insert_statement.with_cte = Some(WithCteStatement {
+                    recursive,
+                    cte_expressions,
+                });
+                Ok(Statement::Insert(insert_statement))
+            }
+            Statement::Update(mut update_statement) => {
+                update_statement.with_cte = Some(WithCteStatement {
+                    recursive,
+                    cte_expressions,
+                });
+                Ok(Statement::Update(update_statement))
+            }
+            _ => Err(ParsingError::UnexpectedParsingState("Common Table Expressions can only be used with DELETE, INSERT, SELECT, and UPDATE statements".to_string())),
+        }
     }
 
     fn parse_cte_expression(&mut self) -> Result<CteExpression, ParsingError> {
@@ -114,13 +139,14 @@ pub mod test_cte_statement_parser {
     use super::super::select::test_utils::select_star_from;
     use super::test_utils::cte_expression;
     use crate::{
-        parser::test_utils::run_sunny_day_test, Identifier, MaterializationType, Statement,
-        WithCteStatement,
+        parser::test_utils::run_sunny_day_test, select::test_utils::select_statement, Identifier,
+        MaterializationType, Statement, WithCteStatement,
     };
 
     #[test]
     fn test_cte_statement_with_recursive() {
-        let expected_statement = Statement::WithCte(WithCteStatement {
+        let mut expected_stmt = select_statement();
+        expected_stmt.with_cte = Some(WithCteStatement {
             recursive: true,
             cte_expressions: vec![cte_expression(
                 Identifier::from("cte_1"),
@@ -128,20 +154,17 @@ pub mod test_cte_statement_parser {
                 None,
                 select_star_from(Identifier::from("cte_table")),
             )],
-            statement: Box::new(Statement::Select(select_star_from(Identifier::from(
-                "table_1",
-            )))),
         });
 
         run_sunny_day_test(
-            "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) SELECT * FROM table_1",
-            expected_statement,
+            "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) SELECT * FROM table_name1",
+            Statement::Select(expected_stmt),
         );
     }
 
     #[test]
     fn test_cte_statement_with_multiple_ctes() {
-        let expected_statement = Statement::WithCte(WithCteStatement {
+        let ctes = WithCteStatement {
             recursive: false,
             cte_expressions: vec![
                 cte_expression(
@@ -157,14 +180,14 @@ pub mod test_cte_statement_parser {
                     select_star_from(Identifier::from("cte_1")),
                 ),
             ],
-            statement: Box::new(Statement::Select(select_star_from(Identifier::from(
-                "cte_2",
-            )))),
-        });
+        };
+
+        let mut expected_stmt = select_statement();
+        expected_stmt.with_cte = Some(ctes);
 
         run_sunny_day_test(
-            "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_1) SELECT * FROM cte_2",
-            expected_statement,
+            "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_1) SELECT * FROM table_name1",
+            Statement::Select(expected_stmt),
         );
     }
 
@@ -176,7 +199,8 @@ pub mod test_cte_statement_parser {
         ];
 
         for materialization_type in materialization_types {
-            let expected_statement = Statement::WithCte(WithCteStatement {
+            let mut expected_stmt = select_statement();
+            expected_stmt.with_cte = Some(WithCteStatement {
                 recursive: false,
                 cte_expressions: vec![cte_expression(
                     Identifier::from("cte_1"),
@@ -184,24 +208,22 @@ pub mod test_cte_statement_parser {
                     Some(materialization_type.clone()),
                     select_star_from(Identifier::from("cte_table")),
                 )],
-                statement: Box::new(Statement::Select(select_star_from(Identifier::from(
-                    "cte_1",
-                )))),
             });
 
             run_sunny_day_test(
                 &format!(
-                    "WITH cte_1 AS {} (SELECT * FROM cte_table) SELECT * FROM cte_1",
+                    "WITH cte_1 AS {} (SELECT * FROM cte_table) SELECT * FROM table_name1",
                     materialization_type
                 ),
-                expected_statement,
+                Statement::Select(expected_stmt),
             );
         }
     }
 
     #[test]
     fn test_cte_statement_with_column_names() {
-        let expected_statement = Statement::WithCte(WithCteStatement {
+        let mut expected_stmt = select_statement();
+        expected_stmt.with_cte = Some(WithCteStatement {
             recursive: false,
             cte_expressions: vec![cte_expression(
                 Identifier::from("cte_1"),
@@ -209,14 +231,11 @@ pub mod test_cte_statement_parser {
                 None,
                 select_star_from(Identifier::from("cte_table")),
             )],
-            statement: Box::new(Statement::Select(select_star_from(Identifier::from(
-                "cte_1",
-            )))),
         });
 
         run_sunny_day_test(
-            "WITH cte_1 (col1, col2) AS (SELECT * FROM cte_table) SELECT * FROM cte_1",
-            expected_statement,
+            "WITH cte_1 (col1, col2) AS (SELECT * FROM cte_table) SELECT * FROM table_name1",
+            Statement::Select(expected_stmt),
         );
     }
 }

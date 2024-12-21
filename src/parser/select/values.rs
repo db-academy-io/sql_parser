@@ -54,13 +54,18 @@ impl<'a> ValuesStatementParser for Parser<'a> {
 
 #[cfg(test)]
 pub(crate) mod select_values_tests {
-    use crate::{BinaryOp, Expression, SelectStatement, Statement, ValuesStatement};
+    use crate::{BinaryOp, Expression, SelectBody, SelectStatement, Statement, ValuesStatement};
 
     use crate::parser::expression::test_utils::*;
     use crate::parser::test_utils::run_sunny_day_test;
 
     fn values_statement(values: Vec<Vec<Expression>>) -> Statement {
-        Statement::Select(SelectStatement::Values(ValuesStatement { values }))
+        Statement::Select(SelectStatement {
+            with_cte: None,
+            select: SelectBody::Values(ValuesStatement { values }),
+            order_by: None,
+            limit: None,
+        })
     }
 
     #[test]

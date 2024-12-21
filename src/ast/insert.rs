@@ -1,11 +1,13 @@
 use super::{
     ConflictClause, Expression, Identifier, Ordering, QualifiedTableName, ReturningClause,
-    SelectStatement, SetClause,
+    SelectStatement, SetClause, WithCteStatement,
 };
 
 /// An AST for [INSERT](https://www.sqlite.org/lang_insert.html) SQL statement.
 #[derive(Debug, PartialEq, Clone)]
 pub struct InsertStatement {
+    pub with_cte: Option<WithCteStatement>,
+
     pub conflict_clause: ConflictClause,
 
     /// TODO: Change the type, as QualifiedTableName contains indexing type

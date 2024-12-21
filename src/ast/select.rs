@@ -1,9 +1,20 @@
-use super::{Expression, Identifier, NamedWindowDefinition, OrderingTerm};
+use super::{Expression, Identifier, NamedWindowDefinition, OrderingTerm, WithCteStatement};
 use std::fmt::Display;
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct SelectStatement {
+    pub with_cte: Option<WithCteStatement>,
+
+    pub select: SelectBody,
+
+    pub order_by: Option<Vec<OrderingTerm>>,
+
+    pub limit: Option<LimitClause>,
+}
 
 /// An enum representing the possible types of [SELECT](https://www.sqlite.org/lang_select.html) statements
 #[derive(Debug, PartialEq, Clone)]
-pub enum SelectStatement {
+pub enum SelectBody {
     /// A normal SELECT statement
     Select(Select),
     /// A VALUES statement
@@ -35,12 +46,6 @@ pub struct Select {
 
     /// The WINDOW clause
     pub window: Option<Vec<NamedWindowDefinition>>,
-
-    /// The ORDER BY clause
-    pub order_by: Option<Vec<OrderingTerm>>,
-
-    /// The LIMIT clause
-    pub limit: Option<LimitClause>,
 }
 
 /// An enum representing the possible distinct options in the

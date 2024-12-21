@@ -22,6 +22,7 @@ impl<'a> UpdateStatementParser for Parser<'a> {
         self.consume_as_keyword(Keyword::Update)?;
 
         Ok(UpdateStatement {
+            with_cte: None,
             conflict_clause: self.parse_on_conflict_clause()?,
             table_name: self.parse_qualified_table_name()?,
             set_clause: self.parse_set_clauses()?,
@@ -107,6 +108,7 @@ pub mod test_utils {
         set_clause: Vec<SetClause>,
     ) -> Statement {
         Statement::Update(UpdateStatement {
+            with_cte: None,
             conflict_clause: ConflictClause::None,
             table_name,
             set_clause,
@@ -120,6 +122,7 @@ pub mod test_utils {
 
     pub fn update_statement2() -> UpdateStatement {
         UpdateStatement {
+            with_cte: None,
             conflict_clause: ConflictClause::None,
             table_name: QualifiedTableName::from(Identifier::from("table_name1")),
             set_clause: vec![SetClause::ColumnAssignment(
@@ -136,6 +139,7 @@ pub mod test_utils {
 
     pub fn update_statement_with_conflict_clause(conflict_clause: ConflictClause) -> Statement {
         Statement::Update(UpdateStatement {
+            with_cte: None,
             conflict_clause,
             table_name: QualifiedTableName::from(Identifier::from("table1")),
             set_clause: vec![SetClause::ColumnAssignment(
@@ -152,6 +156,7 @@ pub mod test_utils {
 
     pub fn update_statement_with_where_clause(where_clause: Expression) -> Statement {
         Statement::Update(UpdateStatement {
+            with_cte: None,
             conflict_clause: ConflictClause::None,
             table_name: QualifiedTableName::from(Identifier::from("table1")),
             set_clause: vec![SetClause::ColumnAssignment(
@@ -170,6 +175,7 @@ pub mod test_utils {
         returning_clause: Vec<ReturningClause>,
     ) -> Statement {
         Statement::Update(UpdateStatement {
+            with_cte: None,
             conflict_clause: ConflictClause::None,
             table_name: QualifiedTableName::from(Identifier::from("table1")),
             set_clause: vec![SetClause::ColumnAssignment(
@@ -186,6 +192,7 @@ pub mod test_utils {
 
     pub fn update_from(from_clause: FromClause) -> UpdateStatement {
         UpdateStatement {
+            with_cte: None,
             conflict_clause: ConflictClause::None,
             table_name: QualifiedTableName::from(Identifier::from("table1")),
             set_clause: vec![SetClause::ColumnAssignment(
@@ -202,6 +209,7 @@ pub mod test_utils {
 
     pub fn update_statement_with_order_by_clause(order_by_clause: Vec<OrderingTerm>) -> Statement {
         Statement::Update(UpdateStatement {
+            with_cte: None,
             conflict_clause: ConflictClause::None,
             table_name: QualifiedTableName::from(Identifier::from("table1")),
             set_clause: vec![SetClause::ColumnAssignment(
@@ -218,6 +226,7 @@ pub mod test_utils {
 
     pub fn update_statement_with_limit_clause(limit_clause: LimitClause) -> Statement {
         Statement::Update(UpdateStatement {
+            with_cte: None,
             conflict_clause: ConflictClause::None,
             table_name: QualifiedTableName::from(Identifier::from("table1")),
             set_clause: vec![SetClause::ColumnAssignment(
@@ -237,22 +246,22 @@ pub mod test_utils {
         cte_expressions: Vec<CteExpression>,
         table_name: QualifiedTableName,
     ) -> Statement {
-        Statement::WithCte(WithCteStatement {
-            recursive,
-            cte_expressions,
-            statement: Box::new(Statement::Update(UpdateStatement {
-                conflict_clause: ConflictClause::None,
-                table_name,
-                set_clause: vec![SetClause::ColumnAssignment(
-                    Identifier::from("column1"),
-                    numeric_literal_expression("1"),
-                )],
-                from_clause: None,
-                where_clause: None,
-                returning_clause: vec![],
-                order_by: None,
-                limit: None,
-            })),
+        Statement::Update(UpdateStatement {
+            with_cte: Some(WithCteStatement {
+                recursive,
+                cte_expressions,
+            }),
+            conflict_clause: ConflictClause::None,
+            table_name,
+            set_clause: vec![SetClause::ColumnAssignment(
+                Identifier::from("column1"),
+                numeric_literal_expression("1"),
+            )],
+            from_clause: None,
+            where_clause: None,
+            returning_clause: vec![],
+            order_by: None,
+            limit: None,
         })
     }
 }
@@ -616,19 +625,24 @@ mod test_update_from_subquery {
     use crate::parser::select::test_utils::select_statement_with_columns;
     use crate::parser::test_utils::*;
     use crate::{
-        DistinctType, Expression, FromClause, Identifier, SelectFromSubquery, SelectItem,
-        SelectStatement, Statement,
+        DistinctType, Expression, FromClause, Identifier, SelectBody, SelectFromSubquery,
+        SelectItem, SelectStatement, Statement,
     };
 
     #[test]
     fn test_update_from_subquery() {
         let expected_statement = update_from(FromClause::Subquery(SelectFromSubquery {
-            subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
-                DistinctType::None,
-                vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Single("col1".to_string()),
-                ))],
-            ))),
+            subquery: Box::new(SelectStatement {
+                with_cte: None,
+                select: SelectBody::Select(select_statement_with_columns(
+                    DistinctType::None,
+                    vec![SelectItem::Expression(Expression::Identifier(
+                        Identifier::Single("col1".to_string()),
+                    ))],
+                )),
+                order_by: None,
+                limit: None,
+            }),
             alias: None,
         }));
 
@@ -641,12 +655,17 @@ mod test_update_from_subquery {
     #[test]
     fn test_update_from_subquery_aliased() {
         let expected_statement = update_from(FromClause::Subquery(SelectFromSubquery {
-            subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
-                DistinctType::None,
-                vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::NameWithWildcard("t".to_string()),
-                ))],
-            ))),
+            subquery: Box::new(SelectStatement {
+                with_cte: None,
+                select: SelectBody::Select(select_statement_with_columns(
+                    DistinctType::None,
+                    vec![SelectItem::Expression(Expression::Identifier(
+                        Identifier::NameWithWildcard("t".to_string()),
+                    ))],
+                )),
+                order_by: None,
+                limit: None,
+            }),
             alias: Some("alias".to_string()),
         }));
 

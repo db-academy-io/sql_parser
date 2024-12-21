@@ -41,6 +41,7 @@ impl<'a> InsertStatementParser for Parser<'a> {
     fn parse_insert_statement(&mut self) -> Result<InsertStatement, ParsingError> {
         if self.consume_as_keyword(Keyword::Replace).is_ok() {
             return Ok(InsertStatement {
+                with_cte: None,
                 conflict_clause: ConflictClause::None,
                 table_name: self.parse_table_name()?,
                 columns: self.parse_columns_names()?,
@@ -53,6 +54,7 @@ impl<'a> InsertStatementParser for Parser<'a> {
         self.consume_as_keyword(Keyword::Insert)?;
 
         Ok(InsertStatement {
+            with_cte: None,
             conflict_clause: self.parse_on_conflict_clause()?,
             table_name: self.parse_table_name()?,
             columns: self.parse_columns_names()?,
@@ -230,6 +232,7 @@ pub mod test_utils {
 
     pub fn insert_statement() -> InsertStatement {
         InsertStatement {
+            with_cte: None,
             conflict_clause: ConflictClause::None,
             table_name: QualifiedTableName::from(Identifier::Single("table_name1".into())),
             columns: vec![],
@@ -494,9 +497,7 @@ mod tests_insert_statement {
 
     #[test]
     fn test_insert_with_cte() {
-        let expected_insert_statement = insert_statement();
-
-        let expected_statement = WithCteStatement {
+        let cte = WithCteStatement {
             recursive: true,
             cte_expressions: vec![CteExpression {
                 name: Identifier::Single("cte_1".to_string()),
@@ -506,11 +507,14 @@ mod tests_insert_statement {
                     Identifier::from("cte_table"),
                 ))),
             }],
-            statement: Box::new(Statement::Insert(expected_insert_statement)),
         };
+
+        let mut expected_insert_statement = insert_statement();
+        expected_insert_statement.with_cte = Some(cte);
+
         run_sunny_day_test(
             "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) INSERT INTO table_name1 DEFAULT VALUES",
-            Statement::WithCte(expected_statement),
+            Statement::Insert(expected_insert_statement),
         );
     }
 
@@ -540,12 +544,12 @@ mod tests_insert_statement {
                     ))),
                 ),
             ],
-            statement: Box::new(Statement::Insert(expected_insert_statement)),
         };
+        expected_insert_statement.with_cte = Some(expected_statement);
 
         run_sunny_day_test(
             "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_1) INSERT INTO cte_2 DEFAULT VALUES",
-            Statement::WithCte(expected_statement),
+            Statement::Insert(expected_insert_statement),
         );
     }
 

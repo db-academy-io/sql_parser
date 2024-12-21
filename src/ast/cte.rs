@@ -1,21 +1,19 @@
 use std::fmt::Display;
 
-use super::{Identifier, SelectStatement, Statement};
+use super::{Identifier, SelectStatement};
 
 /// An AST for [WITH](https://www.sqlite.org/lang_with.html) SQL statement.
 /// The WITH statement is used in SELECT, INSERT, UPDATE, and DELETE
 /// statements to define Common Table Expressions (CTEs).
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct WithCteStatement {
     pub recursive: bool,
 
     pub cte_expressions: Vec<CteExpression>,
-
-    pub statement: Box<Statement>,
 }
 
 /// An AST for a single CTE expression.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CteExpression {
     pub name: Identifier,
 

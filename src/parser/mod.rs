@@ -18,7 +18,7 @@ pub mod window;
 
 use alter::*;
 use create::*;
-use cte::*;
+use cte::CteStatementParser;
 use delete::*;
 use drop::*;
 use errors::*;
@@ -31,7 +31,7 @@ use trx::*;
 use update::*;
 use window::*;
 
-use crate::ast::{IndexedType, LimitClause, OrderingTerm, SelectStatement, Statement};
+use crate::ast::{IndexedType, LimitClause, OrderingTerm, Statement};
 use crate::{Keyword, Token, TokenType, Tokenizer};
 
 /// A parser for SQLite SQL statements
@@ -297,7 +297,7 @@ impl<'a> Parser<'a> {
 
     /// Parse a single statement from the tokenizer [Tokenizer]
     pub fn parse_statement(&mut self) -> Result<Statement, ParsingError> {
-        match self.peek_as_keyword()? {
+        let statement = match self.peek_as_keyword()? {
             Keyword::Explain => {
                 ExplainStatementParser::parse_explain_statement(self).map(Statement::Explain)
             }
@@ -316,12 +316,10 @@ impl<'a> Parser<'a> {
             Keyword::Rollback => TransactionStatementParser::parse_rollback_statement(self),
             Keyword::Release => TransactionStatementParser::parse_release_statement(self),
             Keyword::Savepoint => TransactionStatementParser::parse_savepoint_statement(self),
-            Keyword::Select => {
+            Keyword::Select | Keyword::Values => {
                 SelectStatementParser::parse_select_statement(self).map(Statement::Select)
             }
-            Keyword::Values => ValuesStatementParser::parse_values_statement(self)
-                .map(|stmt| Statement::Select(SelectStatement::Values(stmt))),
-            Keyword::With => CteStatementParser::parse_cte_statement(self).map(Statement::WithCte),
+            Keyword::With => CteStatementParser::parse_cte_statement(self),
             Keyword::Delete => {
                 DeleteStatementParser::parse_delete_statement(self).map(Statement::Delete)
             }
@@ -334,7 +332,9 @@ impl<'a> Parser<'a> {
             Keyword::Alter => AlterTableStatementParser::parse_alter_table_statement(self)
                 .map(Statement::AlterTable),
             keyword => Err(ParsingError::UnexpectedKeyword(keyword)),
-        }
+        }?;
+        // self.finalize_statement_parsing()?;
+        Ok(statement)
     }
 }
 
