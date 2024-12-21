@@ -31,7 +31,7 @@ impl<'a> DeleteStatementParser for Parser<'a> {
     fn parse_qualified_table_name(&mut self) -> Result<QualifiedTableName, ParsingError> {
         Ok(QualifiedTableName {
             table_id: self.parse_identifier()?,
-            alias: self.parse_alias_if_exists()?,
+            alias: self.parse_alias_after_as_keyword()?,
             indexed_type: self.parse_indexed_type()?,
         })
     }
@@ -45,7 +45,7 @@ impl<'a> DeleteStatementParser for Parser<'a> {
                     self.consume_as(TokenType::Star)?;
                     returning_clauses.push(ReturningClause::Wildcard);
                 } else if let Ok(expression) = self.parse_expression() {
-                    if let Some(alias) = self.parse_alias_if_exists()? {
+                    if let Some(alias) = self.parse_alias_after_as_keyword()? {
                         returning_clauses.push(ReturningClause::ExprWithAlias(expression, alias));
                     } else {
                         returning_clauses.push(ReturningClause::Expr(expression));

@@ -232,7 +232,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parse an alias if it exists, after the 'AS' keyword
-    fn parse_alias_if_exists(&mut self) -> Result<Option<String>, ParsingError> {
+    fn parse_alias_after_as_keyword(&mut self) -> Result<Option<String>, ParsingError> {
         if self.consume_as_keyword(Keyword::As).is_ok() {
             Ok(Some(self.consume_as_id()?))
         } else if let Ok(value) = self.consume_as_id() {
@@ -242,6 +242,17 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Parse an [IF EXISTS] clause
+    fn parse_if_exists_clause(&mut self) -> Result<bool, ParsingError> {
+        if self.consume_as_keyword(Keyword::If).is_ok() {
+            self.consume_as_keyword(Keyword::Exists)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Parse an indexed type if it exists
     fn parse_indexed_type(&mut self) -> Result<Option<IndexedType>, ParsingError> {
         if self.consume_as_keyword(Keyword::Indexed).is_ok() {
             self.consume_as_keyword(Keyword::By)?;
@@ -254,6 +265,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Parse a list of order by clauses
     fn parse_order_by_clause(&mut self) -> Result<Option<Vec<OrderingTerm>>, ParsingError> {
         if let Ok(Keyword::Order) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::Order)?;
@@ -265,6 +277,7 @@ impl<'a> Parser<'a> {
         Ok(None)
     }
 
+    /// Parse a limit clause if it exists
     fn parse_limit_clause(&mut self) -> Result<Option<LimitClause>, ParsingError> {
         if self.consume_as_keyword(Keyword::Limit).is_ok() {
             let limit = self.parse_expression()?;

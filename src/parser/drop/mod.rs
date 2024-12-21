@@ -1,10 +1,8 @@
-pub mod drop_generic;
 pub mod drop_index;
 pub mod drop_table;
 pub mod drop_trigger;
 pub mod drop_view;
 
-use drop_generic::*;
 use drop_index::*;
 use drop_table::*;
 use drop_trigger::*;
@@ -15,6 +13,8 @@ use crate::{Keyword, Parser, Statement};
 
 pub trait DropStatementParser {
     fn parse_drop_statement(&mut self) -> Result<Statement, ParsingError>;
+
+    // fn parse_drop_statement_generic(&mut self) -> Result<(bool, Identifier), ParsingError>;
 }
 
 impl<'a> DropStatementParser for Parser<'a> {

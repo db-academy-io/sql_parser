@@ -1,7 +1,6 @@
 use crate::parser::errors::ParsingError;
+use crate::parser::IdentifierParser;
 use crate::{DropViewStatement, Keyword, Parser, Statement};
-
-use super::DropGenericStatementParser;
 
 pub trait DropViewStatementParser {
     fn parse_drop_view_statement(&mut self) -> Result<Statement, ParsingError>;
@@ -11,7 +10,8 @@ impl<'a> DropViewStatementParser for Parser<'a> {
     fn parse_drop_view_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::View)?;
 
-        let (if_exists, identifier) = self.parse_drop_statement_generic()?;
+        let if_exists = self.parse_if_exists_clause()?;
+        let identifier = self.parse_identifier()?;
 
         Ok(Statement::DropView(DropViewStatement {
             if_exists,

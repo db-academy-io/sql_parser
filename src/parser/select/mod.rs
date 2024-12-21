@@ -180,7 +180,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 let subquery = self.parse_select_statement()?;
                 // Here the right parenthesis is mandatory
                 self.consume_as(TokenType::RightParen)?;
-                let alias = self.parse_alias_if_exists()?;
+                let alias = self.parse_alias_after_as_keyword()?;
                 return Ok(FromClause::Subquery(SelectFromSubquery {
                     subquery: Box::new(subquery),
                     alias,
@@ -209,14 +209,14 @@ impl<'a> SelectStatementParser for Parser<'a> {
                 let arguments = self.parse_comma_separated_expressions()?;
 
                 self.consume_as(TokenType::RightParen)?;
-                let alias = self.parse_alias_if_exists()?;
+                let alias = self.parse_alias_after_as_keyword()?;
                 return Ok(FromClause::Function(SelectFromFunction {
                     function_name: id,
                     arguments,
                     alias,
                 }));
             } else {
-                let alias = self.parse_alias_if_exists()?;
+                let alias = self.parse_alias_after_as_keyword()?;
                 let indexed_type = self.parse_indexed_type()?;
 
                 let lhs = FromClause::Table(QualifiedTableName {

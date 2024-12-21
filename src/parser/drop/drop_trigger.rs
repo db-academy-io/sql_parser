@@ -1,5 +1,5 @@
-use super::DropGenericStatementParser;
 use crate::parser::errors::ParsingError;
+use crate::parser::IdentifierParser;
 use crate::{DropTriggerStatement, Keyword, Parser, Statement};
 
 pub trait DropTriggerStatementParser {
@@ -10,7 +10,8 @@ impl<'a> DropTriggerStatementParser for Parser<'a> {
     fn parse_drop_trigger_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Trigger)?;
 
-        let (if_exists, identifier) = self.parse_drop_statement_generic()?;
+        let if_exists = self.parse_if_exists_clause()?;
+        let identifier = self.parse_identifier()?;
 
         Ok(Statement::DropTrigger(DropTriggerStatement {
             if_exists,
