@@ -26,8 +26,8 @@ The items were taken from the official SQLite documentation
     1. [detach-stmt](https://www.sqlite.org/lang_detach.html) &#9989;
     1. [analyze-stmt](https://www.sqlite.org/lang_analyze.html) &#9989; 
     1. [reindex-stmt](https://www.sqlite.org/lang_reindex.html) &#9989; 
-    1. [pragma-stmt](https://www.sqlite.org/pragma.html)
-1. [transaction-stmt](https://www.sqlite.org/lang_transaction.html) &#9989;
+    1. [pragma-stmt](https://www.sqlite.org/pragma.html) &#9989; 
+1. [transaction-stmt](https://www.sqlite.org/lang_transaction.html)
     1. [begin-stmt](https://www.sqlite.org/lang_transaction.html) &#9989;
     1. [commit-stmt](https://www.sqlite.org/lang_transaction.html) &#9989;
     1. [rollback-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
