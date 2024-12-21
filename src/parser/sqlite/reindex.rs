@@ -29,12 +29,11 @@ impl<'a> ReindexStatementParser for Parser<'a> {
             }));
         }
 
-        let mut target_name: Option<String> = None;
-        if self.peek_as(TokenType::Dot).is_ok() {
-            self.consume_as(TokenType::Dot)?;
-
-            target_name = Some(self.parse_sqlite3_name()?);
-        }
+        let target_name: Option<String> = if self.consume_as(TokenType::Dot).is_ok() {
+            Some(self.parse_sqlite3_name()?)
+        } else {
+            None
+        };
 
         self.finalize_statement_parsing()?;
 
@@ -58,20 +57,22 @@ pub mod test_utils {
 mod reindex_statements_tests {
     use crate::ast::ReindexStatement;
     use crate::parser::errors::ParsingError;
-    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
+    use crate::parser::test_utils::{
+        assert_statements_equal, run_rainy_day_test, run_sunny_day_test,
+    };
     use crate::{Parser, Statement};
+
+    use super::test_utils::reindex_statement;
 
     #[test]
     fn test_reindex_basic() {
-        let sql = "REINDEX;";
-        run_sunny_day_test(sql, Statement::Reindex(ReindexStatement::default()));
+        run_sunny_day_test("REINDEX;", Statement::Reindex(reindex_statement()));
     }
 
     #[test]
     fn test_reindex_collation_name() {
-        let sql = "REINDEX my_collation;";
         run_sunny_day_test(
-            sql,
+            "REINDEX my_collation;",
             Statement::Reindex(ReindexStatement {
                 schema_name: None,
                 target_name: Some("my_collation".to_string()),
@@ -81,9 +82,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_table_name() {
-        let sql = "REINDEX my_table;";
         run_sunny_day_test(
-            sql,
+            "REINDEX my_table;",
             Statement::Reindex(ReindexStatement {
                 schema_name: None,
                 target_name: Some("my_table".to_string()),
@@ -93,9 +93,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_index_name() {
-        let sql = "REINDEX my_index;";
         run_sunny_day_test(
-            sql,
+            "REINDEX my_index;",
             Statement::Reindex(ReindexStatement {
                 schema_name: None,
                 target_name: Some("my_index".to_string()),
@@ -105,9 +104,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_with_schema_and_table() {
-        let sql = "REINDEX main.my_table;";
         run_sunny_day_test(
-            sql,
+            "REINDEX main.my_table;",
             Statement::Reindex(ReindexStatement {
                 schema_name: Some("main".to_string()),
                 target_name: Some("my_table".to_string()),
@@ -117,9 +115,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_with_single_quoted_name() {
-        let sql = "REINDEX 'my_table';";
         run_sunny_day_test(
-            sql,
+            "REINDEX 'my_table';",
             Statement::Reindex(ReindexStatement {
                 schema_name: None,
                 target_name: Some("'my_table'".to_string()),
@@ -129,9 +126,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_with_double_quoted_name() {
-        let sql = "REINDEX \"my_table\";";
         run_sunny_day_test(
-            sql,
+            "REINDEX \"my_table\";",
             Statement::Reindex(ReindexStatement {
                 schema_name: None,
                 target_name: Some("\"my_table\"".to_string()),
@@ -141,9 +137,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_with_single_quoted_schema_and_name() {
-        let sql = "REINDEX 'main'.'my_table';";
         run_sunny_day_test(
-            sql,
+            "REINDEX 'main'.'my_table';",
             Statement::Reindex(ReindexStatement {
                 schema_name: Some("'main'".to_string()),
                 target_name: Some("'my_table'".to_string()),
@@ -153,9 +148,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_missing_semicolon() {
-        let sql = "REINDEX";
         run_sunny_day_test(
-            sql,
+            "REINDEX",
             Statement::Reindex(ReindexStatement {
                 schema_name: None,
                 target_name: None,
@@ -165,45 +159,32 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_invalid_syntax_extra_token() {
-        let sql = "REINDEX extra_token extra;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
-    }
-
-    #[test]
-    fn test_reindex_unexpected_token() {
-        let sql = "REINDEX 123;";
-        run_sunny_day_test(
-            sql,
-            Statement::Reindex(ReindexStatement {
-                schema_name: None,
-                target_name: Some("123".to_string()),
-            }),
+        run_rainy_day_test(
+            "REINDEX extra_token extra;",
+            ParsingError::UnexpectedToken("extra".into()),
         );
     }
 
     #[test]
     fn test_reindex_with_invalid_schema_name() {
-        let sql = "REINDEX 'unclosed_schema;";
         run_rainy_day_test(
-            sql,
+            "REINDEX 'unclosed_schema;",
             ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_schema;".into()),
         );
     }
 
     #[test]
     fn test_reindex_with_invalid_target_name() {
-        let sql = "REINDEX main.'unclosed_name;";
         run_rainy_day_test(
-            sql,
+            "REINDEX main.'unclosed_name;",
             ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_name;".into()),
         );
     }
 
     #[test]
     fn test_reindex_with_numeric_name() {
-        let sql = "REINDEX '123';";
         run_sunny_day_test(
-            sql,
+            "REINDEX '123';",
             Statement::Reindex(ReindexStatement {
                 schema_name: None,
                 target_name: Some("'123'".to_string()),
@@ -213,9 +194,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_with_numeric_schema_and_name() {
-        let sql = "REINDEX '123'.'456';";
         run_sunny_day_test(
-            sql,
+            "REINDEX '123'.'456';",
             Statement::Reindex(ReindexStatement {
                 schema_name: Some("'123'".to_string()),
                 target_name: Some("'456'".to_string()),
@@ -225,9 +205,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_with_backticks_schema_and_name() {
-        let sql = "REINDEX `main`.`my_table`;";
         run_sunny_day_test(
-            sql,
+            "REINDEX `main`.`my_table`;",
             Statement::Reindex(ReindexStatement {
                 schema_name: Some("`main`".to_string()),
                 target_name: Some("`my_table`".to_string()),
@@ -237,9 +216,8 @@ mod reindex_statements_tests {
 
     #[test]
     fn test_reindex_with_special_chars_in_schema_and_name() {
-        let sql = "REINDEX '[email protected]!'.'[email protected]!';";
         run_sunny_day_test(
-            sql,
+            "REINDEX '[email protected]!'.'[email protected]!';",
             Statement::Reindex(ReindexStatement {
                 schema_name: Some("'[email protected]!'".to_string()),
                 target_name: Some("'[email protected]!'".to_string()),
@@ -250,32 +228,25 @@ mod reindex_statements_tests {
     #[test]
     fn test_reindex_multiple_statements() {
         let sql = "REINDEX; REINDEX main.my_table;";
+
         let mut parser = Parser::from(sql);
 
+        let first_expected_statement = Statement::Reindex(reindex_statement());
         let first_actual_statement = parser
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
-        let first_expected_statement = Statement::Reindex(ReindexStatement {
-            schema_name: None,
-            target_name: None,
-        });
-        assert_eq!(
-            first_actual_statement, first_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            first_expected_statement, first_actual_statement
-        );
 
-        let second_actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
+        assert_statements_equal(first_expected_statement, first_actual_statement);
+
         let second_expected_statement = Statement::Reindex(ReindexStatement {
             schema_name: Some("main".to_string()),
             target_name: Some("my_table".to_string()),
         });
-        assert_eq!(
-            second_actual_statement, second_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            second_expected_statement, second_actual_statement
-        );
+
+        let second_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+
+        assert_statements_equal(second_expected_statement, second_actual_statement);
     }
 }

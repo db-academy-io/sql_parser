@@ -15,14 +15,7 @@ impl<'a> VacuumStatementParser for Parser<'a> {
             return Ok(Statement::Vacuum(VacuumStatement::default()));
         }
 
-        let schema: Option<String> = if let Ok(id) = self.peek_as_id() {
-            let schema = Some(id.to_string());
-            // Consume the schema token
-            self.consume_as_id()?;
-            schema
-        } else {
-            None
-        };
+        let schema: Option<String> = self.consume_as_id().ok();
 
         let vacuum_statement = if self.consume_as_keyword(Keyword::Into).is_ok() {
             let value = self.peek_as_string()?;
@@ -56,104 +49,91 @@ pub mod test_utils {
 mod vacuum_statements_tests {
     use crate::ast::VacuumStatement;
     use crate::parser::errors::ParsingError;
-    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
+    use crate::parser::test_utils::{
+        assert_statements_equal, run_rainy_day_test, run_sunny_day_test,
+    };
     use crate::{Parser, Statement};
+
+    use super::test_utils::vacuum_statement;
 
     #[test]
     fn test_vacuum_basic() {
-        let sql = "VACUUM;";
-        run_sunny_day_test(
-            sql,
-            Statement::Vacuum(VacuumStatement {
-                schema_name: None,
-                file_name: None,
-            }),
-        );
+        run_sunny_day_test("VACUUM;", Statement::Vacuum(vacuum_statement()));
     }
 
     #[test]
     fn test_vacuum_without_semicolon() {
-        let sql = "VACUUM";
-        run_sunny_day_test(
-            sql,
-            Statement::Vacuum(VacuumStatement {
-                schema_name: None,
-                file_name: None,
-            }),
-        );
+        run_sunny_day_test("VACUUM", Statement::Vacuum(vacuum_statement()));
     }
 
     #[test]
     fn test_vacuum_with_schema() {
-        let sql = "VACUUM main;";
-        run_sunny_day_test(
-            sql,
-            Statement::Vacuum(VacuumStatement {
-                schema_name: Some("main".to_string()),
-                file_name: None,
-            }),
-        );
+        let mut expected_statement = vacuum_statement();
+        expected_statement.schema_name = Some("main".to_string());
+        run_sunny_day_test("VACUUM main;", Statement::Vacuum(expected_statement));
     }
 
     #[test]
     fn test_vacuum_into_file() {
-        let sql = "VACUUM INTO 'backup.db';";
+        let mut expected_statement = vacuum_statement();
+        expected_statement.file_name = Some("'backup.db'".to_string());
+
         run_sunny_day_test(
-            sql,
-            Statement::Vacuum(VacuumStatement {
-                schema_name: None,
-                file_name: Some("'backup.db'".to_string()),
-            }),
+            "VACUUM INTO 'backup.db';",
+            Statement::Vacuum(expected_statement),
         );
     }
 
     #[test]
     fn test_vacuum_schema_into_file() {
-        let sql = "VACUUM main INTO 'backup.db';";
+        let mut expected_statement = vacuum_statement();
+        expected_statement.schema_name = Some("main".to_string());
+        expected_statement.file_name = Some("'backup.db'".to_string());
+
         run_sunny_day_test(
-            sql,
-            Statement::Vacuum(VacuumStatement {
-                schema_name: Some("main".to_string()),
-                file_name: Some("'backup.db'".to_string()),
-            }),
+            "VACUUM main INTO 'backup.db';",
+            Statement::Vacuum(expected_statement),
         );
     }
 
     #[test]
     fn test_vacuum_invalid_syntax() {
-        let sql = "VACUUM INTO;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".to_string()));
+        run_rainy_day_test(
+            "VACUUM INTO;",
+            ParsingError::UnexpectedToken(";".to_string()),
+        );
     }
 
     #[test]
     fn test_vacuum_missing_filename() {
-        let sql = "VACUUM INTO";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test("VACUUM INTO", ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
     fn test_vacuum_invalid_filename() {
-        let sql = "VACUUM INTO backup.db;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(".".to_string()));
+        run_rainy_day_test(
+            "VACUUM INTO backup.db;",
+            ParsingError::UnexpectedToken(".".to_string()),
+        );
     }
 
     #[test]
     fn test_vacuum_unexpected_token() {
-        let sql = "VACUUM 123;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
+        run_rainy_day_test("VACUUM 123;", ParsingError::UnexpectedToken("123".into()));
     }
 
     #[test]
     fn test_vacuum_extra_tokens() {
-        let sql = "VACUUM main INTO 'backup.db' extra;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".to_string()));
+        run_rainy_day_test(
+            "VACUUM main INTO 'backup.db' extra;",
+            ParsingError::UnexpectedToken("extra".to_string()),
+        );
     }
 
     #[test]
     fn test_vacuum_schema_missing_into() {
-        let sql = "VACUUM main 'backup.db';";
         run_rainy_day_test(
-            sql,
+            "VACUUM main 'backup.db';",
             ParsingError::UnexpectedToken("'backup.db'".to_string()),
         );
     }
@@ -163,36 +143,23 @@ mod vacuum_statements_tests {
         let sql = "VACUUM; VACUUM main INTO 'backup.db';";
 
         let mut parser = Parser::from(sql);
+
+        let first_expected_statement = Statement::Vacuum(vacuum_statement());
         let first_actual_statement = parser
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        let first_expected_statement = Statement::Vacuum(VacuumStatement {
-            schema_name: None,
-            file_name: None,
-        });
-
-        // Verify that the statements match
-        assert_eq!(
-            first_actual_statement, first_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            first_expected_statement, first_actual_statement
-        );
-
-        let second_actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
+        assert_statements_equal(first_actual_statement, first_expected_statement);
 
         let second_expected_statement = Statement::Vacuum(VacuumStatement {
             schema_name: Some("main".to_string()),
             file_name: Some("'backup.db'".to_string()),
         });
 
-        // Verify that the statements match
-        assert_eq!(
-            second_actual_statement, second_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            second_expected_statement, second_actual_statement
-        );
+        let second_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+
+        assert_statements_equal(second_actual_statement, second_expected_statement);
     }
 }

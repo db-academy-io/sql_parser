@@ -68,49 +68,50 @@ pub mod test_utils {
 mod detach_statements_tests {
     use crate::ast::DetachStatement;
     use crate::parser::errors::ParsingError;
-    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
+    use crate::parser::test_utils::{
+        assert_statements_equal, run_rainy_day_test, run_sunny_day_test,
+    };
     use crate::{Parser, Statement};
+
+    use super::test_utils::detach_statement;
 
     #[test]
     fn test_detach_basic() {
-        let sql = "DETACH DATABASE schema_name;";
         run_sunny_day_test(
-            sql,
-            Statement::Detach(DetachStatement {
-                schema_name: "schema_name".to_string(),
-            }),
+            "DETACH DATABASE test_db;",
+            Statement::Detach(detach_statement()),
         );
     }
 
     #[test]
     fn test_detach_without_database_keyword() {
-        let sql = "DETACH schema_name;";
-        run_sunny_day_test(
-            sql,
-            Statement::Detach(DetachStatement {
-                schema_name: "schema_name".to_string(),
-            }),
-        );
+        run_sunny_day_test("DETACH test_db;", Statement::Detach(detach_statement()));
+    }
+
+    #[test]
+    fn test_detach_missing_semicolon() {
+        let sql = "DETACH DATABASE test_db";
+        run_sunny_day_test(sql, Statement::Detach(detach_statement()));
     }
 
     #[test]
     fn test_detach_with_single_quoted_schema_name() {
-        let sql = "DETACH DATABASE 'schema_name';";
+        let sql = "DETACH DATABASE 'test_db';";
         run_sunny_day_test(
             sql,
             Statement::Detach(DetachStatement {
-                schema_name: "'schema_name'".to_string(),
+                schema_name: "'test_db'".to_string(),
             }),
         );
     }
 
     #[test]
     fn test_detach_with_double_quoted_schema_name() {
-        let sql = "DETACH DATABASE \"schema_name\";";
+        let sql = "DETACH DATABASE \"test_db\";";
         run_sunny_day_test(
             sql,
             Statement::Detach(DetachStatement {
-                schema_name: "\"schema_name\"".to_string(),
+                schema_name: "\"test_db\"".to_string(),
             }),
         );
     }
@@ -145,54 +146,34 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_missing_semicolon() {
-        let sql = "DETACH DATABASE schema_name";
-        run_sunny_day_test(
-            sql,
-            Statement::Detach(DetachStatement {
-                schema_name: "schema_name".to_string(),
-            }),
-        );
-    }
-
-    #[test]
     fn test_detach_multiple_statements() {
-        let sql = "DETACH schema_name1; DETACH DATABASE 'schema_name2';";
+        let sql = "DETACH test_db; DETACH DATABASE 'test_db2';";
         let mut parser = Parser::from(sql);
 
+        let first_expected_statement = Statement::Detach(detach_statement());
         let first_actual_statement = parser
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
-        let first_expected_statement = Statement::Detach(DetachStatement {
-            schema_name: "schema_name1".to_string(),
-        });
-        assert_eq!(
-            first_actual_statement, first_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            first_expected_statement, first_actual_statement
-        );
 
+        assert_statements_equal(first_expected_statement, first_actual_statement);
+
+        let second_expected_statement = Statement::Detach(DetachStatement {
+            schema_name: "'test_db2'".to_string(),
+        });
         let second_actual_statement = parser
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
-        let second_expected_statement = Statement::Detach(DetachStatement {
-            schema_name: "'schema_name2'".to_string(),
-        });
-        assert_eq!(
-            second_actual_statement, second_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            second_expected_statement, second_actual_statement
-        );
+        assert_statements_equal(second_expected_statement, second_actual_statement);
     }
 
     #[test]
     fn test_detach_schema_name_with_spaces() {
-        let sql = "DETACH DATABASE 'schema name with spaces';";
+        let mut expected_statement = detach_statement();
+        expected_statement.schema_name = "'schema name with spaces'".to_string();
+
         run_sunny_day_test(
-            sql,
-            Statement::Detach(DetachStatement {
-                schema_name: "'schema name with spaces'".to_string(),
-            }),
+            "DETACH DATABASE 'schema name with spaces';",
+            Statement::Detach(expected_statement),
         );
     }
 

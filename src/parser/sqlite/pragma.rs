@@ -19,9 +19,7 @@ impl<'a> PragmaStatementParser for Parser<'a> {
 
         let mut schema_name = None;
 
-        if self.peek_as(TokenType::Dot).is_ok() {
-            self.consume_as(TokenType::Dot)?;
-
+        if self.consume_as(TokenType::Dot).is_ok() {
             // The pragma name is the next name after the '.' token
             schema_name = Some(pragma_name);
             pragma_name = self.peek_as_string()?;
@@ -101,98 +99,69 @@ pub mod test_utils {
 #[cfg(test)]
 mod pragma_statements_tests {
     use crate::parser::errors::ParsingError;
-    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
+    use crate::parser::test_utils::{assert_statements_equal, run_rainy_day_test, run_sunny_day_test};
     use crate::{Parser, PragmaStatement, Statement};
+
+    use super::test_utils::pragma_statement;
 
     #[test]
     fn test_pragma_basic() {
-        let sql = "PRAGMA cache_size;";
         run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: None,
-            }),
+            "PRAGMA cache_size;",
+            Statement::Pragma(pragma_statement()),
         );
     }
 
     #[test]
     fn test_pragma_with_schema() {
-        let sql = "PRAGMA main.cache_size;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: Some("main".to_string()),
-                pragma_name: "cache_size".to_string(),
-                pragma_value: None,
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.schema_name = Some("main".to_string());
+
+        run_sunny_day_test("PRAGMA main.cache_size;", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_with_value() {
-        let sql = "PRAGMA cache_size = 2000;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("2000".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("2000".to_string());
+
+        run_sunny_day_test("PRAGMA cache_size = 2000;", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_with_schema_and_value() {
-        let sql = "PRAGMA main.cache_size = 2000;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: Some("main".to_string()),
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("2000".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.schema_name = Some("main".to_string());
+        expected.pragma_value = Some("2000".to_string());
+
+        run_sunny_day_test("PRAGMA main.cache_size = 2000;", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_with_string_value() {
-        let sql = "PRAGMA main.journal_mode = WAL;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: Some("main".to_string()),
-                pragma_name: "journal_mode".to_string(),
-                pragma_value: Some("WAL".to_string()),
-            }),
-        );
+        let expected = PragmaStatement {
+            schema_name: Some("main".to_string()),
+            pragma_name: "journal_mode".to_string(),
+            pragma_value: Some("WAL".to_string()),
+        };
+
+        run_sunny_day_test("PRAGMA main.journal_mode = WAL;", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_with_quoted_value() {
-        let sql = "PRAGMA main.journal_mode = 'WAL';";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: Some("main".to_string()),
-                pragma_name: "journal_mode".to_string(),
-                pragma_value: Some("'WAL'".to_string()),
-            }),
-        );
+        let expected = PragmaStatement {
+            schema_name: Some("main".to_string()),
+            pragma_name: "journal_mode".to_string(),
+            pragma_value: Some("'WAL'".to_string()),
+        };
+
+        run_sunny_day_test("PRAGMA main.journal_mode = 'WAL';", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_without_semicolon() {
-        let sql = "PRAGMA cache_size";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: None,
-            }),
-        );
+        run_sunny_day_test("PRAGMA cache_size", Statement::Pragma(pragma_statement()));
     }
 
     #[test]
@@ -220,108 +189,47 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_set_value() {
-        let sql = "PRAGMA cache_size = 1000;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("1000".to_string()),
-            }),
-        );
-    }
-
-    #[test]
     fn test_pragma_set_string_value() {
-        let sql = "PRAGMA encoding = 'UTF-8';";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "encoding".to_string(),
-                pragma_value: Some("'UTF-8'".to_string()),
-            }),
-        );
-    }
+        let mut expected = pragma_statement();
+        expected.pragma_name = "encoding".to_string();
+        expected.pragma_value = Some("'UTF-8'".to_string());
 
-    #[test]
-    fn test_pragma_set_value_with_schema() {
-        let sql = "PRAGMA main.cache_size = 1000;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: Some("main".to_string()),
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("1000".to_string()),
-            }),
-        );
+        run_sunny_day_test("PRAGMA encoding = 'UTF-8';", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_call_syntax() {
-        let sql = "PRAGMA cache_size(1000);";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("1000".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("1000".to_string());
+
+        run_sunny_day_test("PRAGMA cache_size(1000);", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_call_syntax_with_schema() {
-        let sql = "PRAGMA main.cache_size(1000);";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: Some("main".to_string()),
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("1000".to_string()),
-            }),
-        );
-    }
+        let mut expected = pragma_statement();
+        expected.schema_name = Some("main".to_string());
+        expected.pragma_value = Some("1000".to_string());
 
-    #[test]
-    fn test_pragma_missing_semicolon() {
-        let sql = "PRAGMA cache_size";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: None,
-            }),
-        );
+        run_sunny_day_test("PRAGMA main.cache_size(1000);", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_with_single_quoted_value() {
-        let sql = "PRAGMA cache_size = '1000';";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("'1000'".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("'1000'".to_string());
+
+        run_sunny_day_test("PRAGMA cache_size = '1000';", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_with_double_quoted_value() {
-        let sql = "PRAGMA cache_size = \"1000\";";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("\"1000\"".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("\"1000\"".to_string());
+
+        run_sunny_day_test("PRAGMA cache_size = \"1000\";", Statement::Pragma(expected));
     }
+
 
     #[test]
     fn test_pragma_with_reserved_keyword_as_name() {
@@ -354,54 +262,35 @@ mod pragma_statements_tests {
 
     #[test]
     fn test_pragma_with_special_chars_in_value() {
-        let sql = "PRAGMA cache_size = '[email protected]!';";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("'[email protected]!'".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("'[email protected]!'".to_string());
+
+        run_sunny_day_test("PRAGMA cache_size = '[email protected]!';", Statement::Pragma(expected));
     }
+
 
     #[test]
     fn test_pragma_with_numeric_value() {
-        let sql = "PRAGMA cache_size = 123;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("123".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("123".to_string());
+
+        run_sunny_day_test("PRAGMA cache_size = 123;", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_with_positive_numeric_value() {
-        let sql = "PRAGMA cache_size = +123;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("123".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("123".to_string());
+
+        run_sunny_day_test("PRAGMA cache_size = +123;", Statement::Pragma(expected));
     }
 
     #[test]
     fn test_pragma_with_negative_numeric_value() {
-        let sql = "PRAGMA cache_size = -123;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("-123".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("-123".to_string());
+
+        run_sunny_day_test("PRAGMA cache_size = -123;", Statement::Pragma(expected));
     }
 
     #[test]
@@ -445,58 +334,34 @@ mod pragma_statements_tests {
         let sql = "PRAGMA cache_size = 1000; PRAGMA encoding = 'UTF-8';";
         let mut parser = Parser::from(sql);
 
-        let first_actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
         let first_expected_statement = Statement::Pragma(PragmaStatement {
             schema_name: None,
             pragma_name: "cache_size".to_string(),
             pragma_value: Some("1000".to_string()),
         });
-        assert_eq!(
-            first_actual_statement, first_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            first_expected_statement, first_actual_statement
-        );
+
+        let first_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+
+        assert_statements_equal(first_actual_statement, first_expected_statement);
 
         let second_actual_statement = parser
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
+        
         let second_expected_statement = Statement::Pragma(PragmaStatement {
             schema_name: None,
             pragma_name: "encoding".to_string(),
             pragma_value: Some("'UTF-8'".to_string()),
-        });
-        assert_eq!(
-            second_actual_statement, second_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            second_expected_statement, second_actual_statement
-        );
-    }
-
-    #[test]
-    fn test_pragma_case_insensitive() {
-        let sql = "pragma cache_size = 1000;";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("1000".to_string()),
-            }),
-        );
+        });        assert_statements_equal(second_actual_statement, second_expected_statement);
     }
 
     #[test]
     fn test_pragma_with_comment() {
-        let sql = "PRAGMA /* set cache size */ cache_size = 1000; ";
-        run_sunny_day_test(
-            sql,
-            Statement::Pragma(PragmaStatement {
-                schema_name: None,
-                pragma_name: "cache_size".to_string(),
-                pragma_value: Some("1000".to_string()),
-            }),
-        );
+        let mut expected = pragma_statement();
+        expected.pragma_value = Some("1000".to_string());
+
+        run_sunny_day_test("PRAGMA /* set cache size */ cache_size = 1000; ", Statement::Pragma(expected));
     }
 }

@@ -27,12 +27,11 @@ impl<'a> AnalyzeStatementParser for Parser<'a> {
             }));
         }
 
-        let mut table_or_index_name: Option<String> = None;
-        if self.peek_as(TokenType::Dot).is_ok() {
-            self.consume_as(TokenType::Dot)?;
-
-            table_or_index_name = Some(self.parse_sqlite3_name()?);
-        }
+        let table_or_index_name: Option<String> = if self.consume_as(TokenType::Dot).is_ok() {
+            Some(self.parse_sqlite3_name()?)
+        } else {
+            None
+        };
 
         self.finalize_statement_parsing()?;
 
@@ -59,124 +58,104 @@ pub mod test_utils {
 mod analyze_statements_tests {
     use crate::ast::AnalyzeStatement;
     use crate::parser::errors::ParsingError;
-    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
+    use crate::parser::test_utils::{
+        assert_statements_equal, run_rainy_day_test, run_sunny_day_test,
+    };
     use crate::{Parser, Statement};
 
     use super::test_utils::analyze_statement;
 
     #[test]
     fn test_analyze_basic() {
-        let sql = "ANALYZE;";
-        run_sunny_day_test(sql, Statement::Analyze(analyze_statement()));
+        run_sunny_day_test("ANALYZE;", Statement::Analyze(analyze_statement()));
     }
 
     #[test]
     fn test_analyze_with_schema_name() {
-        let sql = "ANALYZE main;";
-        run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: Some("main".to_string()),
-                table_or_index_name: None,
-            }),
-        );
+        let mut expected_statement = analyze_statement();
+        expected_statement.schema_name = Some("main".to_string());
+
+        run_sunny_day_test("ANALYZE main;", Statement::Analyze(expected_statement));
     }
 
     #[test]
     fn test_analyze_with_schema_and_table() {
-        let sql = "ANALYZE main.my_table;";
+        let mut expected_statement = analyze_statement();
+        expected_statement.schema_name = Some("main".to_string());
+        expected_statement.table_or_index_name = Some("my_table".to_string());
+
         run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: Some("main".to_string()),
-                table_or_index_name: Some("my_table".to_string()),
-            }),
+            "ANALYZE main.my_table;",
+            Statement::Analyze(expected_statement),
         );
     }
 
     #[test]
     fn test_analyze_with_single_quoted_schema() {
-        let sql = "ANALYZE 'main';";
-        run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: Some("'main'".to_string()),
-                table_or_index_name: None,
-            }),
-        );
+        let mut expected_statement = analyze_statement();
+        expected_statement.schema_name = Some("'main'".to_string());
+
+        run_sunny_day_test("ANALYZE 'main';", Statement::Analyze(expected_statement));
     }
 
     #[test]
     fn test_analyze_with_double_quoted_schema() {
-        let sql = "ANALYZE \"main\";";
-        run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: Some("\"main\"".to_string()),
-                table_or_index_name: None,
-            }),
-        );
+        let mut expected_statement = analyze_statement();
+        expected_statement.schema_name = Some("\"main\"".to_string());
+
+        run_sunny_day_test("ANALYZE \"main\";", Statement::Analyze(expected_statement));
     }
 
     #[test]
     fn test_analyze_with_single_quoted_schema_and_table() {
-        let sql = "ANALYZE 'main'.'my_table';";
+        let mut expected_statement = analyze_statement();
+        expected_statement.schema_name = Some("'main'".to_string());
+        expected_statement.table_or_index_name = Some("'my_table'".to_string());
+
         run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: Some("'main'".to_string()),
-                table_or_index_name: Some("'my_table'".to_string()),
-            }),
+            "ANALYZE 'main'.'my_table';",
+            Statement::Analyze(expected_statement),
         );
     }
 
     #[test]
     fn test_analyze_with_double_quoted_schema_and_table() {
-        let sql = "ANALYZE \"main\".\"my_table\";";
+        let mut expected_statement = analyze_statement();
+        expected_statement.schema_name = Some("\"main\"".to_string());
+        expected_statement.table_or_index_name = Some("\"my_table\"".to_string());
+
         run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: Some("\"main\"".to_string()),
-                table_or_index_name: Some("\"my_table\"".to_string()),
-            }),
+            "ANALYZE \"main\".\"my_table\";",
+            Statement::Analyze(expected_statement),
         );
     }
 
     #[test]
     fn test_analyze_missing_semicolon() {
         let sql = "ANALYZE";
-        run_sunny_day_test(
-            sql,
-            Statement::Analyze(AnalyzeStatement {
-                schema_name: None,
-                table_or_index_name: None,
-            }),
-        );
+        run_sunny_day_test(sql, Statement::Analyze(analyze_statement()));
     }
 
     #[test]
     fn test_analyze_with_invalid_schema_name() {
-        let sql = "ANALYZE 'unclosed_schema;";
         run_rainy_day_test(
-            sql,
+            "ANALYZE 'unclosed_schema;",
             ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_schema;".into()),
         );
     }
 
     #[test]
     fn test_analyze_with_invalid_table_name() {
-        let sql = "ANALYZE main.'unclosed_table;";
         run_rainy_day_test(
-            sql,
+            "ANALYZE main.'unclosed_table;",
             ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_table;".into()),
         );
     }
 
     #[test]
     fn test_analyze_with_numeric_schema_name() {
-        let sql = "ANALYZE '123';";
         run_sunny_day_test(
-            sql,
+            "ANALYZE '123';",
             Statement::Analyze(AnalyzeStatement {
                 schema_name: Some("'123'".to_string()),
                 table_or_index_name: None,
@@ -186,9 +165,8 @@ mod analyze_statements_tests {
 
     #[test]
     fn test_analyze_with_numeric_table_name() {
-        let sql = "ANALYZE main.'123';";
         run_sunny_day_test(
-            sql,
+            "ANALYZE main.'123';",
             Statement::Analyze(AnalyzeStatement {
                 schema_name: Some("main".to_string()),
                 table_or_index_name: Some("'123'".to_string()),
@@ -198,9 +176,8 @@ mod analyze_statements_tests {
 
     #[test]
     fn test_analyze_with_escaped_quotes_in_schema_name() {
-        let sql = "ANALYZE 'main''db';";
         run_sunny_day_test(
-            sql,
+            "ANALYZE 'main''db';",
             Statement::Analyze(AnalyzeStatement {
                 schema_name: Some("'main''db'".to_string()),
                 table_or_index_name: None,
@@ -210,9 +187,8 @@ mod analyze_statements_tests {
 
     #[test]
     fn test_analyze_with_escaped_quotes_in_table_name() {
-        let sql = "ANALYZE main.'table''name';";
         run_sunny_day_test(
-            sql,
+            "ANALYZE main.'table''name';",
             Statement::Analyze(AnalyzeStatement {
                 schema_name: Some("main".to_string()),
                 table_or_index_name: Some("'table''name'".to_string()),
@@ -222,9 +198,8 @@ mod analyze_statements_tests {
 
     #[test]
     fn test_analyze_with_backticks_schema_name() {
-        let sql = "ANALYZE `main`;";
         run_sunny_day_test(
-            sql,
+            "ANALYZE `main`;",
             Statement::Analyze(AnalyzeStatement {
                 schema_name: Some("`main`".to_string()),
                 table_or_index_name: None,
@@ -234,9 +209,8 @@ mod analyze_statements_tests {
 
     #[test]
     fn test_analyze_with_special_chars_in_table_name() {
-        let sql = "ANALYZE main.'[email protected]!';";
         run_sunny_day_test(
-            sql,
+            "ANALYZE main.'[email protected]!';",
             Statement::Analyze(AnalyzeStatement {
                 schema_name: Some("main".to_string()),
                 table_or_index_name: Some("'[email protected]!'".to_string()),
@@ -249,30 +223,22 @@ mod analyze_statements_tests {
         let sql = "ANALYZE; ANALYZE main.my_table;";
         let mut parser = Parser::from(sql);
 
+        let first_expected_statement = Statement::Analyze(analyze_statement());
+
         let first_actual_statement = parser
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
-        let first_expected_statement = Statement::Analyze(AnalyzeStatement {
-            schema_name: None,
-            table_or_index_name: None,
-        });
-        assert_eq!(
-            first_actual_statement, first_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            first_expected_statement, first_actual_statement
-        );
 
-        let second_actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
+        assert_statements_equal(first_expected_statement, first_actual_statement);
         let second_expected_statement = Statement::Analyze(AnalyzeStatement {
             schema_name: Some("main".to_string()),
             table_or_index_name: Some("my_table".to_string()),
         });
-        assert_eq!(
-            second_actual_statement, second_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            second_expected_statement, second_actual_statement
-        );
+
+        let second_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
+
+        assert_statements_equal(second_expected_statement, second_actual_statement);
     }
 }
