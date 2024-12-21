@@ -36,7 +36,9 @@ pub mod test_utils {
 mod drop_table_tests {
     use crate::ast::DropTableStatement;
     use crate::parser::errors::ParsingError;
-    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
+    use crate::parser::test_utils::{
+        assert_statements_equal, run_rainy_day_test, run_sunny_day_test,
+    };
     use crate::{Identifier, Parser, Statement};
 
     use super::test_utils::drop_table_statement;
@@ -137,14 +139,9 @@ mod drop_table_tests {
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        // Verify that the statements are matches
-        assert_eq!(
-            first_actual_statement, first_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            first_actual_statement, first_expected_statement
-        );
+        assert_statements_equal(first_expected_statement, first_actual_statement);
 
-        let secont_expected_statement = Statement::DropTable(DropTableStatement {
+        let second_expected_statement = Statement::DropTable(DropTableStatement {
             if_exists: true,
             identifier: Identifier::Compound(vec![
                 "schema".to_string(),
@@ -155,11 +152,6 @@ mod drop_table_tests {
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        // Verify that the statements are matches
-        assert_eq!(
-            second_actual_statement, secont_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            second_actual_statement, secont_expected_statement
-        );
+        assert_statements_equal(second_expected_statement, second_actual_statement);
     }
 }

@@ -21,10 +21,12 @@ The items were taken from the official SQLite documentation
     1. [drop-index-stmt](https://www.sqlite.org/lang_dropindex.html) &#9989;
     1. [drop-trigger-stmt](https://www.sqlite.org/lang_droptrigger.html) &#9989;
     1. [drop-view-stmt](https://www.sqlite.org/lang_dropview.html) &#9989;
-1. [vacuum-stmt](https://www.sqlite.org/lang_vacuum.html) &#9989;
-1. [detach-stmt](https://www.sqlite.org/lang_detach.html) &#9989;
-1. [analyze-stmt](https://www.sqlite.org/lang_analyze.html) &#9989; 
-1. [reindex-stmt](https://www.sqlite.org/lang_reindex.html) &#9989; 
+1. [sqlite3-stmt](https://www.sqlite.org/lang_vacuum.html) &#9989;
+    1. [vacuum-stmt](https://www.sqlite.org/lang_vacuum.html) &#9989;
+    1. [detach-stmt](https://www.sqlite.org/lang_detach.html) &#9989;
+    1. [analyze-stmt](https://www.sqlite.org/lang_analyze.html) &#9989; 
+    1. [reindex-stmt](https://www.sqlite.org/lang_reindex.html) &#9989; 
+    1. [pragma-stmt](https://www.sqlite.org/pragma.html) &#9989;
 1. [transaction-stmt](https://www.sqlite.org/lang_transaction.html) &#9989;
     1. [begin-stmt](https://www.sqlite.org/lang_transaction.html) &#9989;
     1. [commit-stmt](https://www.sqlite.org/lang_transaction.html) &#9989;
@@ -32,8 +34,7 @@ The items were taken from the official SQLite documentation
 1. [savepoint-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
     1. [savepoint-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
     1. [release-stmt](https://www.sqlite.org/lang_savepoint.html) &#9989;
-    
-1. [pragma-stmt](https://www.sqlite.org/pragma.html) &#9989;
+
 
 ### Intermediate statements
 

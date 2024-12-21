@@ -371,11 +371,7 @@ mod test_utils {
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        assert_eq!(
-            expected_statement, actual_statement,
-            "Expected statement {:?}, got {:?}",
-            expected_statement, actual_statement
-        );
+        assert_statements_equal(expected_statement, actual_statement);
     }
 
     pub fn run_rainy_day_test(sql: &str, expected_error: ParsingError) {
@@ -388,6 +384,14 @@ mod test_utils {
             expected_error, actual_error,
             "Expected error {:?}, got {:?}",
             expected_error, actual_error,
+        );
+    }
+
+    pub fn assert_statements_equal(expected: Statement, actual: Statement) {
+        assert_eq!(
+            actual, expected,
+            "Expected statement {:?}, got {:?}",
+            expected, actual
         );
     }
 }

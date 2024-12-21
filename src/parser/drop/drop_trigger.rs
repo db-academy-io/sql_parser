@@ -36,7 +36,9 @@ pub mod test_utils {
 mod drop_trigger_tests {
     use crate::ast::DropTriggerStatement;
     use crate::parser::errors::ParsingError;
-    use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
+    use crate::parser::test_utils::{
+        assert_statements_equal, run_rainy_day_test, run_sunny_day_test,
+    };
     use crate::{Identifier, Parser, Statement};
 
     use super::test_utils::drop_trigger_statement;
@@ -146,12 +148,7 @@ mod drop_trigger_tests {
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        // Verify that the statements match
-        assert_eq!(
-            first_actual_statement, first_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            first_expected_statement, first_actual_statement
-        );
+        assert_statements_equal(first_expected_statement, first_actual_statement);
 
         let second_expected_statement = Statement::DropTrigger(DropTriggerStatement {
             if_exists: true,
@@ -165,11 +162,6 @@ mod drop_trigger_tests {
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        // Verify that the statements match
-        assert_eq!(
-            second_actual_statement, second_expected_statement,
-            "Expected statement {:?}, got {:?}",
-            second_expected_statement, second_actual_statement
-        );
+        assert_statements_equal(second_expected_statement, second_actual_statement);
     }
 }
