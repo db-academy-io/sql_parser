@@ -39,95 +39,91 @@ mod drop_trigger_tests {
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Identifier, Parser, Statement};
 
+    use super::test_utils::drop_trigger_statement;
+
     #[test]
     fn test_drop_trigger_valid() {
-        let sql = "DROP TRIGGER my_trigger;";
         run_sunny_day_test(
-            sql,
-            Statement::DropTrigger(DropTriggerStatement::name("my_trigger".to_string())),
+            "DROP TRIGGER my_trigger;",
+            Statement::DropTrigger(drop_trigger_statement()),
         )
     }
 
     #[test]
     fn test_drop_trigger_if_exists() {
-        let sql = "DROP TRIGGER IF EXISTS my_trigger;";
+        let mut expected_statement = drop_trigger_statement();
+        expected_statement.if_exists = true;
+
         run_sunny_day_test(
-            sql,
-            Statement::DropTrigger(DropTriggerStatement {
-                if_exists: true,
-                identifier: Identifier::Single("my_trigger".to_string()),
-            }),
+            "DROP TRIGGER IF EXISTS my_trigger;",
+            Statement::DropTrigger(expected_statement),
         )
     }
 
     #[test]
     fn test_drop_trigger_with_schema() {
-        let sql = "DROP TRIGGER main.my_trigger;";
+        let mut expected_statement = drop_trigger_statement();
+        expected_statement.identifier =
+            Identifier::Compound(vec!["main".to_string(), "my_trigger".to_string()]);
+
         run_sunny_day_test(
-            sql,
-            Statement::DropTrigger(DropTriggerStatement {
-                if_exists: false,
-                identifier: Identifier::Compound(vec![
-                    "main".to_string(),
-                    "my_trigger".to_string(),
-                ]),
-            }),
+            "DROP TRIGGER main.my_trigger;",
+            Statement::DropTrigger(expected_statement),
         )
     }
 
     #[test]
     fn test_drop_trigger_missing_trigger_name() {
-        let sql = "DROP TRIGGER ;";
         run_rainy_day_test(
-            sql,
+            "DROP TRIGGER ;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
         );
     }
 
     #[test]
     fn test_drop_trigger_missing_trigger_keyword() {
-        let sql = "DROP my_trigger;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_trigger".into()));
+        run_rainy_day_test(
+            "DROP my_trigger;",
+            ParsingError::UnexpectedToken("my_trigger".into()),
+        );
     }
 
     #[test]
     fn test_drop_trigger_invalid_syntax() {
-        let sql = "DROP TRIGGER IF my_trigger;";
         run_rainy_day_test(
-            sql,
+            "DROP TRIGGER IF my_trigger;",
             ParsingError::UnexpectedToken("Expected Exists keyword, got: my_trigger".into()),
         )
     }
 
     #[test]
     fn test_drop_trigger_extra_tokens() {
-        let sql = "DROP TRIGGER my_trigger extra;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
+        run_rainy_day_test(
+            "DROP TRIGGER my_trigger extra;",
+            ParsingError::UnexpectedToken("extra".into()),
+        );
     }
 
     #[test]
     fn test_drop_trigger_invalid_name() {
-        let sql = "DROP TRIGGER 123invalid;";
         run_rainy_day_test(
-            sql,
+            "DROP TRIGGER 123invalid;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
         );
     }
 
     #[test]
     fn test_drop_trigger_if_exists_missing_name() {
-        let sql = "DROP TRIGGER IF EXISTS;";
         run_rainy_day_test(
-            sql,
+            "DROP TRIGGER IF EXISTS;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
         );
     }
 
     #[test]
     fn test_drop_trigger_missing_semicolon() {
-        let sql = "DROP TRIGGER my_trigger";
         run_sunny_day_test(
-            sql,
+            "DROP TRIGGER my_trigger",
             Statement::DropTrigger(DropTriggerStatement {
                 if_exists: false,
                 identifier: Identifier::Single("my_trigger".to_string()),
@@ -137,17 +133,18 @@ mod drop_trigger_tests {
 
     #[test]
     fn test_multiple_drop_trigger_commands() {
-        let sql = "DROP TRIGGER my_trigger; DROP TRIGGER IF EXISTS schema.my_second_trigger;";
-
-        let mut parser = Parser::from(sql);
-        let first_actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
+        let mut parser = Parser::from(
+            "DROP TRIGGER my_trigger; DROP TRIGGER IF EXISTS schema.my_second_trigger;",
+        );
 
         let first_expected_statement = Statement::DropTrigger(DropTriggerStatement {
             if_exists: false,
             identifier: Identifier::Single("my_trigger".to_string()),
         });
+
+        let first_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
 
         // Verify that the statements match
         assert_eq!(
@@ -156,10 +153,6 @@ mod drop_trigger_tests {
             first_expected_statement, first_actual_statement
         );
 
-        let second_actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
-
         let second_expected_statement = Statement::DropTrigger(DropTriggerStatement {
             if_exists: true,
             identifier: Identifier::Compound(vec![
@@ -167,6 +160,10 @@ mod drop_trigger_tests {
                 "my_second_trigger".to_string(),
             ]),
         });
+
+        let second_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
 
         // Verify that the statements match
         assert_eq!(

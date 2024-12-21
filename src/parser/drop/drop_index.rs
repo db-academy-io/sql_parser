@@ -39,99 +39,96 @@ mod drop_index_tests {
     use crate::parser::test_utils::{run_rainy_day_test, run_sunny_day_test};
     use crate::{Identifier, Parser, Statement};
 
+    use super::test_utils::drop_index_statement;
+
     #[test]
     fn test_drop_index_valid() {
-        let sql = "DROP INDEX my_index;";
         run_sunny_day_test(
-            sql,
-            Statement::DropIndex(DropIndexStatement::name("my_index".to_string())),
+            "DROP INDEX my_index;",
+            Statement::DropIndex(drop_index_statement()),
         )
     }
 
     #[test]
     fn test_drop_index_if_exists() {
-        let sql = "DROP INDEX IF EXISTS my_index;";
+        let mut expected_statement = drop_index_statement();
+        expected_statement.if_exists = true;
         run_sunny_day_test(
-            sql,
-            Statement::DropIndex(DropIndexStatement {
-                if_exists: true,
-                identifier: Identifier::Single("my_index".to_string()),
-            }),
+            "DROP INDEX IF EXISTS my_index;",
+            Statement::DropIndex(expected_statement),
         )
     }
 
     #[test]
     fn test_drop_index_with_schema() {
-        let sql = "DROP INDEX main.my_index;";
+        let mut expected_statement = drop_index_statement();
+        expected_statement.identifier =
+            Identifier::Compound(vec!["main".to_string(), "my_index".to_string()]);
+
         run_sunny_day_test(
-            sql,
-            Statement::DropIndex(DropIndexStatement {
-                if_exists: false,
-                identifier: Identifier::Compound(vec!["main".to_string(), "my_index".to_string()]),
-            }),
+            "DROP INDEX main.my_index;",
+            Statement::DropIndex(expected_statement),
         )
     }
 
     #[test]
     fn test_drop_index_missing_index_name() {
-        let sql = "DROP INDEX ;";
         run_rainy_day_test(
-            sql,
+            "DROP INDEX ;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
         );
 
-        let sql = "DROP INDEX";
         run_rainy_day_test(
-            sql,
+            "DROP INDEX",
             ParsingError::UnexpectedToken("Expected identifier".into()),
         );
     }
 
     #[test]
     fn test_drop_index_missing_index_keyword() {
-        let sql = "DROP my_index;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("my_index".into()));
+        run_rainy_day_test(
+            "DROP my_index;",
+            ParsingError::UnexpectedToken("my_index".into()),
+        );
     }
 
     #[test]
     fn test_drop_index_invalid_syntax() {
-        let sql = "DROP INDEX IF my_index;";
         run_rainy_day_test(
-            sql,
+            "DROP INDEX IF my_index;",
             ParsingError::UnexpectedToken("Expected Exists keyword, got: my_index".into()),
         )
     }
 
     #[test]
     fn test_drop_index_extra_tokens() {
-        let sql = "DROP INDEX my_index extra;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
+        run_rainy_day_test(
+            "DROP INDEX my_index extra;",
+            ParsingError::UnexpectedToken("extra".into()),
+        );
     }
 
     #[test]
     fn test_drop_index_invalid_name() {
-        let sql = "DROP INDEX 123invalid;";
         run_rainy_day_test(
-            sql,
+            "DROP INDEX 123invalid;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
         );
     }
 
     #[test]
     fn test_drop_index_if_exists_missing_name() {
-        let sql = "DROP INDEX IF EXISTS;";
         run_rainy_day_test(
-            sql,
+            "DROP INDEX IF EXISTS;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
         );
     }
 
     #[test]
     fn test_drop_index_missing_semicolon() {
-        let sql = "DROP INDEX my_index";
         run_sunny_day_test(
-            sql,
-            Statement::DropIndex(DropIndexStatement::name("my_index".to_string())),
+            "DROP INDEX my_index",
+            Statement::DropIndex(drop_index_statement()),
         );
     }
 
@@ -144,10 +141,7 @@ mod drop_index_tests {
             .parse_statement()
             .expect("Expected parsed Statement, got Parsing Error");
 
-        let first_expected_statement = Statement::DropIndex(DropIndexStatement {
-            if_exists: false,
-            identifier: Identifier::Single("my_index".to_string()),
-        });
+        let first_expected_statement = Statement::DropIndex(drop_index_statement());
 
         // Verify that the statements match
         assert_eq!(
@@ -156,10 +150,6 @@ mod drop_index_tests {
             first_expected_statement, first_actual_statement
         );
 
-        let second_actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
-
         let second_expected_statement = Statement::DropIndex(DropIndexStatement {
             if_exists: true,
             identifier: Identifier::Compound(vec![
@@ -167,6 +157,10 @@ mod drop_index_tests {
                 "my_second_index".to_string(),
             ]),
         });
+
+        let second_actual_statement = parser
+            .parse_statement()
+            .expect("Expected parsed Statement, got Parsing Error");
 
         // Verify that the statements match
         assert_eq!(
