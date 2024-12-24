@@ -233,24 +233,21 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod tests_insert_statement {
+mod insert_statement_tests {
     use super::test_utils::*;
     use crate::{
         expression::test_utils::{
             binary_op_expression, collate_expression, expression_list, identifier_expression,
             numeric_literal_expression,
         },
-        parser::{
-            cte::test_utils::cte_expression, select::test_utils::select_from,
-            test_utils::run_sunny_day_test,
-        },
-        BinaryOp, ConflictClause, CteExpression, FromClause, Identifier, IndexedColumn,
-        InsertValues, QualifiedTableName, ReturningClause, SetClause, Statement, UpsertAction,
-        UpsertClause, UpsertConflictTarget, UpsertUpdate, WithCteStatement,
+        parser::{select::test_utils::select_from, test_utils::run_sunny_day_test},
+        BinaryOp, ConflictClause, FromClause, Identifier, IndexedColumn, InsertValues,
+        QualifiedTableName, ReturningClause, SetClause, Statement, UpsertAction, UpsertClause,
+        UpsertConflictTarget, UpsertUpdate,
     };
 
     #[test]
-    fn test_parse_insert_statement_basic() {
+    fn insert_statement_test() {
         let expected_statement = insert_statement();
         run_sunny_day_test(
             "INSERT INTO table_name1 DEFAULT VALUES",
@@ -259,7 +256,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_with_qualified_table_and_schema() {
+    fn insert_with_qualified_table_and_schema() {
         let mut expected = insert_statement();
         expected.table_name = QualifiedTableName::from(Identifier::Compound(vec![
             "schema_1".to_string(),
@@ -272,7 +269,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_statement_with_alias() {
+    fn insert_statement_with_alias() {
         let mut expected = insert_statement();
         expected.table_name = QualifiedTableName {
             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
@@ -286,7 +283,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_statement_with_values() {
+    fn insert_statement_with_values() {
         let mut statement = insert_statement();
         statement.values = InsertValues::Values(vec![
             vec![
@@ -305,7 +302,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_statement_with_columns_and_values() {
+    fn insert_statement_with_columns_and_values() {
         let mut statement = insert_statement();
         statement.columns = vec![
             Identifier::Single("col1".to_string()),
@@ -329,7 +326,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_statement_with_values_from_select_statement() {
+    fn insert_statement_with_values_from_select_statement() {
         let mut statement = insert_statement();
         statement.values = InsertValues::Select(select_from(FromClause::Table(
             QualifiedTableName::from(Identifier::Single("table2".to_string())),
@@ -341,7 +338,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_statement_with_conflict_clauses() {
+    fn insert_statement_with_conflict_clauses() {
         let conflict_clauses = vec![
             ConflictClause::None,
             ConflictClause::Rollback,
@@ -364,7 +361,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_statement_with_upsert_clauses() {
+    fn insert_statement_with_upsert_clauses() {
         let sql = r#"
             INSERT INTO table_name1 DEFAULT VALUES 
                 ON CONFLICT (col1) DO NOTHING 
@@ -458,7 +455,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_statement_with_returning_clause() {
+    fn insert_statement_with_returning_clause() {
         let mut expected_statement = insert_statement();
         expected_statement.returning_clause = vec![ReturningClause::Wildcard];
         run_sunny_day_test(
@@ -468,7 +465,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_parse_insert_statement_with_returning_clauses() {
+    fn insert_statement_with_returning_clauses() {
         let mut expected_statement = insert_statement();
         expected_statement.returning_clause = vec![
             ReturningClause::Wildcard,
@@ -485,7 +482,29 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_insert_with_cte() {
+    fn insert_statement_with_replace() {
+        let mut expected_statement = insert_statement();
+        expected_statement.conflict_clause = ConflictClause::None;
+        run_sunny_day_test(
+            "REPLACE INTO table_name1 DEFAULT VALUES",
+            Statement::Insert(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod insert_statement_with_cte {
+    use super::test_utils::*;
+    use crate::{
+        parser::{
+            cte::test_utils::cte_expression, select::test_utils::select_from,
+            test_utils::run_sunny_day_test,
+        },
+        CteExpression, FromClause, Identifier, QualifiedTableName, Statement, WithCteStatement,
+    };
+
+    #[test]
+    fn insert_with_cte() {
         let cte = WithCteStatement {
             recursive: true,
             cte_expressions: vec![CteExpression {
@@ -508,7 +527,7 @@ mod tests_insert_statement {
     }
 
     #[test]
-    fn test_insert_with_multiple_ctes() {
+    fn insert_with_multiple_ctes() {
         let mut expected_insert_statement = insert_statement();
         expected_insert_statement.table_name =
             QualifiedTableName::from(Identifier::Single("cte_2".to_string()));
@@ -539,16 +558,6 @@ mod tests_insert_statement {
         run_sunny_day_test(
             "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_1) INSERT INTO cte_2 DEFAULT VALUES",
             Statement::Insert(expected_insert_statement),
-        );
-    }
-
-    #[test]
-    fn test_parse_insert_statement_with_replace() {
-        let mut expected_statement = insert_statement();
-        expected_statement.conflict_clause = ConflictClause::None;
-        run_sunny_day_test(
-            "REPLACE INTO table_name1 DEFAULT VALUES",
-            Statement::Insert(expected_statement),
         );
     }
 }
