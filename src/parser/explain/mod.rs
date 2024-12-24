@@ -39,7 +39,7 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod tests {
+mod explain_statement_tests {
     use super::test_utils::explain_statement;
     use crate::parser::alter::test_utils::alter_table_statement;
     use crate::parser::create::create_index::test_utils::create_index_statement;
@@ -69,7 +69,17 @@ mod tests {
     use crate::{parser::test_utils::run_sunny_day_test, Statement};
 
     #[test]
-    fn test_explain_statement_with_query_plan() {
+    fn explain_statement_test() {
+        let explain_statement = explain_statement();
+
+        run_sunny_day_test(
+            "EXPLAIN SELECT * FROM table_name1;",
+            Statement::Explain(explain_statement),
+        );
+    }
+
+    #[test]
+    fn explain_with_query_plan() {
         let mut explain_statement = explain_statement();
         explain_statement.query_plan = true;
 
@@ -80,7 +90,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_alter_table() {
+    fn explain_alter_table() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::AlterTable(alter_table_statement())),
             query_plan: false,
@@ -93,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_analize() {
+    fn explain_analize() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Analyze(analyze_statement())),
             query_plan: false,
@@ -103,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_attach() {
+    fn explain_attach() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Attach(attach_statement())),
             query_plan: false,
@@ -116,7 +126,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_begin() {
+    fn explain_begin() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::BeginTransaction(begin_statement())),
             query_plan: false,
@@ -126,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_commit() {
+    fn explain_commit() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::CommitTransaction(commit_statement())),
             query_plan: false,
@@ -136,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_create_index() {
+    fn explain_create_index() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::CreateIndex(create_index_statement())),
             query_plan: false,
@@ -149,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_create_table() {
+    fn explain_create_table() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::CreateTable(create_table_statement())),
             query_plan: false,
@@ -162,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_create_trigger() {
+    fn explain_create_trigger() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::CreateTrigger(create_trigger_statement())),
             query_plan: false,
@@ -175,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_create_view() {
+    fn explain_create_view() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::CreateView(create_view_statement())),
             query_plan: false,
@@ -188,7 +198,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_create_virtual_table() {
+    fn explain_create_virtual_table() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::CreateVirtualTable(
                 create_virtual_table_statement(),
@@ -203,7 +213,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_delete() {
+    fn explain_delete() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Delete(delete_statement())),
             query_plan: false,
@@ -216,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_detach() {
+    fn explain_detach() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Detach(detach_statement())),
             query_plan: false,
@@ -229,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_drop_index() {
+    fn explain_drop_index() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::DropIndex(drop_index_statement())),
             query_plan: false,
@@ -242,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_drop_table() {
+    fn explain_drop_table() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::DropTable(drop_table_statement())),
             query_plan: false,
@@ -255,7 +265,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_drop_trigger() {
+    fn explain_drop_trigger() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::DropTrigger(drop_trigger_statement())),
             query_plan: false,
@@ -268,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_drop_view() {
+    fn explain_drop_view() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::DropView(drop_view_statement())),
             query_plan: false,
@@ -281,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_insert() {
+    fn explain_insert() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Insert(insert_statement())),
             query_plan: false,
@@ -294,7 +304,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_pragma() {
+    fn explain_pragma() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Pragma(pragma_statement())),
             query_plan: false,
@@ -307,7 +317,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_reindex() {
+    fn explain_reindex() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Reindex(reindex_statement())),
             query_plan: false,
@@ -317,7 +327,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_release() {
+    fn explain_release() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Release(release_statement())),
             query_plan: false,
@@ -330,7 +340,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_rollback() {
+    fn explain_rollback() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::RollbackTransaction(rollback_statement())),
             query_plan: false,
@@ -340,7 +350,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_savepoint() {
+    fn explain_savepoint() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Savepoint(savepoint_statement())),
             query_plan: false,
@@ -353,7 +363,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_select() {
+    fn explain_select() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Select(select_statement())),
             query_plan: false,
@@ -366,7 +376,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_update() {
+    fn explain_update() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Update(update_statement2())),
             query_plan: false,
@@ -379,7 +389,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_statement_vacuum() {
+    fn explain_vacuum() {
         let explain_statement = ExplainStatement {
             statement: Box::new(Statement::Vacuum(vacuum_statement())),
             query_plan: false,
