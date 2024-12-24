@@ -44,7 +44,7 @@ mod drop_index_tests {
     use super::test_utils::drop_index_statement;
 
     #[test]
-    fn test_drop_index_valid() {
+    fn drop_index_test() {
         run_sunny_day_test(
             "DROP INDEX my_index;",
             Statement::DropIndex(drop_index_statement()),
@@ -52,7 +52,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_if_exists() {
+    fn drop_index_if_exists() {
         let mut expected_statement = drop_index_statement();
         expected_statement.if_exists = true;
         run_sunny_day_test(
@@ -62,7 +62,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_with_schema() {
+    fn drop_index_with_schema() {
         let mut expected_statement = drop_index_statement();
         expected_statement.identifier =
             Identifier::Compound(vec!["main".to_string(), "my_index".to_string()]);
@@ -74,7 +74,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_missing_index_name() {
+    fn drop_index_missing_index_name() {
         run_rainy_day_test(
             "DROP INDEX ;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -87,7 +87,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_missing_index_keyword() {
+    fn drop_index_missing_index_keyword() {
         run_rainy_day_test(
             "DROP my_index;",
             ParsingError::UnexpectedToken("my_index".into()),
@@ -95,7 +95,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_invalid_syntax() {
+    fn drop_index_invalid_syntax() {
         run_rainy_day_test(
             "DROP INDEX IF my_index;",
             ParsingError::UnexpectedToken("Expected Exists keyword, got: my_index".into()),
@@ -103,7 +103,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_extra_tokens() {
+    fn drop_index_extra_tokens() {
         run_rainy_day_test(
             "DROP INDEX my_index extra;",
             ParsingError::UnexpectedToken("extra".into()),
@@ -111,7 +111,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_invalid_name() {
+    fn drop_index_invalid_name() {
         run_rainy_day_test(
             "DROP INDEX 123invalid;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -119,7 +119,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_if_exists_missing_name() {
+    fn drop_index_if_exists_missing_name() {
         run_rainy_day_test(
             "DROP INDEX IF EXISTS;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -127,7 +127,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_drop_index_missing_semicolon() {
+    fn drop_index_missing_semicolon() {
         run_sunny_day_test(
             "DROP INDEX my_index",
             Statement::DropIndex(drop_index_statement()),
@@ -135,7 +135,7 @@ mod drop_index_tests {
     }
 
     #[test]
-    fn test_multiple_drop_index_commands() {
+    fn multiple_drop_index_commands() {
         let sql = "DROP INDEX my_index; DROP INDEX IF EXISTS schema.my_second_index;";
 
         let mut parser = Parser::from(sql);

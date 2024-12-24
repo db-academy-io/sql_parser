@@ -44,7 +44,7 @@ mod drop_view_tests {
     use super::test_utils::drop_view_statement;
 
     #[test]
-    fn test_drop_view_valid() {
+    fn drop_view_test() {
         run_sunny_day_test(
             "DROP VIEW my_view;",
             Statement::DropView(drop_view_statement()),
@@ -52,7 +52,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_if_exists() {
+    fn drop_view_if_exists() {
         let mut expected_statement = drop_view_statement();
         expected_statement.if_exists = true;
 
@@ -63,7 +63,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_with_schema() {
+    fn drop_view_with_schema() {
         let mut expected_statement = drop_view_statement();
         expected_statement.identifier =
             Identifier::Compound(vec!["main".to_string(), "my_view".to_string()]);
@@ -75,7 +75,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_missing_view_name() {
+    fn drop_view_missing_view_name() {
         run_rainy_day_test(
             "DROP VIEW ;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -88,7 +88,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_missing_view_keyword() {
+    fn drop_view_missing_view_keyword() {
         run_rainy_day_test(
             "DROP my_view;",
             ParsingError::UnexpectedToken("my_view".into()),
@@ -96,7 +96,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_invalid_syntax() {
+    fn drop_view_invalid_syntax() {
         run_rainy_day_test(
             "DROP VIEW IF my_view;",
             ParsingError::UnexpectedToken("Expected Exists keyword, got: my_view".into()),
@@ -104,7 +104,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_extra_tokens() {
+    fn drop_view_extra_tokens() {
         run_rainy_day_test(
             "DROP VIEW my_view extra;",
             ParsingError::UnexpectedToken("extra".into()),
@@ -112,7 +112,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_invalid_name() {
+    fn drop_view_invalid_name() {
         run_rainy_day_test(
             "DROP VIEW 123invalid;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -120,7 +120,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_if_exists_missing_name() {
+    fn drop_view_if_exists_missing_name() {
         run_rainy_day_test(
             "DROP VIEW IF EXISTS;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -128,7 +128,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_drop_view_missing_semicolon() {
+    fn drop_view_missing_semicolon() {
         let mut expected_statement = drop_view_statement();
         expected_statement.if_exists = true;
 
@@ -139,7 +139,7 @@ mod drop_view_tests {
     }
 
     #[test]
-    fn test_multiple_drop_view_commands() {
+    fn multiple_drop_view_commands() {
         let sql = "DROP VIEW my_view; DROP VIEW IF EXISTS schema.my_second_view;";
 
         let mut parser = Parser::from(sql);

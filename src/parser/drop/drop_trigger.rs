@@ -44,7 +44,7 @@ mod drop_trigger_tests {
     use super::test_utils::drop_trigger_statement;
 
     #[test]
-    fn test_drop_trigger_valid() {
+    fn drop_trigger_test() {
         run_sunny_day_test(
             "DROP TRIGGER my_trigger;",
             Statement::DropTrigger(drop_trigger_statement()),
@@ -52,7 +52,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_if_exists() {
+    fn drop_trigger_if_exists() {
         let mut expected_statement = drop_trigger_statement();
         expected_statement.if_exists = true;
 
@@ -63,7 +63,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_with_schema() {
+    fn drop_trigger_with_schema() {
         let mut expected_statement = drop_trigger_statement();
         expected_statement.identifier =
             Identifier::Compound(vec!["main".to_string(), "my_trigger".to_string()]);
@@ -75,7 +75,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_missing_trigger_name() {
+    fn drop_trigger_missing_trigger_name() {
         run_rainy_day_test(
             "DROP TRIGGER ;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -83,7 +83,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_missing_trigger_keyword() {
+    fn drop_trigger_missing_trigger_keyword() {
         run_rainy_day_test(
             "DROP my_trigger;",
             ParsingError::UnexpectedToken("my_trigger".into()),
@@ -91,7 +91,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_invalid_syntax() {
+    fn drop_trigger_invalid_syntax() {
         run_rainy_day_test(
             "DROP TRIGGER IF my_trigger;",
             ParsingError::UnexpectedToken("Expected Exists keyword, got: my_trigger".into()),
@@ -99,7 +99,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_extra_tokens() {
+    fn drop_trigger_extra_tokens() {
         run_rainy_day_test(
             "DROP TRIGGER my_trigger extra;",
             ParsingError::UnexpectedToken("extra".into()),
@@ -107,7 +107,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_invalid_name() {
+    fn drop_trigger_invalid_name() {
         run_rainy_day_test(
             "DROP TRIGGER 123invalid;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -115,7 +115,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_if_exists_missing_name() {
+    fn drop_trigger_if_exists_missing_name() {
         run_rainy_day_test(
             "DROP TRIGGER IF EXISTS;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -123,7 +123,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_drop_trigger_missing_semicolon() {
+    fn drop_trigger_missing_semicolon() {
         run_sunny_day_test(
             "DROP TRIGGER my_trigger",
             Statement::DropTrigger(DropTriggerStatement {
@@ -134,7 +134,7 @@ mod drop_trigger_tests {
     }
 
     #[test]
-    fn test_multiple_drop_trigger_commands() {
+    fn multiple_drop_trigger_commands() {
         let mut parser = Parser::from(
             "DROP TRIGGER my_trigger; DROP TRIGGER IF EXISTS schema.my_second_trigger;",
         );

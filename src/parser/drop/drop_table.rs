@@ -44,7 +44,7 @@ mod drop_table_tests {
     use super::test_utils::drop_table_statement;
 
     #[test]
-    fn test_drop_table_valid() {
+    fn drop_table_test() {
         run_sunny_day_test(
             "DROP TABLE my_table;",
             Statement::DropTable(drop_table_statement()),
@@ -52,7 +52,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_if_exists() {
+    fn drop_table_if_exists() {
         let mut expected_statement = drop_table_statement();
         expected_statement.if_exists = true;
 
@@ -63,7 +63,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_with_schema() {
+    fn drop_table_with_schema() {
         let mut expected_statement = drop_table_statement();
         expected_statement.identifier =
             Identifier::Compound(vec!["main".to_string(), "my_table".to_string()]);
@@ -75,7 +75,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_missing_table_name() {
+    fn drop_table_missing_table_name() {
         run_rainy_day_test(
             "DROP TABLE ;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -83,7 +83,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_missing_table_keyword() {
+    fn drop_table_missing_table_keyword() {
         run_rainy_day_test(
             "DROP my_table",
             ParsingError::UnexpectedToken("my_table".to_string()),
@@ -91,7 +91,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_invalid_syntax() {
+    fn drop_table_invalid_syntax() {
         run_rainy_day_test(
             "DROP TABLE IF my_table;",
             ParsingError::UnexpectedToken("Expected Exists keyword, got: my_table".to_string()),
@@ -99,7 +99,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_extra_tokens() {
+    fn drop_table_extra_tokens() {
         run_rainy_day_test(
             "DROP TABLE my_table extra;",
             ParsingError::UnexpectedToken("extra".to_string()),
@@ -107,7 +107,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_invalid_name() {
+    fn drop_table_invalid_name() {
         run_rainy_day_test(
             "DROP TABLE 123invalid;",
             ParsingError::UnexpectedToken("Expected identifier".to_string()),
@@ -115,7 +115,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_if_exists_missing_name() {
+    fn drop_table_if_exists_missing_name() {
         run_rainy_day_test(
             "DROP TABLE IF EXISTS;",
             ParsingError::UnexpectedToken("Expected identifier".into()),
@@ -123,7 +123,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_drop_table_missing_semicolon() {
+    fn drop_table_missing_semicolon() {
         run_sunny_day_test(
             "DROP TABLE my_table",
             Statement::DropTable(drop_table_statement()),
@@ -131,7 +131,7 @@ mod drop_table_tests {
     }
 
     #[test]
-    fn test_multiple_drop_table_commands() {
+    fn multiple_drop_table_commands() {
         let mut parser =
             Parser::from("DROP TABLE my_table; DROP TABLE IF EXISTS schema.my_second_table;");
         let first_expected_statement = Statement::DropTable(drop_table_statement());
