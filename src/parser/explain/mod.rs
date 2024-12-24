@@ -41,7 +41,7 @@ pub mod test_utils {
 #[cfg(test)]
 mod tests {
     use super::test_utils::explain_statement;
-    use crate::parser::alter::test_utils::alter_table_statement2;
+    use crate::parser::alter::test_utils::alter_table_statement;
     use crate::parser::create::create_index::test_utils::create_index_statement;
     use crate::parser::create::create_table::test_utils::create_table_statement;
     use crate::parser::create::create_trigger::test_utils::create_trigger_statement;
@@ -82,7 +82,7 @@ mod tests {
     #[test]
     fn test_explain_statement_alter_table() {
         let explain_statement = ExplainStatement {
-            statement: Box::new(Statement::AlterTable(alter_table_statement2())),
+            statement: Box::new(Statement::AlterTable(alter_table_statement())),
             query_plan: false,
         };
 

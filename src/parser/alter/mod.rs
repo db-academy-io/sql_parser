@@ -80,10 +80,11 @@ impl<'a> AlterTableStatementParser for Parser<'a> {
         let _ = self.consume_as_keyword(Keyword::Column);
 
         let column_name = self.parse_identifier()?;
+        let statement_type = AlterTableStatementType::DropColumn(column_name);
 
         Ok(AlterTableStatement {
             table_name,
-            statement_type: AlterTableStatementType::DropColumn(column_name),
+            statement_type,
         })
     }
 
@@ -97,10 +98,11 @@ impl<'a> AlterTableStatementParser for Parser<'a> {
         let _ = self.consume_as_keyword(Keyword::Column);
 
         let column_definition = self.parse_column_definition()?;
+        let statement_type = AlterTableStatementType::AddColumn(column_definition);
 
         Ok(AlterTableStatement {
             table_name,
-            statement_type: AlterTableStatementType::AddColumn(column_definition),
+            statement_type,
         })
     }
 }
@@ -108,671 +110,513 @@ impl<'a> AlterTableStatementParser for Parser<'a> {
 #[cfg(test)]
 pub mod test_utils {
     use crate::{
-        AlterTableStatement, AlterTableStatementType, ColumnDefinition, DataType, Identifier,
+        AlterTableStatement, AlterTableStatementType, ColumnConstraint, ColumnDefinition, DataType,
+        Identifier,
     };
 
-    pub fn alter_table_statement2() -> AlterTableStatement {
+    pub fn alter_table_statement() -> AlterTableStatement {
+        alter_table(AlterTableStatementType::AddColumn(ColumnDefinition {
+            column_name: Identifier::Single("column_name".to_string()),
+            column_type: Some(DataType::PlainDataType("integer".to_string())),
+            column_constraints: vec![],
+        }))
+    }
+
+    fn alter_table(statement_type: AlterTableStatementType) -> AlterTableStatement {
         AlterTableStatement {
             table_name: Identifier::Single("table_name".to_string()),
-            statement_type: AlterTableStatementType::AddColumn(ColumnDefinition {
-                column_name: Identifier::Single("column_name".to_string()),
-                column_type: Some(DataType::PlainDataType("integer".to_string())),
-                column_constraints: vec![],
-            }),
+            statement_type,
         }
+    }
+
+    pub fn rename_table_statement() -> AlterTableStatement {
+        alter_table(AlterTableStatementType::RenameTable(Identifier::Single(
+            "new_table_name".to_string(),
+        )))
+    }
+
+    pub fn add_column_statement() -> AlterTableStatement {
+        alter_table(AlterTableStatementType::AddColumn(ColumnDefinition {
+            column_name: Identifier::Single("column_name".to_string()),
+            column_type: Some(DataType::PlainDataType("integer".to_string())),
+            column_constraints: vec![],
+        }))
+    }
+
+    pub fn column_constraint_statement(constraint: ColumnConstraint) -> AlterTableStatement {
+        alter_table(AlterTableStatementType::AddColumn(ColumnDefinition {
+            column_name: Identifier::Single("column_name".to_string()),
+            column_type: Some(DataType::PlainDataType("integer".to_string())),
+            column_constraints: vec![constraint],
+        }))
     }
 }
 
 #[cfg(test)]
-mod alter_table_statement_tests {
+mod rename_table_tests {
+    use super::test_utils::rename_table_statement;
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::{AlterTableStatementType, Identifier, Statement};
+
+    #[test]
+    fn rename_table_test() {
+        run_sunny_day_test(
+            "ALTER TABLE table_name RENAME TO new_table_name",
+            Statement::AlterTable(rename_table_statement()),
+        );
+    }
+
+    #[test]
+    fn rename_table_with_schema() {
+        let mut expected_statement = rename_table_statement();
+        expected_statement.table_name =
+            Identifier::Compound(vec!["schema".to_string(), "table_name".to_string()]);
+
+        run_sunny_day_test(
+            "ALTER TABLE schema.table_name RENAME TO new_table_name",
+            Statement::AlterTable(expected_statement),
+        );
+    }
+
+    #[test]
+    fn rename_table_with_name_in_square_brackets() {
+        let mut expected_statement = rename_table_statement();
+        expected_statement.table_name = Identifier::Single("[table_name]".to_string());
+        expected_statement.statement_type = AlterTableStatementType::RenameTable(
+            Identifier::Single("[new_table_name]".to_string()),
+        );
+
+        run_sunny_day_test(
+            "ALTER TABLE [table_name] RENAME TO [new_table_name]",
+            Statement::AlterTable(expected_statement),
+        );
+    }
+
+    #[test]
+    fn rename_column_test() {
+        let mut expected_statement = rename_table_statement();
+        expected_statement.table_name = Identifier::Single("table_name".to_string());
+        expected_statement.statement_type = AlterTableStatementType::RenameColumn(
+            Identifier::Single("column_name".to_string()),
+            Identifier::Single("new_column_name".to_string()),
+        );
+
+        run_sunny_day_test(
+            "ALTER TABLE table_name RENAME column_name TO new_column_name",
+            Statement::AlterTable(expected_statement),
+        );
+    }
+
+    #[test]
+    fn rename_column_with_column_keyword() {
+        let mut expected_statement = rename_table_statement();
+        expected_statement.table_name =
+            Identifier::Compound(vec!["schema_name".to_string(), "table_name".to_string()]);
+        expected_statement.statement_type = AlterTableStatementType::RenameColumn(
+            Identifier::Single("column_name".to_string()),
+            Identifier::Single("new_column_name".to_string()),
+        );
+
+        run_sunny_day_test(
+            "ALTER TABLE schema_name.table_name RENAME COLUMN column_name TO new_column_name",
+            Statement::AlterTable(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod add_column_tests {
+    use super::test_utils::add_column_statement;
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::{AlterTableStatementType, ColumnDefinition, DataType, Identifier, Statement};
+
+    #[test]
+    fn add_column_test() {
+        run_sunny_day_test(
+            "ALTER TABLE table_name ADD column_name integer",
+            Statement::AlterTable(add_column_statement()),
+        );
+
+        // An optional "COLUMN" keyword is allowed
+        run_sunny_day_test(
+            "ALTER TABLE table_name ADD COLUMN column_name integer",
+            Statement::AlterTable(add_column_statement()),
+        );
+    }
+
+    #[test]
+    fn add_column_without_type() {
+        let mut expected_statement = add_column_statement();
+        expected_statement.statement_type = AlterTableStatementType::AddColumn(ColumnDefinition {
+            column_name: Identifier::Single("column_name".to_string()),
+            column_type: None,
+            column_constraints: vec![],
+        });
+
+        run_sunny_day_test(
+            "ALTER TABLE table_name ADD COLUMN column_name",
+            Statement::AlterTable(expected_statement),
+        );
+    }
+
+    #[test]
+    fn add_column_with_sized_column_type() {
+        let mut expected_statement = add_column_statement();
+        expected_statement.statement_type = AlterTableStatementType::AddColumn(ColumnDefinition {
+            column_name: Identifier::Single("column_name".to_string()),
+            column_type: Some(DataType::SizedDataType(
+                "varchar".to_string(),
+                "10".to_string(),
+            )),
+            column_constraints: vec![],
+        });
+
+        run_sunny_day_test(
+            "ALTER TABLE table_name ADD COLUMN column_name varchar(10)",
+            Statement::AlterTable(expected_statement),
+        );
+    }
+
+    #[test]
+    fn add_column_with_bounded_column_type() {
+        let mut expected_statement = add_column_statement();
+        expected_statement.statement_type = AlterTableStatementType::AddColumn(ColumnDefinition {
+            column_name: Identifier::Single("column_name".to_string()),
+            column_type: Some(DataType::BoundedDataType(
+                "varchar".to_string(),
+                "-10".to_string(),
+                "20".to_string(),
+            )),
+            column_constraints: vec![],
+        });
+
+        run_sunny_day_test(
+            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20)",
+            Statement::AlterTable(expected_statement),
+        );
+    }
+}
+
+#[cfg(test)]
+mod add_column_with_constraints_tests {
+    use std::fmt::Display;
+
+    use super::test_utils::column_constraint_statement;
     use crate::expression::test_utils::*;
+    use crate::parser::test_utils::run_sunny_day_test;
     use crate::{
-        AlterTableStatement, AlterTableStatementType, BinaryOp, ColumnConstraint,
-        ColumnConstraintType, ColumnDefinition, ConflictClause, DataType, FKAction,
+        BinaryOp, ColumnConstraint, ColumnConstraintType, ConflictClause, FKAction,
         FKConstraintAction, FKDeferrableType, ForeignKeyClause, Identifier, Ordering,
         PrimaryKeyConstraint, Statement,
     };
 
-    use crate::parser::test_utils::run_sunny_day_test;
-
-    fn alter_table_statement(table_name: Identifier, action: AlterTableStatementType) -> Statement {
-        Statement::AlterTable(AlterTableStatement {
-            table_name,
-            statement_type: action,
-        })
-    }
-
     #[test]
-    fn alter_table_statement_rename_table() {
+    fn add_column_with_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("constraint_name".to_string())),
+            constraint_type: ColumnConstraintType::NotNull(ConflictClause::None),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name RENAME TO new_table_name",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::RenameTable(Identifier::Single(
-                    "new_table_name".to_string(),
-                )),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT constraint_name NOT NULL",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_rename_table_with_schema() {
+    fn add_column_constraint_without_constraint_name() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: None,
+            constraint_type: ColumnConstraintType::Unique(ConflictClause::None),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE schema.table_name RENAME TO new_table_name",
-            alter_table_statement(
-                Identifier::Compound(vec!["schema".to_string(), "table_name".to_string()]),
-                AlterTableStatementType::RenameTable(Identifier::Single(
-                    "new_table_name".to_string(),
-                )),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer UNIQUE",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_rename_table_with_name_in_square_brackets() {
+    fn add_column_with_primary_key_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("pk".to_string())),
+            constraint_type: ColumnConstraintType::PrimaryKey(PrimaryKeyConstraint {
+                ordering: Some(Ordering::Asc),
+                conflict_clause: ConflictClause::Abort,
+                auto_increment: true,
+            }),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE [table_name] RENAME TO [new_table_name]",
-            alter_table_statement(
-                Identifier::Single("[table_name]".to_string()),
-                AlterTableStatementType::RenameTable(Identifier::Single(
-                    "[new_table_name]".to_string(),
-                )),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT pk PRIMARY KEY ASC ON CONFLICT ABORT AUTOINCREMENT",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_rename_column() {
+    fn add_column_with_not_null_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("nn_constraint".to_string())),
+            constraint_type: ColumnConstraintType::NotNull(ConflictClause::Fail),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name RENAME column_name TO new_column_name",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::RenameColumn(
-                    Identifier::Single("column_name".to_string()),
-                    Identifier::Single("new_column_name".to_string()),
-                ),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT nn_constraint NOT NULL ON CONFLICT FAIL",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_rename_column_with_column_keyword() {
+    fn add_column_with_unique_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("un_constraint".to_string())),
+            constraint_type: ColumnConstraintType::Unique(ConflictClause::Rollback),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE schema_name.table_name RENAME COLUMN column_name TO new_column_name",
-            alter_table_statement(
-                Identifier::Compound(vec!["schema_name".to_string(), "table_name".to_string()]),
-                AlterTableStatementType::RenameColumn(
-                    Identifier::Single("column_name".to_string()),
-                    Identifier::Single("new_column_name".to_string()),
-                ),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT un_constraint UNIQUE ON CONFLICT ROLLBACK",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column() {
+    fn add_column_with_check_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("chk_constraint".to_string())),
+            constraint_type: ColumnConstraintType::Check(binary_op_expression(
+                BinaryOp::GreaterThan,
+                identifier_expression(&["column_name"]),
+                numeric_literal_expression("0"),
+            )),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name ADD column_name integer",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition {
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::PlainDataType("integer".to_string())),
-                    column_constraints: vec![],
-                }),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT chk_constraint CHECK (column_name > 0)",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column_with_column_keyword() {
+    fn add_column_with_default_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("default_constraint".to_string())),
+            constraint_type: ColumnConstraintType::Default(string_literal_expression(
+                "'default_value'",
+            )),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name text",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition {
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::PlainDataType("text".to_string())),
-                    column_constraints: vec![],
-                }),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT default_constraint DEFAULT 'default_value'",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column_without_type() {
+    fn add_column_with_default_expression_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("default_constraint".to_string())),
+            constraint_type: ColumnConstraintType::Default(binary_op_expression(
+                BinaryOp::Plus,
+                identifier_expression(&["column_name"]),
+                numeric_literal_expression("1"),
+            )),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition {
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: None,
-                    column_constraints: vec![],
-                }),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT default_constraint DEFAULT (column_name + 1)",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column_with_complex_column_type() {
+    fn add_column_with_collate_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("collate_constraint".to_string())),
+            constraint_type: ColumnConstraintType::Collate(Identifier::Single(
+                "utf8_bin".to_string(),
+            )),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(10)",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition {
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::SizedDataType(
-                        "varchar".to_string(),
-                        "10".to_string(),
-                    )),
-                    column_constraints: vec![],
-                }),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT collate_constraint COLLATE utf8_bin",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column_with_complex_column_type2() {
+    fn add_column_with_fk_constraint() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("fk_constraint".to_string())),
+            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause {
+                table_name: Identifier::Single("other_table".to_string()),
+                columns: vec![Identifier::Single("column_name".to_string())],
+                constraint_actions: vec![],
+                deferrable: None,
+            }),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20)",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition {
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType(
-                        "varchar".to_string(),
-                        "-10".to_string(),
-                        "20".to_string(),
-                    )),
-                    column_constraints: vec![],
-                }),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT fk_constraint REFERENCES other_table(column_name)",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column_with_constraint() {
+    fn add_column_with_fk_constraint_without_column_names() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("fk_constraint".to_string())),
+            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause {
+                table_name: Identifier::Single("other_table".to_string()),
+                columns: vec![],
+                constraint_actions: vec![],
+                deferrable: None,
+            }),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT constraint_name NOT NULL",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("constraint_name".to_string())),
-                        constraint_type: ColumnConstraintType::NotNull(ConflictClause::None),
-                    }],
-                }),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT fk_constraint REFERENCES other_table",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column_with_constraint_without_constraint_name() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) UNIQUE",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition {
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType(
-                        "varchar".to_string(),
-                        "-10".to_string(),
-                        "20".to_string(),
-                    )),
-                    column_constraints: vec![ColumnConstraint {
-                        name: None,
-                        constraint_type: ColumnConstraintType::Unique(ConflictClause::None),
-                    }],
+    fn add_column_with_fk_constraint_with_on_clause() {
+        impl Display for FKAction {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    FKAction::SetDefault => write!(f, "SET DEFAULT"),
+                    FKAction::SetNull => write!(f, "SET NULL"),
+                    FKAction::Cascade => write!(f, "CASCADE"),
+                    FKAction::Restrict => write!(f, "RESTRICT"),
+                    FKAction::NoAction => write!(f, "NO ACTION"),
+                }
+            }
+        }
+
+        let fk_actions = vec![
+            FKAction::SetDefault,
+            FKAction::SetNull,
+            FKAction::Cascade,
+            FKAction::Restrict,
+            FKAction::NoAction,
+        ];
+
+        // ON DELETE actions tests
+        for fk_action in fk_actions.iter() {
+            let expected_statement = column_constraint_statement(ColumnConstraint {
+                name: Some(Identifier::Single("fk_constraint".to_string())),
+                constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause {
+                    table_name: Identifier::Single("other_table".to_string()),
+                    columns: vec![],
+                    constraint_actions: vec![FKConstraintAction::OnDelete(fk_action.clone())],
+                    deferrable: None,
                 }),
-            ),
+            });
+            run_sunny_day_test(
+                &format!("ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT fk_constraint REFERENCES other_table ON DELETE {}", fk_action),
+                Statement::AlterTable(expected_statement),
+            );
+        }
+
+        // ON UPDATE actions tests
+        for fk_action in fk_actions.iter() {
+            let expected_statement = column_constraint_statement(ColumnConstraint {
+                name: Some(Identifier::Single("fk_constraint".to_string())),
+                constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause {
+                    table_name: Identifier::Single("other_table".to_string()),
+                    columns: vec![],
+                    constraint_actions: vec![FKConstraintAction::OnUpdate(fk_action.clone())],
+                    deferrable: None,
+                }),
+            });
+            run_sunny_day_test(
+                &format!("ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT fk_constraint REFERENCES other_table ON UPDATE {}", fk_action),
+                Statement::AlterTable(expected_statement),
+            );
+        }
+    }
+
+    #[test]
+    fn add_column_fk_constraint_with_match_clause() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("fk_constraint".to_string())),
+            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause {
+                table_name: Identifier::Single("other_table".to_string()),
+                columns: vec![],
+                constraint_actions: vec![FKConstraintAction::Match(Identifier::Single(
+                    "name".to_string(),
+                ))],
+                deferrable: None,
+            }),
+        });
+
+        run_sunny_day_test(
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT fk_constraint REFERENCES other_table MATCH name",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column_with_primary_key_constraint() {
+    fn add_column_fk_constraint_with_multiple_on_clauses() {
+        let expected_statement = column_constraint_statement(ColumnConstraint {
+            name: Some(Identifier::Single("fk_constraint".to_string())),
+            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause {
+                table_name: Identifier::Single("other_table".to_string()),
+                columns: vec![],
+                constraint_actions: vec![
+                    FKConstraintAction::OnUpdate(FKAction::SetNull),
+                    FKConstraintAction::OnDelete(FKAction::NoAction),
+                ],
+                deferrable: None,
+            }),
+        });
+
         run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT pk PRIMARY KEY ASC ON CONFLICT ABORT AUTOINCREMENT",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("pk".to_string())),
-                        constraint_type: ColumnConstraintType::PrimaryKey(PrimaryKeyConstraint {
-                            ordering: Some(Ordering::Asc),
-                            conflict_clause: ConflictClause::Abort,
-                            auto_increment: true,
-                        }),
-                    }],
-                }),
-            ),
+            "ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT fk_constraint REFERENCES other_table ON UPDATE SET NULL ON DELETE NO ACTION",
+            Statement::AlterTable(expected_statement),
         );
     }
 
     #[test]
-    fn alter_table_statement_add_column_with_not_null_constraint() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT nn_constraint NOT NULL ON CONFLICT FAIL",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("nn_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::NotNull(ConflictClause::Fail),
-                    }],
-                }),
-            ),
-        );
-    }
+    fn add_column_with_deferrable_clause() {
+        let deferrable_types = vec![
+            FKDeferrableType::Deferrable,
+            FKDeferrableType::InitiallyDeferred,
+            FKDeferrableType::InitiallyImmediate,
+            FKDeferrableType::Not(Box::new(FKDeferrableType::Deferrable)),
+            FKDeferrableType::Not(Box::new(FKDeferrableType::InitiallyDeferred)),
+            FKDeferrableType::Not(Box::new(FKDeferrableType::InitiallyImmediate)),
+        ];
 
-    #[test]
-    fn alter_table_statement_add_column_with_unique_constraint() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT un_constraint UNIQUE ON CONFLICT ROLLBACK",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("un_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::Unique(ConflictClause::Rollback),
-                    }],
-                }),
-            ),
-        );
-    }
+        impl Display for FKDeferrableType {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    FKDeferrableType::Deferrable => write!(f, "DEFERRABLE"),
+                    FKDeferrableType::Not(deferrable_type) => write!(f, "NOT {}", deferrable_type),
+                    FKDeferrableType::InitiallyDeferred => {
+                        write!(f, "DEFERRABLE INITIALLY DEFERRED")
+                    }
+                    FKDeferrableType::InitiallyImmediate => {
+                        write!(f, "DEFERRABLE INITIALLY IMMEDIATE")
+                    }
+                }
+            }
+        }
 
-    #[test]
-    fn alter_table_statement_add_column_with_check_constraint() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT chk_constraint CHECK (column_name > 0)",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("chk_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::Check(
-                            binary_op_expression(BinaryOp::GreaterThan,
-                                identifier_expression(&["column_name"]), 
-                                numeric_literal_expression("0")
-                            )
-                        ),
-                    }],
+        for deferrable_type in deferrable_types.iter() {
+            let expected_statement = column_constraint_statement(ColumnConstraint {
+                name: Some(Identifier::Single("fk_constraint".to_string())),
+                constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause {
+                    table_name: Identifier::Single("other_table".to_string()),
+                    columns: vec![],
+                    constraint_actions: vec![],
+                    deferrable: Some(deferrable_type.clone()),
                 }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_default_constraint() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT default_constraint DEFAULT 'default_value'",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("default_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::Default(
-                            string_literal_expression("'default_value'")
-                        ),
-                    }],
-                }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_default_expression_constraint() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT default_constraint DEFAULT (column_name + 1)",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("default_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::Default(
-                            binary_op_expression(BinaryOp::Plus,
-                                identifier_expression(&["column_name"]), 
-                                numeric_literal_expression("1")
-                            )
-                        ),
-                    }],
-                }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_collate_constraint() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT collate_constraint COLLATE utf8_bin",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("collate_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::Collate(Identifier::Single("utf8_bin".to_string())),
-                    }],
-                }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_fk_constraint() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT fk_constraint REFERENCES other_table(column_name)",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("fk_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                            table_name: Identifier::Single("other_table".to_string()),
-                            columns: vec![Identifier::Single("column_name".to_string())],
-                            constraint_actions: vec![],
-                            deferrable: None,
-                        }),
-                    }],
-                }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_fk_constraint_without_column_names() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT fk_constraint REFERENCES other_table",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("fk_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                            table_name: Identifier::Single("other_table".to_string()),
-                            columns: vec![],
-                            constraint_actions: vec![],
-                            deferrable: None,
-                        }),
-                    }],
-                }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_fk_constraint_with_on_clause() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT fk_constraint REFERENCES other_table ON UPDATE SET NULL",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![ColumnConstraint {
-                        name: Some(Identifier::Single("fk_constraint".to_string())),
-                        constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                            table_name: Identifier::Single("other_table".to_string()),
-                            columns: vec![],
-                            constraint_actions: vec![FKConstraintAction::OnUpdate(FKAction::SetNull)],
-                            deferrable: None,
-                        }),
-                    }],
-                }),
-            ),
-        );
-
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT fk_constraint REFERENCES other_table ON DELETE SET DEFAULT",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: Some(Identifier::Single("fk_constraint".to_string())),
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![FKConstraintAction::OnDelete(FKAction::SetDefault)],
-                                deferrable: None,
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT fk_constraint REFERENCES other_table ON UPDATE NO ACTION",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: Some(Identifier::Single("fk_constraint".to_string())),
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![FKConstraintAction::OnUpdate(FKAction::NoAction)],
-                                deferrable: None,
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT fk_constraint REFERENCES other_table ON UPDATE CASCADE",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: Some(Identifier::Single("fk_constraint".to_string())),
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![FKConstraintAction::OnUpdate(FKAction::Cascade)],
-                                deferrable: None,
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT fk_constraint REFERENCES other_table ON UPDATE RESTRICT",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: Some(Identifier::Single("fk_constraint".to_string())),
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![FKConstraintAction::OnUpdate(FKAction::Restrict)],
-                                deferrable: None,
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_fk_constraint_with_match_clause() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) CONSTRAINT fk_constraint REFERENCES other_table MATCH name",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: Some(Identifier::Single("fk_constraint".to_string())),
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![
-                                    FKConstraintAction::Match(Identifier::Single("name".to_string())),
-                                ],
-                                deferrable: None,
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_fk_constraint_with_multiple_on_clauses() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) REFERENCES other_table ON UPDATE SET NULL ON DELETE NO ACTION",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: None,
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![
-                                    FKConstraintAction::OnUpdate(FKAction::SetNull),
-                                    FKConstraintAction::OnDelete(FKAction::NoAction),
-                                ],
-                                deferrable: None,
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-    }
-
-    #[test]
-    fn alter_table_statement_add_column_with_deferrable_clause() {
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) REFERENCES other_table DEFERRABLE",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: None,
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![],
-                                deferrable: Some(FKDeferrableType::Deferrable),
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) REFERENCES other_table NOT DEFERRABLE",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: None,
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![],
-                                deferrable: Some(FKDeferrableType::Not(Box::new(FKDeferrableType::Deferrable))),
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) REFERENCES other_table NOT DEFERRABLE INITIALLY DEFERRED",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: None,
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![],
-                                deferrable: Some(FKDeferrableType::Not(Box::new(FKDeferrableType::InitiallyDeferred))),
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
-
-        run_sunny_day_test(
-            "ALTER TABLE table_name ADD COLUMN column_name varchar(-10, 20) REFERENCES other_table DEFERRABLE INITIALLY IMMEDIATE",
-            alter_table_statement(
-                Identifier::Single("table_name".to_string()),
-                AlterTableStatementType::AddColumn(ColumnDefinition{
-                    column_name: Identifier::Single("column_name".to_string()),
-                    column_type: Some(DataType::BoundedDataType("varchar".to_string(), "-10".to_string(), "20".to_string())),
-                    column_constraints: vec![
-                        ColumnConstraint {
-                            name: None,
-                            constraint_type: ColumnConstraintType::ForeignKey(ForeignKeyClause{
-                                table_name: Identifier::Single("other_table".to_string()),
-                                columns: vec![],
-                                constraint_actions: vec![],
-                                deferrable: Some(FKDeferrableType::InitiallyImmediate),
-                            }),
-                        }
-                    ],
-                }),
-            ),
-        );
+            });
+            run_sunny_day_test(
+                &format!("ALTER TABLE table_name ADD COLUMN column_name integer CONSTRAINT fk_constraint REFERENCES other_table {}", deferrable_type),
+                Statement::AlterTable(expected_statement),
+            );
+        }
     }
 }
