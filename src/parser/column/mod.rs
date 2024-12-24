@@ -1,14 +1,11 @@
 use crate::{
     ColumnConstraint, ColumnConstraintType, ColumnDefinition, ConflictClause, Expression, FKAction,
     FKConstraintAction, FKDeferrableType, ForeignKeyClause, GeneratedColumnConstraint,
-    GeneratedColumnType, Identifier, Keyword, LiteralValue, Ordering, PrimaryKeyConstraint,
-    TokenType,
+    GeneratedColumnType, Identifier, Keyword, LiteralValue, PrimaryKeyConstraint, TokenType,
 };
 
-use super::{
-    expression::{DataTypeParser, ExpressionParser, IdentifierParser},
-    Parser, ParsingError,
-};
+use super::expression::{DataTypeParser, ExpressionParser, IdentifierParser};
+use super::{Parser, ParsingError};
 
 pub trait ColumnDefinitionParser {
     fn parse_column_definition(&mut self) -> Result<ColumnDefinition, ParsingError>;
@@ -82,13 +79,7 @@ impl<'a> ColumnDefinitionParser for Parser<'a> {
                 self.consume_as_keyword(Keyword::Primary)?;
                 self.consume_as_keyword(Keyword::Key)?;
 
-                let ordering = if self.consume_as_keyword(Keyword::Asc).is_ok() {
-                    Some(Ordering::Asc)
-                } else if self.consume_as_keyword(Keyword::Desc).is_ok() {
-                    Some(Ordering::Desc)
-                } else {
-                    None
-                };
+                let ordering = self.parse_ordering()?;
 
                 // Parse the optional on conflict clause
                 let conflict_clause = self.parse_on_conflict_clause()?;

@@ -1,6 +1,6 @@
 use crate::{
     parser::select::SelectStatementParser, ConflictClause, Identifier, IndexedColumn,
-    InsertStatement, InsertValues, Keyword, Ordering, QualifiedTableName, TokenType, UpsertAction,
+    InsertStatement, InsertValues, Keyword, QualifiedTableName, TokenType, UpsertAction,
     UpsertClause, UpsertConflictTarget, UpsertUpdate,
 };
 
@@ -33,8 +33,6 @@ pub trait InsertStatementParser {
     fn parse_indexed_columns(&mut self) -> Result<Vec<IndexedColumn>, ParsingError>;
 
     fn parse_indexed_column(&mut self) -> Result<IndexedColumn, ParsingError>;
-
-    fn parse_ordering(&mut self) -> Result<Option<Ordering>, ParsingError>;
 }
 
 impl<'a> InsertStatementParser for Parser<'a> {
@@ -212,15 +210,6 @@ impl<'a> InsertStatementParser for Parser<'a> {
         let column = self.parse_expression()?;
         let ordering = self.parse_ordering()?;
         Ok(IndexedColumn { column, ordering })
-    }
-
-    fn parse_ordering(&mut self) -> Result<Option<Ordering>, ParsingError> {
-        if self.consume_as_keyword(Keyword::Asc).is_ok() {
-            return Ok(Some(Ordering::Asc));
-        } else if self.consume_as_keyword(Keyword::Desc).is_ok() {
-            return Ok(Some(Ordering::Desc));
-        }
-        Ok(None)
     }
 }
 

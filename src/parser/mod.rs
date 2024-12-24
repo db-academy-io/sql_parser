@@ -32,7 +32,7 @@ use update::*;
 use window::*;
 
 use crate::ast::{IndexedType, LimitClause, OrderingTerm, Statement};
-use crate::{Keyword, Token, TokenType, Tokenizer};
+use crate::{Keyword, Ordering, Token, TokenType, Tokenizer};
 
 /// A parser for SQLite SQL statements
 pub struct Parser<'a> {
@@ -250,6 +250,16 @@ impl<'a> Parser<'a> {
         } else {
             Ok(false)
         }
+    }
+
+    /// Parse an ordering if it exists, i.e. ASC or DESC
+    fn parse_ordering(&mut self) -> Result<Option<Ordering>, ParsingError> {
+        if self.consume_as_keyword(Keyword::Asc).is_ok() {
+            return Ok(Some(Ordering::Asc));
+        } else if self.consume_as_keyword(Keyword::Desc).is_ok() {
+            return Ok(Some(Ordering::Desc));
+        }
+        Ok(None)
     }
 
     /// Parse an indexed type if it exists
