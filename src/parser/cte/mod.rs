@@ -135,7 +135,7 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-pub mod test_cte_statement_parser {
+pub mod cte_statement_tests {
     use super::super::select::test_utils::select_star_from;
     use super::test_utils::cte_expression;
     use crate::{
@@ -144,7 +144,26 @@ pub mod test_cte_statement_parser {
     };
 
     #[test]
-    fn test_cte_statement_with_recursive() {
+    fn cte_statement_test() {
+        let mut expected_stmt = select_statement();
+        expected_stmt.with_cte = Some(WithCteStatement {
+            recursive: false,
+            cte_expressions: vec![cte_expression(
+                Identifier::from("cte_1"),
+                vec![],
+                None,
+                select_star_from(Identifier::from("cte_table")),
+            )],
+        });
+
+        run_sunny_day_test(
+            "WITH cte_1 AS (SELECT * FROM cte_table) SELECT * FROM table_name1",
+            Statement::Select(expected_stmt),
+        );
+    }
+
+    #[test]
+    fn recursive_cte_statement() {
         let mut expected_stmt = select_statement();
         expected_stmt.with_cte = Some(WithCteStatement {
             recursive: true,
@@ -163,7 +182,7 @@ pub mod test_cte_statement_parser {
     }
 
     #[test]
-    fn test_cte_statement_with_multiple_ctes() {
+    fn cte_statement_with_multiple_ctes() {
         let ctes = WithCteStatement {
             recursive: false,
             cte_expressions: vec![
@@ -192,7 +211,7 @@ pub mod test_cte_statement_parser {
     }
 
     #[test]
-    fn test_cte_statement_with_materialized() {
+    fn cte_statement_with_materialized() {
         let materialization_types = vec![
             MaterializationType::Materialized,
             MaterializationType::NotMaterialized,
@@ -221,7 +240,7 @@ pub mod test_cte_statement_parser {
     }
 
     #[test]
-    fn test_cte_statement_with_column_names() {
+    fn cte_statement_with_column_names() {
         let mut expected_stmt = select_statement();
         expected_stmt.with_cte = Some(WithCteStatement {
             recursive: false,

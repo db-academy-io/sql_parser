@@ -202,7 +202,6 @@ impl<'a> SelectStatementParser for Parser<'a> {
         }
 
         if let Ok(id) = self.parse_identifier() {
-            dbg!("parse_select_from_clause");
             if self.peek_as(TokenType::LeftParen).is_ok() {
                 self.consume_as(TokenType::LeftParen)?;
 
