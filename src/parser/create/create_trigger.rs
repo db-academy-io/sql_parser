@@ -194,7 +194,7 @@ mod create_trigger_tests {
         },
         parser::{
             create::create_trigger::test_utils::create_trigger_statement,
-            delete::test_utils::delete_statement2, insert::test_utils::insert_statement,
+            delete::test_utils::delete_statement, insert::test_utils::insert_statement,
             select::test_utils::select_statement, test_utils::run_sunny_day_test,
             update::test_utils::update_statement2,
         },
@@ -362,7 +362,7 @@ mod create_trigger_tests {
         expected.trigger_statements = vec![
             TriggerStatement::Update(update_statement2()),
             TriggerStatement::Insert(insert_statement()),
-            TriggerStatement::Delete(delete_statement2()),
+            TriggerStatement::Delete(delete_statement()),
             TriggerStatement::Select(select_statement()),
         ];
 

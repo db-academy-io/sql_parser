@@ -47,7 +47,7 @@ mod tests {
     use crate::parser::create::create_trigger::test_utils::create_trigger_statement;
     use crate::parser::create::create_view::test_utils::create_view_statement;
     use crate::parser::create::create_virtual_table::test_utils::create_virtual_table_statement;
-    use crate::parser::delete::test_utils::delete_statement2;
+    use crate::parser::delete::test_utils::delete_statement;
     use crate::parser::drop::drop_index::test_utils::drop_index_statement;
     use crate::parser::drop::drop_table::test_utils::drop_table_statement;
     use crate::parser::drop::drop_trigger::test_utils::drop_trigger_statement;
@@ -205,7 +205,7 @@ mod tests {
     #[test]
     fn test_explain_statement_delete() {
         let explain_statement = ExplainStatement {
-            statement: Box::new(Statement::Delete(delete_statement2())),
+            statement: Box::new(Statement::Delete(delete_statement())),
             query_plan: false,
         };
 

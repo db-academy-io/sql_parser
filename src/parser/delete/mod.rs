@@ -67,23 +67,9 @@ impl<'a> DeleteStatementParser for Parser<'a> {
 #[cfg(test)]
 pub mod test_utils {
 
-    use crate::{
-        CteExpression, DeleteStatement, Expression, Identifier, LimitClause, OrderingTerm,
-        QualifiedTableName, ReturningClause, Statement, WithCteStatement,
-    };
+    use crate::{CteExpression, DeleteStatement, Identifier, QualifiedTableName, WithCteStatement};
 
-    pub fn delete_statement(table_name: QualifiedTableName) -> Statement {
-        Statement::Delete(DeleteStatement {
-            with_cte: None,
-            table_name,
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: None,
-            limit: None,
-        })
-    }
-
-    pub fn delete_statement2() -> DeleteStatement {
+    pub fn delete_statement() -> DeleteStatement {
         DeleteStatement {
             with_cte: None,
             table_name: QualifiedTableName::from(Identifier::from("table_name1")),
@@ -94,40 +80,12 @@ pub mod test_utils {
         }
     }
 
-    pub fn delete_statement_with_where_clause(
-        table_name: QualifiedTableName,
-        where_clause: Expression,
-    ) -> Statement {
-        Statement::Delete(DeleteStatement {
-            with_cte: None,
-            table_name,
-            where_clause: Some(Box::new(where_clause)),
-            returning_clause: vec![],
-            order_by: None,
-            limit: None,
-        })
-    }
-
-    pub fn delete_statement_with_returning_clause(
-        table_name: QualifiedTableName,
-        returning_clause: Vec<ReturningClause>,
-    ) -> Statement {
-        Statement::Delete(DeleteStatement {
-            with_cte: None,
-            table_name,
-            where_clause: None,
-            returning_clause,
-            order_by: None,
-            limit: None,
-        })
-    }
-
     pub fn delete_statement_with_cte_clause(
         recursive: bool,
         cte_expressions: Vec<CteExpression>,
         table_name: QualifiedTableName,
-    ) -> Statement {
-        Statement::Delete(DeleteStatement {
+    ) -> DeleteStatement {
+        DeleteStatement {
             with_cte: Some(WithCteStatement {
                 recursive,
                 cte_expressions,
@@ -137,46 +95,13 @@ pub mod test_utils {
             returning_clause: vec![],
             order_by: None,
             limit: None,
-        })
-    }
-
-    pub fn delete_statement_with_order_by_clause(
-        table_name: QualifiedTableName,
-        order_by: Vec<OrderingTerm>,
-    ) -> Statement {
-        Statement::Delete(DeleteStatement {
-            with_cte: None,
-            table_name,
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: Some(order_by),
-            limit: None,
-        })
-    }
-
-    pub fn delete_statement_with_limit_clause(
-        table_name: QualifiedTableName,
-        limit: LimitClause,
-    ) -> Statement {
-        Statement::Delete(DeleteStatement {
-            with_cte: None,
-            table_name,
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: None,
-            limit: Some(limit),
-        })
+        }
     }
 }
 
 #[cfg(test)]
-mod tests_delete_statements {
-    use test_utils::{
-        delete_statement, delete_statement_with_limit_clause,
-        delete_statement_with_order_by_clause, delete_statement_with_returning_clause,
-        delete_statement_with_where_clause,
-    };
-
+mod delete_statement_tests {
+    use super::test_utils::delete_statement;
     use crate::{
         expression::test_utils::{
             binary_op_expression, collate_expression, identifier_expression,
@@ -184,229 +109,229 @@ mod tests_delete_statements {
         },
         parser::test_utils::run_sunny_day_test,
         BinaryOp, Identifier, IndexedType, LimitClause, NullsOrdering, Ordering, OrderingTerm,
-        Statement,
+        QualifiedTableName, ReturningClause, Statement,
     };
 
-    use super::*;
-
     #[test]
-    fn test_parse_delete_statement_basic() {
-        let expected_statement = delete_statement(QualifiedTableName {
-            table_id: Identifier::Single("table_1".to_string()),
-            alias: None,
-            indexed_type: None,
-        });
+    fn delete_statement_test() {
+        let expected_statement = delete_statement();
 
-        run_sunny_day_test("DELETE FROM table_1", expected_statement);
+        run_sunny_day_test(
+            "DELETE FROM table_name1",
+            Statement::Delete(expected_statement),
+        );
     }
 
     #[test]
-    fn test_parse_delete_statement_with_schema() {
-        let expected_statement = delete_statement(QualifiedTableName {
-            table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
-            alias: None,
-            indexed_type: None,
-        });
+    fn delete_statement_with_schema() {
+        let mut expected_statement = delete_statement();
+        expected_statement.table_name.table_id =
+            Identifier::Compound(vec!["schema_1".to_string(), "table_name1".to_string()]);
 
-        run_sunny_day_test("DELETE FROM schema_1.table_1", expected_statement);
+        run_sunny_day_test(
+            "DELETE FROM schema_1.table_name1",
+            Statement::Delete(expected_statement),
+        );
     }
 
     #[test]
-    fn test_parse_delete_statement_with_alias() {
-        let expected_statement = delete_statement(QualifiedTableName {
+    fn delete_statement_with_alias() {
+        let mut expected_statement = delete_statement();
+        expected_statement.table_name = QualifiedTableName {
             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
             alias: Some("alias_1".to_string()),
             indexed_type: None,
-        });
+        };
 
         run_sunny_day_test(
             "DELETE FROM schema_1.table_1 AS alias_1",
-            expected_statement,
+            Statement::Delete(expected_statement),
         );
     }
 
     #[test]
-    fn test_parse_delete_statement_with_indexed_type() {
-        let expected_statement = delete_statement(QualifiedTableName {
+    fn delete_statement_with_indexed_type() {
+        let mut expected_statement = delete_statement();
+        expected_statement.table_name = QualifiedTableName {
             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
             alias: Some("alias_1".to_string()),
             indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
-        });
+        };
 
         run_sunny_day_test(
             "DELETE FROM schema_1.table_1 AS alias_1 INDEXED BY index_1",
-            expected_statement,
+            Statement::Delete(expected_statement),
         );
 
-        let expected_statement = delete_statement(QualifiedTableName {
+        let mut expected_statement = delete_statement();
+        expected_statement.table_name = QualifiedTableName {
             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
             alias: Some("alias_1".to_string()),
             indexed_type: Some(IndexedType::NotIndexed),
-        });
+        };
 
         run_sunny_day_test(
             "DELETE FROM schema_1.table_1 AS alias_1 NOT INDEXED",
-            expected_statement,
+            Statement::Delete(expected_statement),
         );
     }
 
     #[test]
-    fn test_parse_delete_statement_with_where_clause() {
-        let expected_statement = delete_statement_with_where_clause(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-            numeric_literal_expression("1"),
+    fn delete_statement_with_where_clause() {
+        let mut expected_statement = delete_statement();
+        expected_statement.where_clause = Some(Box::new(numeric_literal_expression("1")));
+
+        run_sunny_day_test(
+            "DELETE FROM table_name1 WHERE 1",
+            Statement::Delete(expected_statement),
         );
-        run_sunny_day_test("DELETE FROM table_1 WHERE 1", expected_statement);
     }
 
     #[test]
-    fn test_parse_delete_statement_with_where_clause_with_column_expression() {
-        let expected_statement = delete_statement_with_where_clause(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-            binary_op_expression(
-                BinaryOp::Equals,
+    fn delete_statement_with_where_clause_and_column_expression() {
+        let mut expected_statement = delete_statement();
+        expected_statement.where_clause = Some(Box::new(binary_op_expression(
+            BinaryOp::Equals,
+            identifier_expression(&["column_1"]),
+            string_literal_expression("'abc'"),
+        )));
+
+        run_sunny_day_test(
+            "DELETE FROM table_name1 WHERE column_1 = 'abc'",
+            Statement::Delete(expected_statement),
+        );
+    }
+
+    #[test]
+    fn delete_statement_with_returning_clause() {
+        let mut expected_statement = delete_statement();
+        expected_statement.returning_clause = vec![ReturningClause::Wildcard];
+
+        run_sunny_day_test(
+            "DELETE FROM table_name1 RETURNING *",
+            Statement::Delete(expected_statement),
+        );
+    }
+
+    #[test]
+    fn delete_statement_with_multiple_returning_clauses() {
+        let mut expected_statement = delete_statement();
+        expected_statement.returning_clause = vec![
+            ReturningClause::Wildcard,
+            ReturningClause::Expr(numeric_literal_expression("1")),
+            ReturningClause::ExprWithAlias(
                 identifier_expression(&["column_1"]),
-                string_literal_expression("'abc'"),
+                "alias_1".to_string(),
             ),
-        );
-        run_sunny_day_test(
-            "DELETE FROM table_1 WHERE column_1 = 'abc'",
-            expected_statement,
-        );
-    }
-
-    #[test]
-    fn test_parse_delete_statement_with_returning_clause() {
-        let expected_statement = delete_statement_with_returning_clause(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-            vec![ReturningClause::Wildcard],
-        );
-
-        run_sunny_day_test("DELETE FROM table_1 RETURNING *", expected_statement);
-    }
-
-    #[test]
-    fn test_parse_delete_statement_with_returning_clauses() {
-        let expected_statement = delete_statement_with_returning_clause(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-            vec![
-                ReturningClause::Wildcard,
-                ReturningClause::Expr(numeric_literal_expression("1")),
-                ReturningClause::ExprWithAlias(
-                    identifier_expression(&["column_1"]),
-                    "alias_1".to_string(),
-                ),
-            ],
-        );
+        ];
 
         run_sunny_day_test(
-            "DELETE FROM table_1 RETURNING *, 1, column_1 AS alias_1",
-            expected_statement,
+            "DELETE FROM table_name1 RETURNING *, 1, column_1 AS alias_1",
+            Statement::Delete(expected_statement),
         );
     }
 
     #[test]
-    fn test_parse_delete_statement_with_order_by_clause() {
-        let expected_statement = delete_statement_with_order_by_clause(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-            vec![
-                OrderingTerm {
-                    expression: Box::new(identifier_expression(&["column_1"])),
-                    ordering: Some(Ordering::Asc),
-                    nulls_ordering: None,
-                },
-                OrderingTerm {
-                    expression: Box::new(collate_expression(
-                        identifier_expression(&["column_2"]),
-                        "binary".to_string(),
-                    )),
-                    ordering: None,
-                    nulls_ordering: Some(NullsOrdering::Last),
-                },
-            ],
-        );
+    fn delete_statement_with_order_by_clause() {
+        let mut expected_statement = delete_statement();
+        expected_statement.order_by = Some(vec![
+            OrderingTerm {
+                expression: Box::new(identifier_expression(&["column_1"])),
+                ordering: Some(Ordering::Asc),
+                nulls_ordering: None,
+            },
+            OrderingTerm {
+                expression: Box::new(collate_expression(
+                    identifier_expression(&["column_2"]),
+                    "binary".to_string(),
+                )),
+                ordering: None,
+                nulls_ordering: Some(NullsOrdering::Last),
+            },
+        ]);
         run_sunny_day_test(
-            "DELETE FROM table_1 ORDER BY column_1 ASC, column_2 COLLATE binary NULLS LAST",
-            expected_statement,
+            "DELETE FROM table_name1 ORDER BY column_1 ASC, column_2 COLLATE binary NULLS LAST",
+            Statement::Delete(expected_statement),
         );
     }
 
     #[test]
-    fn test_parse_delete_statement_with_limit_clause() {
-        let expected_statement = delete_statement_with_limit_clause(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-            LimitClause {
-                limit: Box::new(numeric_literal_expression("10")),
-                offset: None,
-                additional_limit: None,
-            },
-        );
-        run_sunny_day_test("DELETE FROM table_1 LIMIT 10", expected_statement);
-
-        let expected_statement = delete_statement_with_limit_clause(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-            LimitClause {
-                limit: Box::new(numeric_literal_expression("10")),
-                offset: Some(Box::new(numeric_literal_expression("4"))),
-                additional_limit: None,
-            },
-        );
-        run_sunny_day_test("DELETE FROM table_1 LIMIT 10 OFFSET 4", expected_statement);
-
-        let expected_statement = delete_statement_with_limit_clause(
-            QualifiedTableName::from(Identifier::Single("table_1".to_string())),
-            LimitClause {
-                limit: Box::new(numeric_literal_expression("10")),
-                offset: None,
-                additional_limit: Some(Box::new(numeric_literal_expression("40"))),
-            },
-        );
-        run_sunny_day_test("DELETE FROM table_1 LIMIT 10, 40", expected_statement);
-    }
-
-    #[test]
-    fn test_parse_delete_statement_with_all_clauses() {
-        let expected_statement = Statement::Delete(DeleteStatement {
-            with_cte: None,
-            table_name: QualifiedTableName {
-                table_id: Identifier::Single("table_1".to_string()),
-                alias: Some("alias_1".to_string()),
-                indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
-            },
-            where_clause: Some(Box::new(binary_op_expression(
-                BinaryOp::Equals,
-                identifier_expression(&["column_1"]),
-                string_literal_expression("'abc'"),
-            ))),
-            returning_clause: vec![
-                ReturningClause::Wildcard,
-                ReturningClause::Expr(numeric_literal_expression("1")),
-                ReturningClause::ExprWithAlias(
-                    identifier_expression(&["column_1"]),
-                    "alias_1".to_string(),
-                ),
-            ],
-            order_by: None,
-            limit: None,
+    fn delete_statement_with_limit_clause() {
+        let mut expected_statement = delete_statement();
+        expected_statement.limit = Some(LimitClause {
+            limit: Box::new(numeric_literal_expression("10")),
+            offset: None,
+            additional_limit: None,
         });
+        run_sunny_day_test(
+            "DELETE FROM table_name1 LIMIT 10",
+            Statement::Delete(expected_statement),
+        );
+
+        let mut expected_statement = delete_statement();
+        expected_statement.limit = Some(LimitClause {
+            limit: Box::new(numeric_literal_expression("10")),
+            offset: Some(Box::new(numeric_literal_expression("4"))),
+            additional_limit: None,
+        });
+        run_sunny_day_test(
+            "DELETE FROM table_name1 LIMIT 10 OFFSET 4",
+            Statement::Delete(expected_statement),
+        );
+
+        let mut expected_statement = delete_statement();
+        expected_statement.limit = Some(LimitClause {
+            limit: Box::new(numeric_literal_expression("10")),
+            offset: None,
+            additional_limit: Some(Box::new(numeric_literal_expression("40"))),
+        });
+        run_sunny_day_test(
+            "DELETE FROM table_name1 LIMIT 10, 40",
+            Statement::Delete(expected_statement),
+        );
+    }
+
+    #[test]
+    fn delete_statement_with_all_clauses() {
+        let mut expected_statement = delete_statement();
+        expected_statement.table_name = QualifiedTableName {
+            table_id: Identifier::Single("table_name1".to_string()),
+            alias: Some("alias_1".to_string()),
+            indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
+        };
+        expected_statement.where_clause = Some(Box::new(binary_op_expression(
+            BinaryOp::Equals,
+            identifier_expression(&["column_1"]),
+            string_literal_expression("'abc'"),
+        )));
+        expected_statement.returning_clause = vec![
+            ReturningClause::Wildcard,
+            ReturningClause::Expr(numeric_literal_expression("1")),
+            ReturningClause::ExprWithAlias(
+                identifier_expression(&["column_1"]),
+                "alias_1".to_string(),
+            ),
+        ];
+        expected_statement.order_by = None;
+        expected_statement.limit = None;
 
         run_sunny_day_test(
-            "DELETE FROM table_1 AS alias_1 INDEXED BY index_1 WHERE column_1 = 'abc' RETURNING *, 1, column_1 AS alias_1",
-            expected_statement,
+            "DELETE FROM table_name1 AS alias_1 INDEXED BY index_1 WHERE column_1 = 'abc' RETURNING *, 1, column_1 AS alias_1",
+            Statement::Delete(expected_statement),
         );
     }
 }
 
 #[cfg(test)]
-mod test_delete_statements_with_cte {
+mod delete_statements_with_cte_tests {
     use super::super::cte::test_utils::cte_expression;
     use super::test_utils::delete_statement_with_cte_clause;
     use crate::parser::select::test_utils::select_from;
     use crate::parser::test_utils::*;
-    use crate::{FromClause, Identifier, QualifiedTableName};
+    use crate::{FromClause, Identifier, QualifiedTableName, Statement};
 
     #[test]
-    fn test_delete_with_cte() {
+    fn delete_with_cte() {
         let expected_statement = delete_statement_with_cte_clause(
             true,
             vec![cte_expression(
@@ -422,12 +347,12 @@ mod test_delete_statements_with_cte {
 
         run_sunny_day_test(
             "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) DELETE FROM cte_1",
-            expected_statement,
+            Statement::Delete(expected_statement),
         );
     }
 
     #[test]
-    fn test_delete_with_multiple_ctes() {
+    fn delete_with_multiple_ctes() {
         let expected_statement = delete_statement_with_cte_clause(
             false,
             vec![
@@ -453,7 +378,7 @@ mod test_delete_statements_with_cte {
 
         run_sunny_day_test(
             "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_table2) DELETE FROM cte_2",
-            expected_statement,
+            Statement::Delete(expected_statement),
         );
     }
 }
