@@ -185,7 +185,7 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod test_create_trigger_statements {
+mod create_trigger_tests {
     use std::fmt::Display;
 
     use crate::{
@@ -203,7 +203,7 @@ mod test_create_trigger_statements {
     };
 
     #[test]
-    fn test_create_trigger_statement() {
+    fn create_trigger_test() {
         let expected = create_trigger_statement();
         run_sunny_day_test(
             "CREATE TRIGGER trigger_name DELETE ON table_name BEGIN SELECT * FROM table_name; END;",
@@ -212,7 +212,7 @@ mod test_create_trigger_statements {
     }
 
     #[test]
-    fn test_create_temporary_trigger_statement() {
+    fn create_temporary_trigger_test() {
         let temp_keywords = vec![Keyword::Temporary, Keyword::Temp];
         let mut expected = create_trigger_statement();
         expected.temporary = true;
@@ -226,7 +226,7 @@ mod test_create_trigger_statements {
     }
 
     #[test]
-    fn test_create_trigger_statement_with_if_not_exists() {
+    fn create_trigger_with_if_not_exists() {
         let mut expected = create_trigger_statement();
         expected.if_not_exists = true;
 
@@ -237,7 +237,7 @@ mod test_create_trigger_statements {
     }
 
     #[test]
-    fn test_create_trigger_statement_with_trigger_schema() {
+    fn create_trigger_with_trigger_schema() {
         let mut expected = create_trigger_statement();
         expected.trigger_name =
             Identifier::Compound(vec!["schema_name".to_string(), "trigger_name".to_string()]);
@@ -249,7 +249,7 @@ mod test_create_trigger_statements {
     }
 
     #[test]
-    fn test_create_trigger_statement_with_trigger_pre_conditions() {
+    fn create_trigger_with_trigger_pre_conditions() {
         let trigger_pre_conditions = vec![
             TriggerPreCondition::Before,
             TriggerPreCondition::After,
@@ -271,7 +271,7 @@ mod test_create_trigger_statements {
     }
 
     #[test]
-    fn test_create_trigger_statement_with_trigger_event_types() {
+    fn create_trigger_with_trigger_event_types() {
         let trigger_event_types = vec![
             TriggerEventType::Delete,
             TriggerEventType::Insert,
@@ -331,7 +331,7 @@ mod test_create_trigger_statements {
     }
 
     #[test]
-    fn test_create_trigger_statement_with_for_each_row() {
+    fn create_trigger_with_for_each_row() {
         let mut expected = create_trigger_statement();
         expected.for_each_row = true;
 
@@ -342,7 +342,7 @@ mod test_create_trigger_statements {
     }
 
     #[test]
-    fn test_create_trigger_statement_with_when_clause() {
+    fn create_trigger_with_when_clause() {
         let mut expected = create_trigger_statement();
         expected.when_clause = Some(binary_op_expression(
             BinaryOp::Equals,
@@ -357,7 +357,7 @@ mod test_create_trigger_statements {
     }
 
     #[test]
-    fn test_create_trigger_statement_with_multiple_statements() {
+    fn create_trigger_with_multiple_statements() {
         let mut expected = create_trigger_statement();
         expected.trigger_statements = vec![
             TriggerStatement::Update(update_statement2()),

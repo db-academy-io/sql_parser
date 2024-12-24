@@ -68,7 +68,7 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod tests_create_virtual_table_parser {
+mod create_virtual_table_tests {
     use test_utils::create_virtual_table_statement;
 
     use crate::{
@@ -79,7 +79,7 @@ mod tests_create_virtual_table_parser {
     use super::*;
 
     #[test]
-    fn test_parse_create_virtual_table_statement_default() {
+    fn create_virtual_table_test() {
         run_sunny_day_test(
             "CREATE VIRTUAL TABLE test_table USING test_module",
             Statement::CreateVirtualTable(create_virtual_table_statement()),
@@ -87,7 +87,7 @@ mod tests_create_virtual_table_parser {
     }
 
     #[test]
-    fn test_parse_create_virtual_table_statement_if_not_exists() {
+    fn create_virtual_table_with_if_not_exists() {
         let mut stmt = create_virtual_table_statement();
         stmt.if_not_exists = true;
 
@@ -98,7 +98,7 @@ mod tests_create_virtual_table_parser {
     }
 
     #[test]
-    fn test_parse_create_virtual_table_statement_with_schema() {
+    fn create_virtual_table_with_schema() {
         let mut stmt = create_virtual_table_statement();
         stmt.table_name =
             Identifier::Compound(vec!["test_schema".to_string(), "test_table".to_string()]);
@@ -110,7 +110,7 @@ mod tests_create_virtual_table_parser {
     }
 
     #[test]
-    fn test_parse_create_virtual_table_statement_with_module_arguments() {
+    fn create_virtual_table_with_module_arguments() {
         let mut stmt = create_virtual_table_statement();
         stmt.module_arguments = vec![
             string_literal_expression("'arg1'"),

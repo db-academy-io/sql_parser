@@ -59,13 +59,13 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod test_create_view_statement_parser {
+mod create_view_tests {
     use crate::{parser::test_utils::run_sunny_day_test, Identifier, Statement};
 
     use super::test_utils::create_view_statement;
 
     #[test]
-    fn test_parse_create_view_statement() {
+    fn create_view_test() {
         let expected_stmt = create_view_statement();
         run_sunny_day_test(
             "CREATE VIEW view_name AS SELECT * FROM table_name",
@@ -74,7 +74,7 @@ mod test_create_view_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_temporary_view_statement() {
+    fn create_temporary_view_test() {
         let mut expected_stmt = create_view_statement();
         expected_stmt.temporary = true;
         run_sunny_day_test(
@@ -88,7 +88,7 @@ mod test_create_view_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_view_statement_with_if_not_exists() {
+    fn create_view_with_if_not_exists() {
         let mut expected_stmt = create_view_statement();
         expected_stmt.if_not_exists = true;
         run_sunny_day_test(
@@ -98,7 +98,7 @@ mod test_create_view_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_view_statement_with_schema_name() {
+    fn create_view_with_schema_name() {
         let mut expected_stmt = create_view_statement();
         expected_stmt.view_name =
             Identifier::Compound(vec!["schema_name".to_string(), "view_name".to_string()]);
@@ -109,7 +109,7 @@ mod test_create_view_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_view_statement_with_columns() {
+    fn create_view_with_columns() {
         let mut expected_stmt = create_view_statement();
         expected_stmt.columns = vec![Identifier::from("column1"), Identifier::from("column2")];
         run_sunny_day_test(

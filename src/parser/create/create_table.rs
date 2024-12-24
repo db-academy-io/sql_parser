@@ -200,7 +200,7 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod test_create_table_statement_parser {
+mod create_table_tests {
     use crate::{
         expression::test_utils::identifier_expression, parser::test_utils::run_sunny_day_test,
         ColumnConstraint, ColumnConstraintType, ColumnDefinition, ConflictClause,
@@ -211,7 +211,7 @@ mod test_create_table_statement_parser {
     use super::test_utils::create_table_statement;
 
     #[test]
-    fn test_parse_create_table_statement() {
+    fn create_table_test() {
         let expected_stmt = create_table_statement();
         run_sunny_day_test(
             "CREATE TABLE table_name AS SELECT * FROM table_name",
@@ -220,7 +220,7 @@ mod test_create_table_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_temporary_table_statement() {
+    fn create_temporary_table_test() {
         let mut expected_stmt = create_table_statement();
         expected_stmt.temporary = true;
 
@@ -236,7 +236,7 @@ mod test_create_table_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_table_statement_with_if_not_exists() {
+    fn create_table_with_if_not_exists() {
         let mut expected_stmt = create_table_statement();
         expected_stmt.if_not_exists = true;
 
@@ -247,7 +247,7 @@ mod test_create_table_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_table_statement_with_schema() {
+    fn create_table_with_schema() {
         let mut expected_stmt = create_table_statement();
         expected_stmt.table_name =
             Identifier::Compound(vec!["schema_name".to_string(), "table_name".to_string()]);
@@ -258,7 +258,7 @@ mod test_create_table_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_table_statement_with_column_definitions() {
+    fn create_table_with_column_definitions() {
         let mut expected_stmt = create_table_statement();
         expected_stmt.create_table_option =
             CreateTableOption::ColumnDefinitions(CreateTableColumnDef {
@@ -291,7 +291,7 @@ mod test_create_table_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_table_statement_with_table_constraints() {
+    fn create_table_with_table_constraints() {
         let mut expected_stmt = create_table_statement();
         expected_stmt.create_table_option =
             CreateTableOption::ColumnDefinitions(CreateTableColumnDef {
@@ -320,7 +320,7 @@ mod test_create_table_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_table_statement_with_table_options() {
+    fn create_table_with_table_options() {
         let table_options = vec![TableOption::WithoutRowId, TableOption::Strict];
 
         for option in table_options {

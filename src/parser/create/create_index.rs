@@ -64,28 +64,24 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod test_create_index_statement_parser {
-    use test_utils::create_index_statement;
-
+mod create_index_tests {
+    use super::test_utils::create_index_statement;
+    use crate::expression::test_utils::{
+        binary_op_expression, identifier_expression, numeric_literal_expression,
+    };
     use crate::{
-        expression::test_utils::{
-            binary_op_expression, identifier_expression, numeric_literal_expression,
-        },
-        parser::test_utils::run_sunny_day_test,
-        BinaryOp, Identifier, IndexedColumn, Statement,
+        parser::test_utils::run_sunny_day_test, BinaryOp, Identifier, IndexedColumn, Statement,
     };
 
-    use super::*;
-
     #[test]
-    fn test_parse_create_index_statement() {
+    fn create_index_test() {
         let sql = "CREATE INDEX index_name ON table_name (column1)";
         let expected = create_index_statement();
         run_sunny_day_test(sql, Statement::CreateIndex(expected));
     }
 
     #[test]
-    fn test_parse_create_unique_index_statement() {
+    fn create_unique_index() {
         let sql = "CREATE UNIQUE INDEX index_name ON table_name (column1)";
         let mut expected = create_index_statement();
         expected.unique = true;
@@ -93,7 +89,7 @@ mod test_create_index_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_index_statement_with_schema() {
+    fn create_index_with_schema() {
         let sql = "CREATE INDEX schema_name.index_name ON table_name (column1)";
         let mut expected = create_index_statement();
         expected.index_name =
@@ -102,7 +98,7 @@ mod test_create_index_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_index_statement_with_multiple_columns() {
+    fn create_index_with_multiple_columns() {
         let sql = "CREATE INDEX index_name ON table_name (column1, column2, column3, column4)";
         let mut expected = create_index_statement();
         expected.columns = vec![
@@ -127,7 +123,7 @@ mod test_create_index_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_index_statement_with_if_not_exists() {
+    fn create_index_with_if_not_exists() {
         let sql = "CREATE INDEX IF NOT EXISTS index_name ON table_name (column1)";
         let mut expected = create_index_statement();
         expected.if_not_exists = true;
@@ -135,7 +131,7 @@ mod test_create_index_statement_parser {
     }
 
     #[test]
-    fn test_parse_create_index_statement_with_where_clause() {
+    fn create_index_with_where_clause() {
         let sql = "CREATE INDEX index_name ON table_name (column1) WHERE column1 = 1";
         let mut expected = create_index_statement();
         expected.where_clause = Some(Box::new(binary_op_expression(
