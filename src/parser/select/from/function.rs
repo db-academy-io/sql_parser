@@ -27,11 +27,11 @@ impl<'a> SelectFromFunctionParser for Parser<'a> {
 
         let alias = self.parse_alias_after_as_keyword()?;
 
-        return Ok(FromClause::Function(SelectFromFunction {
+        Ok(FromClause::Function(SelectFromFunction {
             function_name,
             arguments,
             alias,
-        }));
+        }))
     }
 }
 
