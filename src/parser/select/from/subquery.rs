@@ -1,9 +1,8 @@
-use super::SelectFromParser;
+use super::{SelectFromFunctionParser, SelectFromParser};
 use crate::parser::select::SelectStatementParser;
 use crate::{
-    parser::{ExpressionParser, IdentifierParser, ParsingError},
-    FromClause, Keyword, Parser, QualifiedTableName, SelectFromFunction, SelectFromSubquery,
-    TokenType,
+    parser::{IdentifierParser, ParsingError},
+    FromClause, Keyword, Parser, QualifiedTableName, SelectFromSubquery, TokenType,
 };
 
 pub trait SelectFromSubqueryParser {
@@ -42,17 +41,7 @@ impl<'a> SelectFromSubqueryParser for Parser<'a> {
 
         if let Ok(id) = self.parse_identifier() {
             if self.peek_as(TokenType::LeftParen).is_ok() {
-                self.consume_as(TokenType::LeftParen)?;
-
-                let arguments = self.parse_comma_separated_expressions()?;
-
-                self.consume_as(TokenType::RightParen)?;
-                let alias = self.parse_alias_after_as_keyword()?;
-                return Ok(FromClause::Function(SelectFromFunction {
-                    function_name: id,
-                    arguments,
-                    alias,
-                }));
+                return self.parse_from_function(id);
             } else {
                 let alias = self.parse_alias_after_as_keyword()?;
                 let indexed_type = self.parse_indexed_type()?;
