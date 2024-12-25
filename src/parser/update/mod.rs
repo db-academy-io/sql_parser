@@ -4,7 +4,7 @@ use super::{
     delete::DeleteStatementParser,
     expression::{ExpressionParser, IdentifierParser},
     select::SelectStatementParser,
-    Parser, ParsingError,
+    Parser, ParsingError, SelectFromParser,
 };
 
 pub trait UpdateStatementParser {
