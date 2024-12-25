@@ -6,7 +6,7 @@ use crate::{
 pub trait ValuesStatementParser {
     fn parse_values_statement(&mut self) -> Result<ValuesStatement, ParsingError>;
 
-    fn parse_values_group(&mut self) -> Result<Vec<Expression>, ParsingError>;
+    fn parse_values_statement_group(&mut self) -> Result<Vec<Expression>, ParsingError>;
 }
 
 impl<'a> ValuesStatementParser for Parser<'a> {
@@ -16,10 +16,8 @@ impl<'a> ValuesStatementParser for Parser<'a> {
 
         // Check if the first token is a left parenthesis
         // which is mandatory for the VALUES statement
-        self.peek_as(TokenType::LeftParen)?;
-
         while self.peek_as(TokenType::LeftParen).is_ok() {
-            let group = self.parse_values_group()?;
+            let group = self.parse_values_statement_group()?;
 
             values.push(group);
 
@@ -33,7 +31,7 @@ impl<'a> ValuesStatementParser for Parser<'a> {
         Ok(ValuesStatement { values })
     }
 
-    fn parse_values_group(&mut self) -> Result<Vec<Expression>, ParsingError> {
+    fn parse_values_statement_group(&mut self) -> Result<Vec<Expression>, ParsingError> {
         self.consume_as(TokenType::LeftParen)?;
 
         let mut group = Vec::new();
@@ -53,88 +51,99 @@ impl<'a> ValuesStatementParser for Parser<'a> {
 }
 
 #[cfg(test)]
-pub(crate) mod select_values_tests {
-    use crate::{BinaryOp, Expression, SelectBody, SelectStatement, Statement, ValuesStatement};
+pub mod test_utils {
+    use crate::{Expression, SelectBody, SelectStatement, ValuesStatement};
 
-    use crate::parser::expression::test_utils::*;
-    use crate::parser::test_utils::run_sunny_day_test;
-
-    fn values_statement(values: Vec<Vec<Expression>>) -> Statement {
-        Statement::Select(SelectStatement {
+    pub fn values_statement(values: Vec<Vec<Expression>>) -> SelectStatement {
+        SelectStatement {
             with_cte: None,
             select: SelectBody::Values(ValuesStatement { values }),
             order_by: None,
             limit: None,
-        })
+        }
+    }
+}
+
+#[cfg(test)]
+mod values_statement_tests {
+    use super::test_utils::values_statement;
+    use crate::parser::expression::test_utils::*;
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::{BinaryOp, Statement};
+
+    #[test]
+    pub fn single_value() {
+        let expected = values_statement(vec![vec![numeric_literal_expression("1")]]);
+
+        run_sunny_day_test("VALUES (1)", Statement::Select(expected));
     }
 
     #[test]
-    pub fn test_values_statement_parser_single_value() {
-        run_sunny_day_test(
-            "VALUES (1)",
-            values_statement(vec![vec![numeric_literal_expression("1")]]),
-        );
+    pub fn multiple_values() {
+        let expected = values_statement(vec![vec![
+            numeric_literal_expression("1"),
+            numeric_literal_expression("2"),
+            numeric_literal_expression("3"),
+        ]]);
+
+        run_sunny_day_test("VALUES (1, 2, 3)", Statement::Select(expected));
     }
 
     #[test]
-    pub fn test_values_statement_parser_multiple_values() {
-        run_sunny_day_test(
-            "VALUES (1, 2, 3)",
-            values_statement(vec![vec![
+    pub fn single_expressions() {
+        let expected = values_statement(vec![vec![binary_op_expression(
+            BinaryOp::Plus,
+            numeric_literal_expression("1"),
+            numeric_literal_expression("2"),
+        )]]);
+
+        run_sunny_day_test("VALUES (1 + 2)", Statement::Select(expected));
+    }
+
+    #[test]
+    pub fn multiple_expressions() {
+        let expected = values_statement(vec![vec![
+            binary_op_expression(
+                BinaryOp::Plus,
                 numeric_literal_expression("1"),
                 numeric_literal_expression("2"),
+            ),
+            binary_op_expression(
+                BinaryOp::Mul,
                 numeric_literal_expression("3"),
-            ]]),
-        );
+                numeric_literal_expression("4"),
+            ),
+        ]]);
+
+        run_sunny_day_test("VALUES (1 + 2, 3 * 4)", Statement::Select(expected));
     }
 
     #[test]
-    pub fn test_values_statement_parser_multiple_expressions() {
-        run_sunny_day_test(
-            "VALUES (1 + 2, 3 * 4)",
-            values_statement(vec![vec![
-                binary_op_expression(
-                    BinaryOp::Plus,
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
-                ),
-                binary_op_expression(
-                    BinaryOp::Mul,
-                    numeric_literal_expression("3"),
-                    numeric_literal_expression("4"),
-                ),
-            ]]),
-        );
+    pub fn multiple_groups() {
+        let expected = values_statement(vec![
+            vec![numeric_literal_expression("1")],
+            vec![numeric_literal_expression("2")],
+            vec![numeric_literal_expression("3")],
+        ]);
+
+        run_sunny_day_test("VALUES (1), (2), (3)", Statement::Select(expected));
     }
 
     #[test]
-    pub fn test_values_statement_parser_multiple_groups() {
-        run_sunny_day_test(
-            "VALUES (1), (2), (3)",
-            values_statement(vec![
-                vec![numeric_literal_expression("1")],
-                vec![numeric_literal_expression("2")],
-                vec![numeric_literal_expression("3")],
-            ]),
-        );
-    }
+    pub fn multiple_expressions_groups() {
+        let expected = values_statement(vec![
+            vec![binary_op_expression(
+                BinaryOp::Plus,
+                numeric_literal_expression("1"),
+                numeric_literal_expression("2"),
+            )],
+            vec![binary_op_expression(
+                BinaryOp::Mul,
+                numeric_literal_expression("3"),
+                numeric_literal_expression("4"),
+            )],
+        ]);
 
-    #[test]
-    pub fn test_values_statement_parser_multiple_groups_with_expressions() {
-        run_sunny_day_test(
-            "VALUES (1 + 2), (3 * 4)",
-            values_statement(vec![
-                vec![binary_op_expression(
-                    BinaryOp::Plus,
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
-                )],
-                vec![binary_op_expression(
-                    BinaryOp::Mul,
-                    numeric_literal_expression("3"),
-                    numeric_literal_expression("4"),
-                )],
-            ]),
-        );
+        run_sunny_day_test("VALUES (1 + 2), (3 * 4)", Statement::Select(expected));
     }
 }
