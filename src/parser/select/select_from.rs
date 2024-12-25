@@ -191,148 +191,177 @@ impl<'a> SelectFromParser for Parser<'a> {
     }
 }
 
-// #[cfg(test)]
-// mod test_select_from_table_indexed {
-//     use super::test_utils::select_from;
-//     use crate::parser::test_utils::*;
-//     use crate::{FromClause, Identifier, IndexedType, QualifiedTableName, Statement};
+#[cfg(test)]
+pub mod test_utils {
+    use crate::{
+        DistinctType, Expression, FromClause, Identifier, QualifiedTableName, Select, SelectBody,
+        SelectFromSubquery, SelectItem, SelectStatement,
+    };
 
-//     #[test]
-//     fn test_select_from_table() {
-//         let expected_statement = select_from(FromClause::Table(QualifiedTableName::from(
-//             Identifier::Single("table_1".to_string()),
-//         )));
+    pub fn select_from_table(table: QualifiedTableName) -> SelectStatement {
+        SelectStatement {
+            with_cte: None,
+            select: SelectBody::Select(Select {
+                distinct_type: DistinctType::None,
+                columns: vec![SelectItem::Expression(Expression::Identifier(
+                    Identifier::Wildcard,
+                ))],
+                from: Some(FromClause::Table(table)),
+                ..Default::default()
+            }),
+            order_by: None,
+            limit: None,
+        }
+    }
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    pub fn select_from_subquery(subquery: SelectFromSubquery) -> SelectStatement {
+        SelectStatement {
+            with_cte: None,
+            select: SelectBody::Select(Select {
+                distinct_type: DistinctType::None,
+                columns: vec![SelectItem::Expression(Expression::Identifier(
+                    Identifier::Wildcard,
+                ))],
+                from: Some(FromClause::Subquery(subquery)),
+                ..Default::default()
+            }),
+            order_by: None,
+            limit: None,
+        }
+    }
+}
 
-//     #[test]
-//     fn test_select_from_table_with_schema() {
-//         let expected_statement = select_from(FromClause::Table(QualifiedTableName::from(
-//             Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
-//         )));
+#[cfg(test)]
+mod select_from_table {
+    use super::test_utils::select_from_table;
+    use crate::parser::test_utils::*;
+    use crate::{Identifier, IndexedType, QualifiedTableName, Statement};
 
-//         run_sunny_day_test(
-//             "SELECT * FROM schema_1.table_1",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn select_from_table_test() {
+        let expected_statement = select_from_table(QualifiedTableName::from(Identifier::Single(
+            "table_1".to_string(),
+        )));
 
-//     #[test]
-//     fn test_select_from_table_with_alias() {
-//         let expected_statement = select_from(FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
-//             alias: Some("alias".to_string()),
-//             indexed_type: None,
-//         }));
+        run_sunny_day_test(
+            "SELECT * FROM table_1",
+            Statement::Select(expected_statement),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "SELECT * FROM schema_1.table_1 AS alias",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn select_from_table_with_schema() {
+        let expected_statement =
+            select_from_table(QualifiedTableName::from(Identifier::Compound(vec![
+                "schema_1".to_string(),
+                "table_1".to_string(),
+            ])));
 
-//     #[test]
-//     fn test_select_from_table_with_alias_without_as_keyword() {
-//         let expected_statement = select_from(FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Single("table_1".to_string()),
-//             alias: Some("alias".to_string()),
-//             indexed_type: None,
-//         }));
+        run_sunny_day_test(
+            "SELECT * FROM schema_1.table_1",
+            Statement::Select(expected_statement),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 alias",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn select_from_table_with_alias() {
+        let expected_statement = select_from_table(QualifiedTableName {
+            table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
+            alias: Some("alias".to_string()),
+            indexed_type: None,
+        });
 
-//     #[test]
-//     fn test_select_from_table_with_alias_indexed() {
-//         let expected_statement = select_from(FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Single("table_1".to_string()),
-//             alias: Some("alias".to_string()),
-//             indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
-//         }));
+        run_sunny_day_test(
+            "SELECT * FROM schema_1.table_1 AS alias",
+            Statement::Select(expected_statement),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 alias INDEXED BY index_1",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn select_from_table_with_alias_without_as_keyword() {
+        let expected_statement = select_from_table(QualifiedTableName {
+            table_id: Identifier::Single("table_1".to_string()),
+            alias: Some("alias".to_string()),
+            indexed_type: None,
+        });
 
-//     #[test]
-//     fn test_select_from_table_not_indexed() {
-//         let expected_statement = select_from(FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Single("table_1".to_string()),
-//             alias: None,
-//             indexed_type: Some(IndexedType::NotIndexed),
-//         }));
+        run_sunny_day_test(
+            "SELECT * FROM table_1 alias",
+            Statement::Select(expected_statement),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 NOT INDEXED",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-// }
+    #[test]
+    fn select_from_table_with_alias_indexed() {
+        let expected_statement = select_from_table(QualifiedTableName {
+            table_id: Identifier::Single("table_1".to_string()),
+            alias: Some("alias".to_string()),
+            indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
+        });
 
-// #[cfg(test)]
-// mod test_select_from_subquery {
-//     use super::test_utils::{select_from, select_statement_with_columns};
-//     use crate::parser::test_utils::*;
-//     use crate::{
-//         DistinctType, Expression, FromClause, Identifier, SelectBody, SelectFromSubquery, SelectItem, SelectStatement, Statement
-//     };
+        run_sunny_day_test(
+            "SELECT * FROM table_1 alias INDEXED BY index_1",
+            Statement::Select(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_select_from_subquery() {
-//         let expected_statement = select_from(FromClause::Subquery(SelectFromSubquery {
-//             subquery: Box::new(SelectStatement::Select(select_statement_with_columns(
-//                 DistinctType::None,
-//                 vec![SelectItem::Expression(Expression::Identifier(
-//                     Identifier::Single("col1".to_string()),
-//                 ))],
-//             ))),
-//             alias: None,
-//         }));
+    #[test]
+    fn select_from_table_not_indexed() {
+        let expected_statement = select_from_table(QualifiedTableName {
+            table_id: Identifier::Single("table_1".to_string()),
+            alias: None,
+            indexed_type: Some(IndexedType::NotIndexed),
+        });
 
-//         run_sunny_day_test(
-//             "SELECT * FROM (SELECT col1)",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "SELECT * FROM table_1 NOT INDEXED",
+            Statement::Select(expected_statement),
+        );
+    }
+}
 
-//     #[test]
-//     fn test_select_from_subquery_aliased() {
-//         let expected_statement = select_from(FromClause::Subquery(SelectFromSubquery {
-//             subquery: Box::new(SelectStatement {
-//                 with_cte: None,
-//                 select: SelectBody::Select(select_statement_with_columns(
-//                     DistinctType::None,
-//                     vec![SelectItem::Expression(Expression::Identifier(
-//                         Identifier::NameWithWildcard("t".to_string()),
-//                     ))],
-//                 )),
-//                 order_by: None,
-//                 limit: None,
-//             }),
-//             alias: Some("alias".to_string()),
-//         }));
+#[cfg(test)]
+mod test_select_from_subquery {
+    use super::test_utils::{select_from_subquery, select_from_table};
+    use crate::parser::test_utils::*;
+    use crate::{Identifier, QualifiedTableName, SelectFromSubquery, Statement};
 
-//         run_sunny_day_test(
-//             "SELECT * FROM (SELECT t.* ) as alias",
-//             Statement::Select(expected_statement.clone()),
-//         );
+    #[test]
+    fn select_from_subquery_test() {
+        let expected_statement = select_from_subquery(SelectFromSubquery {
+            subquery: Box::new(select_from_table(QualifiedTableName::from(
+                Identifier::Single("table_1".to_string()),
+            ))),
+            alias: None,
+        });
 
-//         // without the as keyword
-//         run_sunny_day_test(
-//             "SELECT * FROM (SELECT t.* ) alias",
-//             Statement::Select(expected_statement.clone()),
-//         );
-//     }
-// }
+        run_sunny_day_test(
+            "SELECT * FROM (SELECT * FROM table_1)",
+            Statement::Select(expected_statement),
+        );
+    }
+
+    #[test]
+    fn test_select_from_subquery_aliased() {
+        let expected_statement = select_from_subquery(SelectFromSubquery {
+            subquery: Box::new(select_from_table(QualifiedTableName::from(
+                Identifier::Single("table_1".to_string()),
+            ))),
+            alias: Some("alias".to_string()),
+        });
+
+        run_sunny_day_test(
+            "SELECT * FROM (SELECT * FROM table_1) as alias",
+            Statement::Select(expected_statement.clone()),
+        );
+
+        // without the as keyword
+        run_sunny_day_test(
+            "SELECT * FROM (SELECT * FROM table_1) alias",
+            Statement::Select(expected_statement.clone()),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod test_select_from_table_function {
