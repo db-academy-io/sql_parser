@@ -1,5 +1,6 @@
 mod select_columns;
 mod select_from;
+mod select_from_subquery;
 mod values;
 
 use crate::ast::{
