@@ -1,6 +1,5 @@
+mod from;
 mod select_columns;
-mod select_from;
-mod select_from_subquery;
 mod values;
 
 use crate::ast::{
@@ -15,9 +14,9 @@ use super::Parser;
 use crate::ast::{Select, SelectStatement};
 use crate::parser::errors::ParsingError;
 
+pub use from::*;
 pub use select_columns::SelectColumnsParser;
-pub use select_from::SelectFromParser;
-pub use values::ValuesStatementParser;
+use values::ValuesStatementParser;
 
 /// Trait for parsing SELECT statements
 /// The SELECT statement documentation can be found here:

@@ -1,10 +1,10 @@
+use super::SelectFromParser;
+use crate::parser::select::SelectStatementParser;
 use crate::{
     parser::{ExpressionParser, IdentifierParser, ParsingError},
     FromClause, Keyword, Parser, QualifiedTableName, SelectFromFunction, SelectFromSubquery,
     TokenType,
 };
-
-use super::{SelectFromParser, SelectStatementParser};
 
 pub trait SelectFromSubqueryParser {
     fn parse_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError>;
@@ -75,7 +75,7 @@ impl<'a> SelectFromSubqueryParser for Parser<'a> {
 
 #[cfg(test)]
 mod test_select_from_subquery {
-    use crate::parser::select::select_from::test_utils::*;
+    use crate::parser::select::from::test_utils::*;
     use crate::parser::test_utils::*;
     use crate::{Identifier, QualifiedTableName, SelectFromSubquery, Statement};
 

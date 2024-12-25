@@ -1,9 +1,12 @@
+mod function;
+mod subquery;
+
 use crate::parser::{ExpressionParser, IdentifierParser, ParsingError};
 use crate::{
     FromClause, JoinClause, JoinConstraint, JoinTable, JoinType, Keyword, Parser, TokenType,
 };
 
-pub use super::select_from_subquery::SelectFromSubqueryParser;
+pub use subquery::SelectFromSubqueryParser;
 
 pub trait SelectFromParser {
     fn parse_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError>;
