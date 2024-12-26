@@ -1,24 +1,15 @@
 mod function;
+mod join;
 mod subquery;
 
-use crate::parser::{ExpressionParser, IdentifierParser, ParsingError};
-use crate::{
-    FromClause, JoinClause, JoinConstraint, JoinTable, JoinType, Keyword, Parser, TokenType,
-};
+use crate::parser::ParsingError;
+use crate::{FromClause, Keyword, Parser};
 
 pub use function::SelectFromFunctionParser;
 pub use subquery::SelectFromSubqueryParser;
 
 pub trait SelectFromParser {
     fn parse_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError>;
-
-    fn parse_from_join_clause(&mut self, lhs: FromClause) -> Result<FromClause, ParsingError>;
-
-    fn parse_from_clause_join_type(&mut self) -> Result<JoinType, ParsingError>;
-
-    fn parse_from_clause_join_constraints(
-        &mut self,
-    ) -> Result<Option<JoinConstraint>, ParsingError>;
 }
 
 impl<'a> SelectFromParser for Parser<'a> {
@@ -29,133 +20,32 @@ impl<'a> SelectFromParser for Parser<'a> {
         }
         Ok(None)
     }
-
-    fn parse_from_join_clause(&mut self, lhs: FromClause) -> Result<FromClause, ParsingError> {
-        let mut join_tables = Vec::new();
-
-        while let Ok(join_type) = self.parse_from_clause_join_type() {
-            let rhs = self.parse_from_clause_subquery()?;
-            join_tables.push(JoinTable {
-                join_type,
-                table: Box::new(rhs),
-                constraints: self.parse_from_clause_join_constraints()?,
-            });
-        }
-
-        if join_tables.is_empty() {
-            return Ok(lhs);
-        }
-
-        Ok(FromClause::Join(JoinClause {
-            lhs_table: Box::new(lhs),
-            join_tables,
-        }))
-    }
-
-    fn parse_from_clause_join_type(&mut self) -> Result<JoinType, ParsingError> {
-        let natural_join = self.consume_as_keyword(Keyword::Natural).is_ok();
-
-        if self.consume_as(TokenType::Comma).is_ok() {
-            return Ok(JoinType::Cross);
-        }
-
-        let keyword = self.peek_as_keyword()?;
-        match keyword {
-            Keyword::Join => {
-                self.consume_as_keyword(Keyword::Join)?;
-                Ok(JoinType::Inner(natural_join))
-            }
-            Keyword::Left => {
-                self.consume_as_keyword(Keyword::Left)?;
-                // An optional OUTER keyword
-                let _ = self.consume_as_keyword(Keyword::Outer);
-                // A mandatory JOIN keyword
-                self.consume_as_keyword(Keyword::Join)?;
-                Ok(JoinType::Left(natural_join))
-            }
-            Keyword::Right => {
-                self.consume_as_keyword(Keyword::Right)?;
-                // An optional OUTER keyword
-                let _ = self.consume_as_keyword(Keyword::Outer);
-                // A mandatory JOIN keyword
-                self.consume_as_keyword(Keyword::Join)?;
-                Ok(JoinType::Right(natural_join))
-            }
-            Keyword::Full => {
-                self.consume_as_keyword(Keyword::Full)?;
-                // An optional OUTER keyword
-                let _ = self.consume_as_keyword(Keyword::Outer);
-                // A mandatory JOIN keyword
-                self.consume_as_keyword(Keyword::Join)?;
-                Ok(JoinType::Full(natural_join))
-            }
-            Keyword::Inner => {
-                self.consume_as_keyword(Keyword::Inner)?;
-                self.consume_as_keyword(Keyword::Join)?;
-                Ok(JoinType::Inner(natural_join))
-            }
-            Keyword::Cross => {
-                if natural_join {
-                    return Err(ParsingError::UnexpectedParsingState(
-                        "CROSS NATURAL JOIN".to_string(),
-                    ));
-                }
-                self.consume_as_keyword(Keyword::Cross)?;
-                self.consume_as_keyword(Keyword::Join)?;
-                Ok(JoinType::Cross)
-            }
-
-            _ => Err(ParsingError::UnexpectedToken(keyword.to_string())),
-        }
-    }
-
-    fn parse_from_clause_join_constraints(
-        &mut self,
-    ) -> Result<Option<JoinConstraint>, ParsingError> {
-        if self.consume_as_keyword(Keyword::On).is_ok() {
-            let lhs = self.parse_expression()?;
-            Ok(Some(JoinConstraint::On(lhs)))
-        } else if self.consume_as_keyword(Keyword::Using).is_ok() {
-            self.consume_as(TokenType::LeftParen)?;
-            let mut columns = Vec::new();
-            loop {
-                columns.push(self.parse_identifier()?);
-                if self.consume_as(TokenType::Comma).is_err() {
-                    break;
-                }
-            }
-            self.consume_as(TokenType::RightParen)?;
-            Ok(Some(JoinConstraint::Using(columns)))
-        } else {
-            Ok(None)
-        }
-    }
 }
 
 #[cfg(test)]
 pub mod test_utils {
     use crate::{
-        DistinctType, Expression, FromClause, Identifier, QualifiedTableName, Select, SelectBody,
-        SelectFromSubquery, SelectItem, SelectStatement,
+        DistinctType, Expression, FromClause, Identifier, JoinClause, QualifiedTableName, Select,
+        SelectBody, SelectFromFunction, SelectFromSubquery, SelectItem, SelectStatement,
     };
 
     pub fn select_from_table(table: QualifiedTableName) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(table)),
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        }
+        select_from(FromClause::Table(table))
     }
 
     pub fn select_from_subquery(subquery: SelectFromSubquery) -> SelectStatement {
+        select_from(FromClause::Subquery(subquery))
+    }
+
+    pub fn select_from_join(join: JoinClause) -> SelectStatement {
+        select_from(FromClause::Join(join))
+    }
+
+    pub fn select_from_function(function: SelectFromFunction) -> SelectStatement {
+        select_from(FromClause::Function(function))
+    }
+
+    pub fn select_from(from: FromClause) -> SelectStatement {
         SelectStatement {
             with_cte: None,
             select: SelectBody::Select(Select {
@@ -163,7 +53,7 @@ pub mod test_utils {
                 columns: vec![SelectItem::Expression(Expression::Identifier(
                     Identifier::Wildcard,
                 ))],
-                from: Some(FromClause::Subquery(subquery)),
+                from: Some(from),
                 ..Default::default()
             }),
             order_by: None,
@@ -337,241 +227,6 @@ mod select_from_table {
 //                     not_indexed_table as t2 NOT INDEXED,
 //                     (SELECT * FROM table_2) as select_alias
 //                 )",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-// }
-
-// #[cfg(test)]
-// mod test_select_from_with_join_clause {
-//     use super::test_utils::select_from;
-//     use crate::expression::test_utils::{binary_op_expression, identifier_expression};
-//     use crate::parser::test_utils::*;
-//     use crate::{
-//         BinaryOp, FromClause, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable,
-//         JoinType, QualifiedTableName, SelectFromSubquery, Statement,
-//     };
-
-//     #[test]
-//     fn test_select_from_with_join_clause() {
-//         let expected_statement = select_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![JoinTable {
-//                 join_type: JoinType::Inner(false),
-//                 table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_2".to_string()),
-//                 ))),
-//                 constraints: None,
-//             }],
-//         }));
-
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 INNER JOIN table_2",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-
-//     #[test]
-//     fn test_select_from_with_join_types() {
-//         let join_types = vec![
-//             JoinType::Inner(false),
-//             JoinType::Left(false),
-//             JoinType::Right(false),
-//             JoinType::Full(false),
-//             // NATURAL JOIN
-//             JoinType::Inner(true),
-//             JoinType::Left(true),
-//             JoinType::Right(true),
-//             JoinType::Full(true),
-//             JoinType::Cross,
-//         ];
-
-//         for join_type in join_types {
-//             let expected_statement = select_from(FromClause::Join(JoinClause {
-//                 lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_1".to_string()),
-//                 ))),
-//                 join_tables: vec![JoinTable {
-//                     join_type: join_type.clone(),
-//                     table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("table_2".to_string()),
-//                     ))),
-//                     constraints: None,
-//                 }],
-//             }));
-
-//             run_sunny_day_test(
-//                 &format!("SELECT * FROM table_1 {} JOIN table_2", &join_type),
-//                 Statement::Select(expected_statement),
-//             );
-//         }
-//     }
-
-//     #[test]
-//     fn test_select_from_with_cross_join() {
-//         let expected_statement = select_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![JoinTable {
-//                 join_type: JoinType::Cross,
-//                 table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_2".to_string()),
-//                 ))),
-//                 constraints: None,
-//             }],
-//         }));
-
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1, table_2",
-//             Statement::Select(expected_statement.clone()),
-//         );
-
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 CROSS JOIN table_2",
-//             Statement::Select(expected_statement.clone()),
-//         );
-//     }
-
-//     #[test]
-//     fn test_select_from_with_join_clause_with_on_constraints() {
-//         let expected_statement = select_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![JoinTable {
-//                 join_type: JoinType::Inner(false),
-//                 table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_2".to_string()),
-//                 ))),
-//                 constraints: Some(JoinConstraint::On(binary_op_expression(
-//                     BinaryOp::Equals,
-//                     identifier_expression(&["table_1", "col1"]),
-//                     identifier_expression(&["table_2", "col1"]),
-//                 ))),
-//             }],
-//         }));
-
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 INNER JOIN table_2 ON table_1.col1 = table_2.col1",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-
-//     #[test]
-//     fn test_select_from_with_join_clause_with_using_constraints() {
-//         let expected_statement = select_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![JoinTable {
-//                 join_type: JoinType::Inner(false),
-//                 table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_2".to_string()),
-//                 ))),
-//                 constraints: Some(JoinConstraint::Using(vec![Identifier::Single(
-//                     "col1".to_string(),
-//                 )])),
-//             }],
-//         }));
-
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 INNER JOIN table_2 USING (col1)",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-
-//     #[test]
-//     fn test_select_from_with_join_clause_nested() {
-//         let expected_statement = select_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![
-//                 JoinTable {
-//                     join_type: JoinType::Inner(false),
-//                     table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("table_2".to_string()),
-//                     ))),
-//                     constraints: Some(JoinConstraint::On(binary_op_expression(
-//                         BinaryOp::Equals,
-//                         identifier_expression(&["table_1", "col1"]),
-//                         identifier_expression(&["table_2", "col2"]),
-//                     ))),
-//                 },
-//                 JoinTable {
-//                     join_type: JoinType::Full(false),
-//                     table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("table_3".to_string()),
-//                     ))),
-//                     constraints: Some(JoinConstraint::Using(vec![Identifier::Single(
-//                         "col3".to_string(),
-//                     )])),
-//                 },
-//             ],
-//         }));
-
-//         run_sunny_day_test(
-//             "SELECT *
-//                 FROM table_1
-//                 INNER JOIN table_2 ON table_1.col1 = table_2.col2
-//                 FULL JOIN table_3 USING (col3)",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-
-//     #[test]
-//     fn test_select_from_with_join_clause_with_nested_keeping_ordering() {
-//         let subquery = JoinTable {
-//             join_type: JoinType::Inner(false),
-//             table: Box::new(FromClause::Subquery(SelectFromSubquery {
-//                 subquery: Box::new(select_from(FromClause::Join(JoinClause {
-//                     lhs_table: Box::new(FromClause::Table(QualifiedTableName {
-//                         table_id: Identifier::Single("table_2".to_string()),
-//                         alias: Some("t2".to_string()),
-//                         indexed_type: None,
-//                     })),
-//                     join_tables: vec![JoinTable {
-//                         join_type: JoinType::Left(false),
-//                         table: Box::new(FromClause::Table(QualifiedTableName {
-//                             table_id: Identifier::Single("table_3".to_string()),
-//                             alias: Some("t3".to_string()),
-//                             indexed_type: Some(IndexedType::Indexed("index_3".to_string())),
-//                         })),
-//                         constraints: Some(JoinConstraint::On(binary_op_expression(
-//                             BinaryOp::Equals,
-//                             identifier_expression(&["t2", "col2"]),
-//                             identifier_expression(&["t3", "col3"]),
-//                         ))),
-//                     }],
-//                 }))),
-//                 alias: Some("t_complex".to_string()),
-//             })),
-//             constraints: Some(JoinConstraint::On(binary_op_expression(
-//                 BinaryOp::Equals,
-//                 identifier_expression(&["t1", "col1"]),
-//                 identifier_expression(&["t_complex", "col1"]),
-//             ))),
-//         };
-
-//         let expected_statement = select_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName {
-//                 table_id: Identifier::Single("table_1".to_string()),
-//                 alias: Some("t1".to_string()),
-//                 indexed_type: None,
-//             })),
-//             join_tables: vec![subquery],
-//         }));
-
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 as t1 INNER JOIN
-//                 (
-//                     SELECT * FROM table_2 as t2 LEFT JOIN table_3 as t3 INDEXED BY index_3
-//                     ON t2.col2 = t3.col3
-//                 ) as t_complex
-//                 ON t1.col1 = t_complex.col1",
 //             Statement::Select(expected_statement),
 //         );
 //     }

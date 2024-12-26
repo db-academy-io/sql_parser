@@ -36,35 +36,11 @@ impl<'a> SelectFromFunctionParser for Parser<'a> {
 }
 
 #[cfg(test)]
-mod test_utils {
-    use crate::{
-        DistinctType, Expression, FromClause, Identifier, Select, SelectBody, SelectFromFunction,
-        SelectItem, SelectStatement,
-    };
-
-    pub fn select_from_function(function: SelectFromFunction) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Function(function)),
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
-}
-
-#[cfg(test)]
 mod select_from_function_tests {
-    use super::test_utils::select_from_function;
     use crate::expression::test_utils::{
         binary_op_expression, identifier_expression, numeric_literal_expression,
     };
+    use crate::parser::select::from::test_utils::select_from_function;
     use crate::parser::test_utils::*;
     use crate::{BinaryOp, Identifier, SelectFromFunction, Statement};
 

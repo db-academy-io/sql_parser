@@ -1,4 +1,5 @@
-use super::{SelectFromFunctionParser, SelectFromParser};
+use super::join::SelectFromJoinParser;
+use super::SelectFromFunctionParser;
 use crate::parser::select::SelectStatementParser;
 use crate::{
     parser::{IdentifierParser, ParsingError},
