@@ -1,5 +1,5 @@
+mod column;
 mod from;
-mod select_columns;
 mod values;
 
 use crate::ast::{
@@ -14,8 +14,8 @@ use super::Parser;
 use crate::ast::{Select, SelectStatement};
 use crate::parser::errors::ParsingError;
 
+pub use column::SelectColumnsParser;
 pub use from::*;
-pub use select_columns::SelectColumnsParser;
 use values::ValuesStatementParser;
 
 /// Trait for parsing SELECT statements
