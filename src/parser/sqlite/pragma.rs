@@ -175,25 +175,37 @@ mod pragma_statements_tests {
     #[test]
     fn pragma_with_invalid_schema() {
         let sql = "PRAGMA invalid..cache_size;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(".".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken(". at position 15".to_string()),
+        );
     }
 
     #[test]
     fn pragma_with_multiple_dots() {
         let sql = "PRAGMA main.db.cache_size;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(".".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken(". at position 14".to_string()),
+        );
     }
 
     #[test]
     fn pragma_missing_name() {
         let sql = "PRAGMA;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 6".to_string()),
+        );
     }
 
     #[test]
     fn pragma_missing_value_after_equals() {
         let sql = "PRAGMA cache_size =;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 19".to_string()),
+        );
     }
 
     #[test]
@@ -242,20 +254,26 @@ mod pragma_statements_tests {
     fn pragma_with_reserved_keyword_as_name() {
         run_rainy_day_test(
             "PRAGMA select;",
-            ParsingError::UnexpectedToken("Select".into()),
+            ParsingError::UnexpectedToken("Select at position 7".to_string()),
         );
     }
 
     #[test]
     fn pragma_with_numeric_pragma_name() {
         let sql = "PRAGMA 123;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("123 at position 7".to_string()),
+        );
     }
 
     #[test]
     fn pragma_with_invalid_syntax_extra_token() {
         let sql = "PRAGMA cache_size = 1000 EXTRA;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("EXTRA at position 25".to_string()),
+        );
     }
 
     #[test]
@@ -296,37 +314,55 @@ mod pragma_statements_tests {
     #[test]
     fn pragma_with_reserved_keyword_as_value() {
         let sql = "PRAGMA cache_size = select;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("Select".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Select at position 20".to_string()),
+        );
     }
 
     #[test]
     fn pragma_with_no_value_after_equal() {
         let sql = "PRAGMA cache_size =;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 19".to_string()),
+        );
     }
 
     #[test]
     fn pragma_with_no_value_in_parentheses() {
         let sql = "PRAGMA cache_size();";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(")".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken(") at position 18".to_string()),
+        );
     }
 
     #[test]
     fn pragma_with_schema_missing_pragma_name() {
         let sql = "PRAGMA main.;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 12".to_string()),
+        );
     }
 
     #[test]
     fn pragma_missing_pragma_name() {
         let sql = "PRAGMA;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 6".to_string()),
+        );
     }
 
     #[test]
     fn pragma_with_unexpected_token_after_parentheses() {
         let sql = "PRAGMA cache_size(1000) EXTRA;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("EXTRA at position 24".to_string()),
+        );
     }
 
     #[test]

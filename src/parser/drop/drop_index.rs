@@ -90,7 +90,7 @@ mod drop_index_tests {
     fn drop_index_missing_index_keyword() {
         run_rainy_day_test(
             "DROP my_index;",
-            ParsingError::UnexpectedToken("my_index".into()),
+            ParsingError::UnexpectedToken("my_index at position 5".into()),
         );
     }
 
@@ -98,7 +98,9 @@ mod drop_index_tests {
     fn drop_index_invalid_syntax() {
         run_rainy_day_test(
             "DROP INDEX IF my_index;",
-            ParsingError::UnexpectedToken("Expected Exists keyword, got: my_index".into()),
+            ParsingError::UnexpectedToken(
+                "Expected Exists keyword, got: my_index at position 14".into(),
+            ),
         )
     }
 
@@ -106,7 +108,7 @@ mod drop_index_tests {
     fn drop_index_extra_tokens() {
         run_rainy_day_test(
             "DROP INDEX my_index extra;",
-            ParsingError::UnexpectedToken("extra".into()),
+            ParsingError::UnexpectedToken("extra at position 20".into()),
         );
     }
 

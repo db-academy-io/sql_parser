@@ -91,21 +91,24 @@ mod commit_statements_tests {
     fn commit_transaction_with_unexpected_token() {
         run_rainy_day_test(
             "COMMIT EXTRA;",
-            ParsingError::UnexpectedToken("EXTRA".into()),
+            ParsingError::UnexpectedToken("EXTRA at position 7".into()),
         );
     }
 
     #[test]
     fn commit_transaction_with_invalid_syntax() {
         let sql = "COMMIT TRANSACT;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("TRANSACT".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("TRANSACT at position 7".into()),
+        );
     }
 
     #[test]
     fn commit_transaction_with_transaction_name() {
         run_rainy_day_test(
             "COMMIT TRANSACTION transaction_name;",
-            ParsingError::UnexpectedToken("transaction_name".into()),
+            ParsingError::UnexpectedToken("transaction_name at position 19".into()),
         );
     }
 

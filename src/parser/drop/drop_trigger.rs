@@ -86,7 +86,7 @@ mod drop_trigger_tests {
     fn drop_trigger_missing_trigger_keyword() {
         run_rainy_day_test(
             "DROP my_trigger;",
-            ParsingError::UnexpectedToken("my_trigger".into()),
+            ParsingError::UnexpectedToken("my_trigger at position 5".into()),
         );
     }
 
@@ -94,7 +94,9 @@ mod drop_trigger_tests {
     fn drop_trigger_invalid_syntax() {
         run_rainy_day_test(
             "DROP TRIGGER IF my_trigger;",
-            ParsingError::UnexpectedToken("Expected Exists keyword, got: my_trigger".into()),
+            ParsingError::UnexpectedToken(
+                "Expected Exists keyword, got: my_trigger at position 16".into(),
+            ),
         )
     }
 
@@ -102,7 +104,7 @@ mod drop_trigger_tests {
     fn drop_trigger_extra_tokens() {
         run_rainy_day_test(
             "DROP TRIGGER my_trigger extra;",
-            ParsingError::UnexpectedToken("extra".into()),
+            ParsingError::UnexpectedToken("extra at position 24".into()),
         );
     }
 

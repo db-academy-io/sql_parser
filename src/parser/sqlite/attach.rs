@@ -119,19 +119,28 @@ mod detach_statements_tests {
     #[test]
     fn detach_missing_schema_name() {
         let sql = "DETACH DATABASE;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 15".to_string()),
+        );
     }
 
     #[test]
     fn detach_missing_schema_name_no_database() {
         let sql = "DETACH;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 6".to_string()),
+        );
     }
 
     #[test]
     fn detach_invalid_syntax_extra_token() {
         let sql = "DETACH DATABASE schema_name extra;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("extra at position 28".to_string()),
+        );
     }
 
     #[test]
@@ -191,7 +200,10 @@ mod detach_statements_tests {
     #[test]
     fn detach_invalid_schema_name_no_quotes() {
         let sql = "DETACH DATABASE schema name;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("name".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("name at position 23".to_string()),
+        );
     }
 
     #[test]

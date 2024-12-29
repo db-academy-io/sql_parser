@@ -89,19 +89,25 @@ mod savepoint_statements_tests {
     #[test]
     fn savepoint_missing_name() {
         let sql = "SAVEPOINT;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("; at position 9".into()));
     }
 
     #[test]
     fn savepoint_unexpected_token() {
         let sql = "SAVEPOINT 123;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("123 at position 10".into()),
+        );
     }
 
     #[test]
     fn savepoint_reserved_keyword_as_name() {
         let sql = "SAVEPOINT select;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("Select".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Select at position 10".into()),
+        );
     }
 
     #[test]
@@ -182,7 +188,10 @@ mod savepoint_statements_tests {
     #[test]
     fn savepoint_with_extra_tokens() {
         let sql = "SAVEPOINT sp_name EXTRA;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("EXTRA at position 18".into()),
+        );
     }
 
     #[test]

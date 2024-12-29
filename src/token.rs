@@ -18,7 +18,7 @@ pub struct Token<'a> {
 
 impl<'a> Display for Token<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.token_type)
+        write!(f, "{} at position {}", self.token_type, self.position)
     }
 }
 

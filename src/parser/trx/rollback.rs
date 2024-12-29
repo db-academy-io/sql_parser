@@ -104,19 +104,28 @@ mod rollback_statements_tests {
     #[test]
     fn rollback_transaction_with_unexpected_token() {
         let sql = "ROLLBACK EXTRA;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("EXTRA at position 9".into()),
+        );
     }
 
     #[test]
     fn rollback_transaction_to_missing_savepoint_name() {
         let sql = "ROLLBACK TO;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 11".into()),
+        );
     }
 
     #[test]
     fn rollback_transaction_to_unexpected_token() {
         let sql = "ROLLBACK TO 123;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("123 at position 12".into()),
+        );
     }
 
     #[test]
@@ -230,7 +239,7 @@ mod rollback_statements_tests {
     fn rollback_transaction_with_invalid_syntax_extra_token() {
         run_rainy_day_test(
             "ROLLBACK TO SAVEPOINT sp_name EXTRA;",
-            ParsingError::UnexpectedToken("EXTRA".into()),
+            ParsingError::UnexpectedToken("EXTRA at position 30".into()),
         );
     }
 
@@ -243,13 +252,19 @@ mod rollback_statements_tests {
     #[test]
     fn rollback_transaction_with_savepoint_missing_name() {
         let sql = "ROLLBACK TO SAVEPOINT;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 21".into()),
+        );
     }
 
     #[test]
     fn rollback_transaction_with_missing_to_keyword() {
         let sql = "ROLLBACK SAVEPOINT sp_name;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("Savepoint".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Savepoint at position 9".into()),
+        );
     }
 
     #[test]

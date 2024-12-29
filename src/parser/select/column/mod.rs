@@ -92,12 +92,12 @@ mod test_select_result_columns {
     fn select_distinct_all() {
         run_rainy_day_test(
             "SELECT DISTINCT ALL column1",
-            ParsingError::UnexpectedToken("All".to_string()),
+            ParsingError::UnexpectedToken("All at position 16".to_string()),
         );
 
         run_rainy_day_test(
             "SELECT ALL DISTINCT column1",
-            ParsingError::UnexpectedToken("Distinct".to_string()),
+            ParsingError::UnexpectedToken("Distinct at position 11".to_string()),
         );
     }
 

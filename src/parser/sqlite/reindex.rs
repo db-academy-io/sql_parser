@@ -161,7 +161,7 @@ mod reindex_statements_tests {
     fn reindex_invalid_syntax_extra_token() {
         run_rainy_day_test(
             "REINDEX extra_token extra;",
-            ParsingError::UnexpectedToken("extra".into()),
+            ParsingError::UnexpectedToken("extra at position 20".to_string()),
         );
     }
 

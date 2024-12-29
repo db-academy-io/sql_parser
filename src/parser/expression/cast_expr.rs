@@ -97,7 +97,11 @@ mod cast_expression_tests {
     //         "SELECT CAST(1 AS DOUBLE PRECISION) as 1;",
     //         &cast_expression(
     //             numeric_literal_expression("1"),
-    //             DataType::BoundedDataType("DOUBLE PRECISION".to_string(), "1".to_string(), "10".to_string()),
+    //             DataType::BoundedDataType(
+    //                 "DOUBLE PRECISION".to_string(),
+    //                 "1".to_string(),
+    //                 "10".to_string(),
+    //             ),
     //         ),
     //     );
     // }

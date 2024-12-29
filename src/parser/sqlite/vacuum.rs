@@ -95,33 +95,39 @@ mod vacuum_statements_tests {
     fn vacuum_invalid_syntax() {
         run_rainy_day_test(
             "VACUUM INTO;",
-            ParsingError::UnexpectedToken(";".to_string()),
+            ParsingError::UnexpectedToken("; at position 11".to_string()),
         );
     }
 
     #[test]
     fn vacuum_missing_filename() {
-        run_rainy_day_test("VACUUM INTO", ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            "VACUUM INTO",
+            ParsingError::UnexpectedToken("; at position 11".to_string()),
+        );
     }
 
     #[test]
     fn vacuum_invalid_filename() {
         run_rainy_day_test(
             "VACUUM INTO backup.db;",
-            ParsingError::UnexpectedToken(".".to_string()),
+            ParsingError::UnexpectedToken(". at position 18".to_string()),
         );
     }
 
     #[test]
     fn vacuum_unexpected_token() {
-        run_rainy_day_test("VACUUM 123;", ParsingError::UnexpectedToken("123".into()));
+        run_rainy_day_test(
+            "VACUUM 123;",
+            ParsingError::UnexpectedToken("123 at position 7".to_string()),
+        );
     }
 
     #[test]
     fn vacuum_extra_tokens() {
         run_rainy_day_test(
             "VACUUM main INTO 'backup.db' extra;",
-            ParsingError::UnexpectedToken("extra".to_string()),
+            ParsingError::UnexpectedToken("extra at position 29".to_string()),
         );
     }
 
@@ -129,7 +135,7 @@ mod vacuum_statements_tests {
     fn vacuum_schema_missing_into() {
         run_rainy_day_test(
             "VACUUM main 'backup.db';",
-            ParsingError::UnexpectedToken("'backup.db'".to_string()),
+            ParsingError::UnexpectedToken("'backup.db' at position 12".to_string()),
         );
     }
 

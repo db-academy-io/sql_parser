@@ -142,19 +142,28 @@ mod begin_statements_tests {
     #[test]
     fn begin_transaction_with_unexpected_token() {
         let sql = "BEGIN UNKNOWN;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("UNKNOWN".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("UNKNOWN at position 6".into()),
+        );
     }
 
     #[test]
     fn begin_transaction_with_invalid_transaction_type() {
         let sql = "BEGIN INVALID TRANSACTION;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("INVALID".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("INVALID at position 6".into()),
+        );
     }
 
     #[test]
     fn begin_transaction_with_extra_tokens() {
         let sql = "BEGIN TRANSACTION EXTRA;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("EXTRA at position 18".into()),
+        );
     }
 
     #[test]
@@ -180,14 +189,17 @@ mod begin_statements_tests {
     #[test]
     fn begin_transaction_with_multiple_transaction_types() {
         let sql = "BEGIN DEFERRED IMMEDIATE;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("Immediate".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Immediate at position 15".into()),
+        );
     }
 
     #[test]
     fn begin_transaction_with_transaction_name() {
         run_rainy_day_test(
             "BEGIN TRANSACTION transaction_name;",
-            ParsingError::UnexpectedToken("transaction_name".into()),
+            ParsingError::UnexpectedToken("transaction_name at position 18".into()),
         );
     }
 
@@ -195,12 +207,12 @@ mod begin_statements_tests {
     fn begin_transaction_with_keyword() {
         run_rainy_day_test(
             "BEGIN COMMIT;",
-            ParsingError::UnexpectedToken("Commit".into()),
+            ParsingError::UnexpectedToken("Commit at position 6".into()),
         );
 
         run_rainy_day_test(
             "BEGIN ROLLBACK;",
-            ParsingError::UnexpectedToken("Rollback".into()),
+            ParsingError::UnexpectedToken("Rollback at position 6".into()),
         );
     }
 

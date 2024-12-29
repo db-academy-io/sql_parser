@@ -86,7 +86,7 @@ mod drop_table_tests {
     fn drop_table_missing_table_keyword() {
         run_rainy_day_test(
             "DROP my_table",
-            ParsingError::UnexpectedToken("my_table".to_string()),
+            ParsingError::UnexpectedToken("my_table at position 5".to_string()),
         );
     }
 
@@ -94,15 +94,17 @@ mod drop_table_tests {
     fn drop_table_invalid_syntax() {
         run_rainy_day_test(
             "DROP TABLE IF my_table;",
-            ParsingError::UnexpectedToken("Expected Exists keyword, got: my_table".to_string()),
+            ParsingError::UnexpectedToken(
+                "Expected Exists keyword, got: my_table at position 14".to_string(),
+            ),
         )
     }
 
     #[test]
-    fn drop_table_extra_tokens() {
+    fn drop_table_extra_token() {
         run_rainy_day_test(
             "DROP TABLE my_table extra;",
-            ParsingError::UnexpectedToken("extra".to_string()),
+            ParsingError::UnexpectedToken("extra at position 20".to_string()),
         );
     }
 

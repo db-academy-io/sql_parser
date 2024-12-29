@@ -91,7 +91,7 @@ mod drop_view_tests {
     fn drop_view_missing_view_keyword() {
         run_rainy_day_test(
             "DROP my_view;",
-            ParsingError::UnexpectedToken("my_view".into()),
+            ParsingError::UnexpectedToken("my_view at position 5".into()),
         );
     }
 
@@ -99,7 +99,9 @@ mod drop_view_tests {
     fn drop_view_invalid_syntax() {
         run_rainy_day_test(
             "DROP VIEW IF my_view;",
-            ParsingError::UnexpectedToken("Expected Exists keyword, got: my_view".into()),
+            ParsingError::UnexpectedToken(
+                "Expected Exists keyword, got: my_view at position 13".into(),
+            ),
         )
     }
 
@@ -107,7 +109,7 @@ mod drop_view_tests {
     fn drop_view_extra_tokens() {
         run_rainy_day_test(
             "DROP VIEW my_view extra;",
-            ParsingError::UnexpectedToken("extra".into()),
+            ParsingError::UnexpectedToken("extra at position 18".into()),
         );
     }
 

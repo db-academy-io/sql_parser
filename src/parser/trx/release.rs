@@ -84,25 +84,34 @@ mod release_statements_tests {
     #[test]
     fn release_savepoint_missing_name() {
         let sql = "RELEASE SAVEPOINT;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("; at position 17".into()),
+        );
     }
 
     #[test]
     fn release_savepoint_missing_name_without_keyword() {
         let sql = "RELEASE;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
+        run_rainy_day_test(sql, ParsingError::UnexpectedToken("; at position 7".into()));
     }
 
     #[test]
     fn release_savepoint_unexpected_token() {
         let sql = "RELEASE SAVEPOINT 123;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("123 at position 18".into()),
+        );
     }
 
     #[test]
     fn release_savepoint_with_reserved_keyword_as_name() {
         let sql = "RELEASE SAVEPOINT select;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("Select".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("Select at position 18".into()),
+        );
     }
 
     #[test]
@@ -183,7 +192,10 @@ mod release_statements_tests {
     #[test]
     fn release_savepoint_with_extra_tokens() {
         let sql = "RELEASE SAVEPOINT sp_name EXTRA;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("EXTRA at position 26".into()),
+        );
     }
 
     #[test]
@@ -228,7 +240,10 @@ mod release_statements_tests {
     #[test]
     fn release_savepoint_with_numeric_name_without_quotes() {
         let sql = "RELEASE SAVEPOINT 123;";
-        run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
+        run_rainy_day_test(
+            sql,
+            ParsingError::UnexpectedToken("123 at position 18".into()),
+        );
     }
 
     #[test]

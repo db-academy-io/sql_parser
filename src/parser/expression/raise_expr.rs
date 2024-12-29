@@ -100,7 +100,7 @@ mod raise_expression_tests {
     fn test_expression_raise_fail_with_empty_string() {
         run_rainy_day_test(
             "SELECT RAISE(FAIL);",
-            ParsingError::UnexpectedToken(")".to_string()),
+            ParsingError::UnexpectedToken(") at position 17".to_string()),
         );
     }
 }
