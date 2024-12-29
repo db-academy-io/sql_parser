@@ -55,10 +55,9 @@ mod savepoint_statements_tests {
     use crate::{Parser, Statement};
 
     #[test]
-    fn test_savepoint_basic() {
-        let sql = "SAVEPOINT sp_name;";
+    fn savepoint_test() {
         run_sunny_day_test(
-            sql,
+            "SAVEPOINT sp_name;",
             Statement::Savepoint(SavepointStatement {
                 savepoint_name: "sp_name".to_string(),
             }),
@@ -66,7 +65,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_with_single_quoted_name() {
+    fn savepoint_with_single_quoted_name() {
         let sql = "SAVEPOINT 'sp_name';";
         run_sunny_day_test(
             sql,
@@ -77,7 +76,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_with_double_quoted_name() {
+    fn savepoint_with_double_quoted_name() {
         let sql = "SAVEPOINT \"sp_name\";";
         run_sunny_day_test(
             sql,
@@ -88,25 +87,25 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_missing_name() {
+    fn savepoint_missing_name() {
         let sql = "SAVEPOINT;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_savepoint_unexpected_token() {
+    fn savepoint_unexpected_token() {
         let sql = "SAVEPOINT 123;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
     }
 
     #[test]
-    fn test_savepoint_reserved_keyword_as_name() {
+    fn savepoint_reserved_keyword_as_name() {
         let sql = "SAVEPOINT select;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("Select".into()));
     }
 
     #[test]
-    fn test_savepoint_with_numeric_name_in_quotes() {
+    fn savepoint_with_numeric_name_in_quotes() {
         let sql = "SAVEPOINT '123';";
         run_sunny_day_test(
             sql,
@@ -117,7 +116,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_with_special_chars_in_name() {
+    fn savepoint_with_special_chars_in_name() {
         let sql = "SAVEPOINT '[email protected]!';";
         run_sunny_day_test(
             sql,
@@ -128,7 +127,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_unterminated_string() {
+    fn savepoint_unterminated_string() {
         let sql = "SAVEPOINT 'sp_name;";
         run_rainy_day_test(
             sql,
@@ -137,7 +136,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_with_escaped_quotes_in_name() {
+    fn savepoint_with_escaped_quotes_in_name() {
         let sql = "SAVEPOINT 'sp''name';";
         run_sunny_day_test(
             sql,
@@ -148,7 +147,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_with_double_escaped_quotes_in_name() {
+    fn savepoint_with_double_escaped_quotes_in_name() {
         let sql = "SAVEPOINT \"sp\"\"name\";";
         run_sunny_day_test(
             sql,
@@ -159,7 +158,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_with_backticks_name() {
+    fn savepoint_with_backticks_name() {
         let sql = "SAVEPOINT `sp_name`;";
         run_sunny_day_test(
             sql,
@@ -170,7 +169,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_missing_semicolon() {
+    fn savepoint_missing_semicolon() {
         let sql = "SAVEPOINT sp_name";
         run_sunny_day_test(
             sql,
@@ -181,13 +180,13 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_with_extra_tokens() {
+    fn savepoint_with_extra_tokens() {
         let sql = "SAVEPOINT sp_name EXTRA;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
     }
 
     #[test]
-    fn test_multiple_savepoint_commands() {
+    fn multiple_savepoint_commands() {
         let sql = "SAVEPOINT sp1; SAVEPOINT 'sp2';";
         let mut parser = Parser::from(sql);
 
@@ -217,7 +216,7 @@ mod savepoint_statements_tests {
     }
 
     #[test]
-    fn test_savepoint_with_invalid_name() {
+    fn savepoint_with_invalid_name() {
         let sql = "SAVEPOINT 123invalid;";
         run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
     }

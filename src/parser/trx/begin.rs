@@ -50,7 +50,7 @@ mod begin_statements_tests {
     use crate::{BeginTransactionStatement, Parser, Statement, TransactionType};
 
     #[test]
-    fn test_begin_transaction_basic() {
+    fn begin_transaction() {
         run_sunny_day_test(
             "BEGIN;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -60,7 +60,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_with_transaction_keyword() {
+    fn begin_with_transaction_keyword() {
         run_sunny_day_test(
             "BEGIN TRANSACTION;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -70,7 +70,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_deferred() {
+    fn begin_transaction_deferred() {
         run_sunny_day_test(
             "BEGIN DEFERRED;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -80,7 +80,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_immediate() {
+    fn begin_transaction_immediate() {
         run_sunny_day_test(
             "BEGIN IMMEDIATE;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -90,7 +90,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_exclusive() {
+    fn begin_transaction_exclusive() {
         run_sunny_day_test(
             "BEGIN EXCLUSIVE;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -100,7 +100,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_deferred_with_transaction_keyword() {
+    fn begin_transaction_deferred_with_transaction_keyword() {
         run_sunny_day_test(
             "BEGIN DEFERRED TRANSACTION;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -110,7 +110,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_immediate_with_transaction_keyword() {
+    fn begin_transaction_immediate_with_transaction_keyword() {
         run_sunny_day_test(
             "BEGIN IMMEDIATE TRANSACTION;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -120,7 +120,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_exclusive_with_transaction_keyword() {
+    fn begin_transaction_exclusive_with_transaction_keyword() {
         run_sunny_day_test(
             "BEGIN EXCLUSIVE TRANSACTION;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -130,7 +130,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_missing_semicolon() {
+    fn begin_transaction_missing_semicolon() {
         run_sunny_day_test(
             "BEGIN",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -140,25 +140,25 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_with_unexpected_token() {
+    fn begin_transaction_with_unexpected_token() {
         let sql = "BEGIN UNKNOWN;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("UNKNOWN".into()));
     }
 
     #[test]
-    fn test_begin_transaction_with_invalid_transaction_type() {
+    fn begin_transaction_with_invalid_transaction_type() {
         let sql = "BEGIN INVALID TRANSACTION;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("INVALID".into()));
     }
 
     #[test]
-    fn test_begin_transaction_with_extra_tokens() {
+    fn begin_transaction_with_extra_tokens() {
         let sql = "BEGIN TRANSACTION EXTRA;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
     }
 
     #[test]
-    fn test_begin_transaction_case_insensitive() {
+    fn begin_transaction_case_insensitive() {
         run_sunny_day_test(
             "begin transaction;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -168,7 +168,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_with_comment() {
+    fn begin_transaction_with_comment() {
         run_sunny_day_test(
             "BEGIN -- Start transaction\n;",
             Statement::BeginTransaction(BeginTransactionStatement {
@@ -178,13 +178,13 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_with_multiple_transaction_types() {
+    fn begin_transaction_with_multiple_transaction_types() {
         let sql = "BEGIN DEFERRED IMMEDIATE;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("Immediate".into()));
     }
 
     #[test]
-    fn test_begin_transaction_with_transaction_name() {
+    fn begin_transaction_with_transaction_name() {
         run_rainy_day_test(
             "BEGIN TRANSACTION transaction_name;",
             ParsingError::UnexpectedToken("transaction_name".into()),
@@ -192,7 +192,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_begin_transaction_with_keyword() {
+    fn begin_transaction_with_keyword() {
         run_rainy_day_test(
             "BEGIN COMMIT;",
             ParsingError::UnexpectedToken("Commit".into()),
@@ -205,7 +205,7 @@ mod begin_statements_tests {
     }
 
     #[test]
-    fn test_multiple_begin_transaction_commands() {
+    fn multiple_begin_transaction_commands() {
         let sql = "BEGIN; BEGIN IMMEDIATE TRANSACTION;";
         let mut parser = Parser::from(sql);
 

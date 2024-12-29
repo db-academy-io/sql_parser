@@ -38,7 +38,7 @@ mod release_statements_tests {
     use crate::{Parser, Statement};
 
     #[test]
-    fn test_release_savepoint_basic() {
+    fn release_savepoint() {
         let sql = "RELEASE SAVEPOINT sp_name;";
         run_sunny_day_test(
             sql,
@@ -49,7 +49,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_without_keyword() {
+    fn release_savepoint_without_keyword() {
         let sql = "RELEASE sp_name;";
         run_sunny_day_test(
             sql,
@@ -60,7 +60,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_single_quoted_name() {
+    fn release_savepoint_with_single_quoted_name() {
         let sql = "RELEASE SAVEPOINT 'sp_name';";
         run_sunny_day_test(
             sql,
@@ -71,7 +71,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_double_quoted_name() {
+    fn release_savepoint_with_double_quoted_name() {
         let sql = "RELEASE SAVEPOINT \"sp_name\";";
         run_sunny_day_test(
             sql,
@@ -82,31 +82,31 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_missing_name() {
+    fn release_savepoint_missing_name() {
         let sql = "RELEASE SAVEPOINT;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_release_savepoint_missing_name_without_keyword() {
+    fn release_savepoint_missing_name_without_keyword() {
         let sql = "RELEASE;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_release_savepoint_unexpected_token() {
+    fn release_savepoint_unexpected_token() {
         let sql = "RELEASE SAVEPOINT 123;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
     }
 
     #[test]
-    fn test_release_savepoint_with_reserved_keyword_as_name() {
+    fn release_savepoint_with_reserved_keyword_as_name() {
         let sql = "RELEASE SAVEPOINT select;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("Select".into()));
     }
 
     #[test]
-    fn test_release_savepoint_with_numeric_name_in_quotes() {
+    fn release_savepoint_with_numeric_name_in_quotes() {
         let sql = "RELEASE SAVEPOINT '123';";
         run_sunny_day_test(
             sql,
@@ -117,7 +117,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_special_chars_in_name() {
+    fn release_savepoint_with_special_chars_in_name() {
         let sql = "RELEASE SAVEPOINT '[email protected]!';";
         run_sunny_day_test(
             sql,
@@ -128,7 +128,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_unterminated_string() {
+    fn release_savepoint_unterminated_string() {
         let sql = "RELEASE SAVEPOINT 'sp_name;";
         run_rainy_day_test(
             sql,
@@ -137,7 +137,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_escaped_quotes_in_name() {
+    fn release_savepoint_with_escaped_quotes_in_name() {
         let sql = "RELEASE SAVEPOINT 'sp''name';";
         run_sunny_day_test(
             sql,
@@ -148,7 +148,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_double_escaped_quotes_in_name() {
+    fn release_savepoint_with_double_escaped_quotes_in_name() {
         let sql = "RELEASE SAVEPOINT \"sp\"\"name\";";
         run_sunny_day_test(
             sql,
@@ -159,7 +159,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_backticks_name() {
+    fn release_savepoint_with_backticks_name() {
         let sql = "RELEASE SAVEPOINT `sp_name`;";
         run_sunny_day_test(
             sql,
@@ -170,7 +170,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_missing_semicolon() {
+    fn release_savepoint_missing_semicolon() {
         let sql = "RELEASE SAVEPOINT sp_name";
         run_sunny_day_test(
             sql,
@@ -181,13 +181,13 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_extra_tokens() {
+    fn release_savepoint_with_extra_tokens() {
         let sql = "RELEASE SAVEPOINT sp_name EXTRA;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
     }
 
     #[test]
-    fn test_release_savepoint_case_insensitive() {
+    fn release_savepoint_case_insensitive() {
         let sql = "release savepoint sp_name;";
         run_sunny_day_test(
             sql,
@@ -198,7 +198,7 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_comment() {
+    fn release_savepoint_with_comment() {
         let sql = "RELEASE SAVEPOINT -- release savepoint\nsp_name;";
         run_sunny_day_test(
             sql,
@@ -209,13 +209,13 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_invalid_name() {
+    fn release_savepoint_with_invalid_name() {
         let sql = "RELEASE SAVEPOINT 123invalid;";
         run_rainy_day_test(sql, ParsingError::TokenizerError("BadNumber".into()));
     }
 
     #[test]
-    fn test_release_savepoint_with_reserved_keyword_as_name_in_quotes() {
+    fn release_savepoint_with_reserved_keyword_as_name_in_quotes() {
         let sql = "RELEASE SAVEPOINT 'select';";
         run_sunny_day_test(
             sql,
@@ -226,13 +226,13 @@ mod release_statements_tests {
     }
 
     #[test]
-    fn test_release_savepoint_with_numeric_name_without_quotes() {
+    fn release_savepoint_with_numeric_name_without_quotes() {
         let sql = "RELEASE SAVEPOINT 123;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
     }
 
     #[test]
-    fn test_release_savepoint_multiple_commands() {
+    fn release_savepoint_multiple_commands() {
         let sql = "RELEASE SAVEPOINT sp1; RELEASE sp2;";
         let mut parser = Parser::from(sql);
 
