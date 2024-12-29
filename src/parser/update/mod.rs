@@ -1025,63 +1025,69 @@ mod update_from_with_join_clause_tests {
     }
 }
 
-// #[cfg(test)]
-// mod update_statements_with_cte_tests {
-//     use super::super::cte::test_utils::cte_expression;
-//     use super::test_utils::update_statement_with_cte_clause;
-//     use crate::parser::select::test_utils::select_from;
-//     use crate::parser::test_utils::*;
-//     use crate::{FromClause, Identifier, QualifiedTableName};
+#[cfg(test)]
+mod update_statements_with_cte_tests {
+    use super::super::cte::test_utils::cte_expression;
+    use super::test_utils::update_statement2;
+    use crate::parser::select::test_utils::select_from;
+    use crate::parser::test_utils::*;
+    use crate::{FromClause, Identifier, QualifiedTableName, Statement, WithCteStatement};
 
-//     #[test]
-//     fn test_update_with_cte() {
-//         let expected_statement = update_statement_with_cte_clause(
-//             true,
-//             vec![cte_expression(
-//                 Identifier::Single("cte_1".to_string()),
-//                 vec![],
-//                 None,
-//                 select_from(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::from("cte_table"),
-//                 ))),
-//             )],
-//             QualifiedTableName::from(Identifier::Single("cte_1".to_string())),
-//         );
+    #[test]
+    fn update_with_cte() {
+        let cte = cte_expression(
+            Identifier::Single("cte_1".to_string()),
+            vec![],
+            None,
+            select_from(FromClause::Table(QualifiedTableName::from(
+                Identifier::from("cte_table"),
+            ))),
+        );
+        let mut expected_statement = update_statement2();
+        expected_statement.table_name =
+            QualifiedTableName::from(Identifier::Single("cte_1".to_string()));
+        expected_statement.with_cte = Some(WithCteStatement {
+            recursive: true,
+            cte_expressions: vec![cte],
+        });
 
-//         run_sunny_day_test(
-//             "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) UPDATE cte_1 SET column1 = 1",
-//             expected_statement,
-//         );
-//     }
+        run_sunny_day_test(
+            "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) UPDATE cte_1 SET col1 = 1",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_update_with_multiple_ctes() {
-//         let expected_statement = update_statement_with_cte_clause(
-//             false,
-//             vec![
-//                 cte_expression(
-//                     Identifier::Single("cte_1".to_string()),
-//                     vec![],
-//                     None,
-//                     select_from(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("cte_table1".to_string()),
-//                     ))),
-//                 ),
-//                 cte_expression(
-//                     Identifier::Single("cte_2".to_string()),
-//                     vec![],
-//                     None,
-//                     select_from(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("cte_table2".to_string()),
-//                     ))),
-//                 ),
-//             ],
-//             QualifiedTableName::from(Identifier::Single("cte_2".to_string())),
-//         );
+    #[test]
+    fn test_update_with_multiple_ctes() {
+        let cte1 = cte_expression(
+            Identifier::Single("cte_1".to_string()),
+            vec![],
+            None,
+            select_from(FromClause::Table(QualifiedTableName::from(
+                Identifier::Single("cte_table1".to_string()),
+            ))),
+        );
 
-//         run_sunny_day_test(
-//             "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_table2) UPDATE cte_2 SET column1 = 1",
-//             expected_statement,
-//         );
-//     }
-// }
+        let cte2 = cte_expression(
+            Identifier::Single("cte_2".to_string()),
+            vec![],
+            None,
+            select_from(FromClause::Table(QualifiedTableName::from(
+                Identifier::Single("cte_table2".to_string()),
+            ))),
+        );
+
+        let mut expected_statement = update_statement2();
+        expected_statement.table_name =
+            QualifiedTableName::from(Identifier::Single("cte_2".to_string()));
+        expected_statement.with_cte = Some(WithCteStatement {
+            recursive: false,
+            cte_expressions: vec![cte1, cte2],
+        });
+
+        run_sunny_day_test(
+            "WITH cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_table2) UPDATE cte_2 SET col1 = 1",
+            Statement::Update(expected_statement),
+        );
+    }
+}
