@@ -498,92 +498,89 @@ mod update_statement_tests {
     }
 }
 
-// #[cfg(test)]
-// mod update_from_table_tests {
-//     use super::test_utils::update_from;
-//     use crate::parser::test_utils::*;
-//     use crate::{FromClause, Identifier, IndexedType, QualifiedTableName, Statement};
+#[cfg(test)]
+mod update_from_table_tests {
+    use super::test_utils::update_statement2;
+    use crate::parser::test_utils::*;
+    use crate::{FromClause, Identifier, IndexedType, QualifiedTableName, Statement};
 
-//     #[test]
-//     fn test_update_from_table() {
-//         let expected_statement = update_from(FromClause::Table(QualifiedTableName::from(
-//             Identifier::Single("table_1".to_string()),
-//         )));
+    #[test]
+    fn update_from_table() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName::from(
+            Identifier::Single("table_1".to_string()),
+        )));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_update_from_table_with_schema() {
-//         let expected_statement = update_from(FromClause::Table(QualifiedTableName::from(
-//             Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
-//         )));
+    #[test]
+    fn update_from_table_with_schema() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName::from(
+            Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
+        )));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM schema_1.table_1",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM schema_1.table_1",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_update_from_table_with_alias() {
-//         let expected_statement = update_from(FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
-//             alias: Some("alias".to_string()),
-//             indexed_type: None,
-//         }));
+    #[test]
+    fn update_from_table_with_alias() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName {
+            table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
+            alias: Some("alias".to_string()),
+            indexed_type: None,
+        }));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM schema_1.table_1 AS alias",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM schema_1.table_1 AS alias",
+            Statement::Update(expected_statement.clone()),
+        );
 
-//     #[test]
-//     fn test_update_from_table_with_alias_without_as_keyword() {
-//         let expected_statement = update_from(FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Single("table_1".to_string()),
-//             alias: Some("alias".to_string()),
-//             indexed_type: None,
-//         }));
+        // without the as keyword
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM schema_1.table_1 alias",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1 alias",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+    #[test]
+    fn update_from_table_indexed() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName {
+            table_id: Identifier::Single("table_1".to_string()),
+            alias: None,
+            indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
+        }));
 
-//     #[test]
-//     fn test_update_from_table_with_alias_indexed() {
-//         let expected_statement = update_from(FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Single("table_1".to_string()),
-//             alias: Some("alias".to_string()),
-//             indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
-//         }));
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1 INDEXED BY index_1",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1 alias INDEXED BY index_1",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+    #[test]
+    fn update_from_table_not_indexed() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName {
+            table_id: Identifier::Single("table_1".to_string()),
+            alias: None,
+            indexed_type: Some(IndexedType::NotIndexed),
+        }));
 
-//     #[test]
-//     fn test_update_from_table_not_indexed() {
-//         let expected_statement = update_from(FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Single("table_1".to_string()),
-//             alias: None,
-//             indexed_type: Some(IndexedType::NotIndexed),
-//         }));
-
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1 NOT INDEXED",
-//             Statement::Update(expected_statement),
-//         );
-//     }
-// }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1 NOT INDEXED",
+            Statement::Update(expected_statement),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod update_from_subquery_tests {
