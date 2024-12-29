@@ -802,243 +802,228 @@ mod update_from_comma_separated_subqueries_tests {
     }
 }
 
-// #[cfg(test)]
-// mod update_from_with_join_clause_tests {
-//     use super::test_utils::update_from;
-//     use crate::expression::test_utils::{binary_op_expression, identifier_expression};
-//     use crate::parser::select::test_utils::select_from;
-//     use crate::parser::test_utils::*;
-//     use crate::{
-//         BinaryOp, FromClause, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable,
-//         JoinType, QualifiedTableName, SelectFromSubquery, Statement,
-//     };
+#[cfg(test)]
+mod update_from_with_join_clause_tests {
+    use super::test_utils::update_statement2;
+    use crate::expression::test_utils::{binary_op_expression, identifier_expression};
+    use crate::parser::select::test_utils::select_from;
+    use crate::parser::test_utils::*;
+    use crate::{
+        BinaryOp, FromClause, Identifier, IndexedType, JoinClause, JoinConstraint, JoinTable,
+        JoinType, QualifiedTableName, SelectFromSubquery, Statement,
+    };
 
-//     #[test]
-//     fn test_update_from_with_join_clause() {
-//         let expected_statement = update_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![JoinTable {
-//                 join_type: JoinType::Inner(false),
-//                 table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_2".to_string()),
-//                 ))),
-//                 constraints: None,
-//             }],
-//         }));
+    fn to_table(table_name: &str) -> Box<FromClause> {
+        Box::new(FromClause::Table(QualifiedTableName::from(
+            Identifier::Single(table_name.to_string()),
+        )))
+    }
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1 INNER JOIN table_2",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+    #[test]
+    fn update_from_with_join_clause() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Join(JoinClause {
+            lhs_table: to_table("table_1"),
+            join_tables: vec![JoinTable {
+                join_type: JoinType::Inner(false),
+                table: to_table("table_2"),
+                constraints: None,
+            }],
+        }));
 
-//     #[test]
-//     fn test_update_from_with_join_types() {
-//         let join_types = vec![
-//             JoinType::Inner(false),
-//             JoinType::Left(false),
-//             JoinType::Right(false),
-//             JoinType::Full(false),
-//             // NATURAL JOIN
-//             JoinType::Inner(true),
-//             JoinType::Left(true),
-//             JoinType::Right(true),
-//             JoinType::Full(true),
-//             JoinType::Cross,
-//         ];
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1 INNER JOIN table_2",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//         for join_type in join_types {
-//             let expected_statement = update_from(FromClause::Join(JoinClause {
-//                 lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_1".to_string()),
-//                 ))),
-//                 join_tables: vec![JoinTable {
-//                     join_type: join_type.clone(),
-//                     table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("table_2".to_string()),
-//                     ))),
-//                     constraints: None,
-//                 }],
-//             }));
+    #[test]
+    fn update_from_with_join_types() {
+        let join_types = vec![
+            JoinType::Inner(false),
+            JoinType::Left(false),
+            JoinType::Right(false),
+            JoinType::Full(false),
+            // NATURAL JOIN
+            JoinType::Inner(true),
+            JoinType::Left(true),
+            JoinType::Right(true),
+            JoinType::Full(true),
+            JoinType::Cross,
+        ];
 
-//             run_sunny_day_test(
-//                 &format!(
-//                     "UPDATE table1 SET column1 = 1 FROM table_1 {} JOIN table_2",
-//                     &join_type
-//                 ),
-//                 Statement::Update(expected_statement),
-//             );
-//         }
-//     }
+        for join_type in join_types {
+            let mut expected_statement = update_statement2();
+            expected_statement.from_clause = Some(FromClause::Join(JoinClause {
+                lhs_table: to_table("table_1"),
+                join_tables: vec![JoinTable {
+                    join_type: join_type.clone(),
+                    table: to_table("table_2"),
+                    constraints: None,
+                }],
+            }));
 
-//     #[test]
-//     fn test_update_from_with_cross_join() {
-//         let expected_statement = update_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![JoinTable {
-//                 join_type: JoinType::Cross,
-//                 table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_2".to_string()),
-//                 ))),
-//                 constraints: None,
-//             }],
-//         }));
+            run_sunny_day_test(
+                &format!(
+                    "UPDATE table_name1 SET col1 = 1 FROM table_1 {} JOIN table_2",
+                    &join_type
+                ),
+                Statement::Update(expected_statement),
+            );
+        }
+    }
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1, table_2",
-//             Statement::Update(expected_statement.clone()),
-//         );
+    #[test]
+    fn update_from_with_cross_join() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Join(JoinClause {
+            lhs_table: to_table("table_1"),
+            join_tables: vec![JoinTable {
+                join_type: JoinType::Cross,
+                table: to_table("table_2"),
+                constraints: None,
+            }],
+        }));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1 CROSS JOIN table_2",
-//             Statement::Update(expected_statement.clone()),
-//         );
-//     }
+        // implicit cross join
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1, table_2",
+            Statement::Update(expected_statement.clone()),
+        );
 
-//     #[test]
-//     fn test_update_from_with_join_clause_with_on_constraints() {
-//         let expected_statement = update_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![JoinTable {
-//                 join_type: JoinType::Inner(false),
-//                 table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_2".to_string()),
-//                 ))),
-//                 constraints: Some(JoinConstraint::On(binary_op_expression(
-//                     BinaryOp::Equals,
-//                     identifier_expression(&["table_1", "col1"]),
-//                     identifier_expression(&["table_2", "col1"]),
-//                 ))),
-//             }],
-//         }));
+        // explicit cross join
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1 CROSS JOIN table_2",
+            Statement::Update(expected_statement.clone()),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1 INNER JOIN table_2 ON table_1.col1 = table_2.col1",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+    #[test]
+    fn update_from_with_join_clause_with_on_constraints() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Join(JoinClause {
+            lhs_table: to_table("table_1"),
+            join_tables: vec![JoinTable {
+                join_type: JoinType::Inner(false),
+                table: to_table("table_2"),
+                constraints: Some(JoinConstraint::On(binary_op_expression(
+                    BinaryOp::Equals,
+                    identifier_expression(&["table_1", "col1"]),
+                    identifier_expression(&["table_2", "col1"]),
+                ))),
+            }],
+        }));
 
-//     #[test]
-//     fn test_update_from_with_join_clause_with_using_constraints() {
-//         let expected_statement = update_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![JoinTable {
-//                 join_type: JoinType::Inner(false),
-//                 table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("table_2".to_string()),
-//                 ))),
-//                 constraints: Some(JoinConstraint::Using(vec![Identifier::Single(
-//                     "col1".to_string(),
-//                 )])),
-//             }],
-//         }));
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1 INNER JOIN table_2 ON table_1.col1 = table_2.col1",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1 INNER JOIN table_2 USING (col1)",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+    #[test]
+    fn update_from_with_join_clause_with_using_constraints() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Join(JoinClause {
+            lhs_table: to_table("table_1"),
+            join_tables: vec![JoinTable {
+                join_type: JoinType::Inner(false),
+                table: to_table("table_2"),
+                constraints: Some(JoinConstraint::Using(vec![Identifier::Single(
+                    "col1".to_string(),
+                )])),
+            }],
+        }));
 
-//     #[test]
-//     fn test_update_from_with_join_clause_nested() {
-//         let expected_statement = update_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_1".to_string()),
-//             ))),
-//             join_tables: vec![
-//                 JoinTable {
-//                     join_type: JoinType::Inner(false),
-//                     table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("table_2".to_string()),
-//                     ))),
-//                     constraints: Some(JoinConstraint::On(binary_op_expression(
-//                         BinaryOp::Equals,
-//                         identifier_expression(&["table_1", "col1"]),
-//                         identifier_expression(&["table_2", "col2"]),
-//                     ))),
-//                 },
-//                 JoinTable {
-//                     join_type: JoinType::Full(false),
-//                     table: Box::new(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("table_3".to_string()),
-//                     ))),
-//                     constraints: Some(JoinConstraint::Using(vec![Identifier::Single(
-//                         "col3".to_string(),
-//                     )])),
-//                 },
-//             ],
-//         }));
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1 INNER JOIN table_2 USING (col1)",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1
-//                 INNER JOIN table_2 ON table_1.col1 = table_2.col2
-//                 FULL JOIN table_3 USING (col3)",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+    #[test]
+    fn update_from_with_multiple_join_clauses() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Join(JoinClause {
+            lhs_table: to_table("table_1"),
+            join_tables: vec![
+                JoinTable {
+                    join_type: JoinType::Inner(false),
+                    table: to_table("table_2"),
+                    constraints: Some(JoinConstraint::On(binary_op_expression(
+                        BinaryOp::Equals,
+                        identifier_expression(&["table_1", "col1"]),
+                        identifier_expression(&["table_2", "col2"]),
+                    ))),
+                },
+                JoinTable {
+                    join_type: JoinType::Full(false),
+                    table: to_table("table_3"),
+                    constraints: Some(JoinConstraint::Using(vec![Identifier::Single(
+                        "col3".to_string(),
+                    )])),
+                },
+            ],
+        }));
 
-//     #[test]
-//     fn test_update_from_with_join_clause_with_nested_keeping_ordering() {
-//         let subquery = JoinTable {
-//             join_type: JoinType::Inner(false),
-//             table: Box::new(FromClause::Subquery(SelectFromSubquery {
-//                 subquery: Box::new(select_from(FromClause::Join(JoinClause {
-//                     lhs_table: Box::new(FromClause::Table(QualifiedTableName {
-//                         table_id: Identifier::Single("table_2".to_string()),
-//                         alias: Some("t2".to_string()),
-//                         indexed_type: None,
-//                     })),
-//                     join_tables: vec![JoinTable {
-//                         join_type: JoinType::Left(false),
-//                         table: Box::new(FromClause::Table(QualifiedTableName {
-//                             table_id: Identifier::Single("table_3".to_string()),
-//                             alias: Some("t3".to_string()),
-//                             indexed_type: Some(IndexedType::Indexed("index_3".to_string())),
-//                         })),
-//                         constraints: Some(JoinConstraint::On(binary_op_expression(
-//                             BinaryOp::Equals,
-//                             identifier_expression(&["t2", "col2"]),
-//                             identifier_expression(&["t3", "col3"]),
-//                         ))),
-//                     }],
-//                 }))),
-//                 alias: Some("t_complex".to_string()),
-//             })),
-//             constraints: Some(JoinConstraint::On(binary_op_expression(
-//                 BinaryOp::Equals,
-//                 identifier_expression(&["t1", "col1"]),
-//                 identifier_expression(&["t_complex", "col1"]),
-//             ))),
-//         };
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1
+                INNER JOIN table_2 ON table_1.col1 = table_2.col2
+                FULL JOIN table_3 USING (col3)",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//         let expected_statement = update_from(FromClause::Join(JoinClause {
-//             lhs_table: Box::new(FromClause::Table(QualifiedTableName {
-//                 table_id: Identifier::Single("table_1".to_string()),
-//                 alias: Some("t1".to_string()),
-//                 indexed_type: None,
-//             })),
-//             join_tables: vec![subquery],
-//         }));
+    #[test]
+    fn update_from_with_nested_join_clauses() {
+        let subquery = JoinTable {
+            join_type: JoinType::Inner(false),
+            table: Box::new(FromClause::Subquery(SelectFromSubquery {
+                subquery: Box::new(select_from(FromClause::Join(JoinClause {
+                    lhs_table: Box::new(FromClause::Table(QualifiedTableName {
+                        table_id: Identifier::Single("table_2".to_string()),
+                        alias: Some("t2".to_string()),
+                        indexed_type: None,
+                    })),
+                    join_tables: vec![JoinTable {
+                        join_type: JoinType::Left(false),
+                        table: Box::new(FromClause::Table(QualifiedTableName {
+                            table_id: Identifier::Single("table_3".to_string()),
+                            alias: Some("t3".to_string()),
+                            indexed_type: Some(IndexedType::Indexed("index_3".to_string())),
+                        })),
+                        constraints: Some(JoinConstraint::On(binary_op_expression(
+                            BinaryOp::Equals,
+                            identifier_expression(&["t2", "col2"]),
+                            identifier_expression(&["t3", "col3"]),
+                        ))),
+                    }],
+                }))),
+                alias: Some("t_complex".to_string()),
+            })),
+            constraints: Some(JoinConstraint::On(binary_op_expression(
+                BinaryOp::Equals,
+                identifier_expression(&["t1", "col1"]),
+                identifier_expression(&["t_complex", "col1"]),
+            ))),
+        };
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM table_1 as t1 INNER JOIN
-//                 (
-//                     SELECT * FROM table_2 as t2 LEFT JOIN table_3 as t3 INDEXED BY index_3
-//                     ON t2.col2 = t3.col3
-//                 ) as t_complex
-//                 ON t1.col1 = t_complex.col1",
-//             Statement::Update(expected_statement),
-//         );
-//     }
-// }
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Join(JoinClause {
+            lhs_table: to_table("table_1"),
+            join_tables: vec![subquery],
+        }));
+
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM table_1 INNER JOIN
+                (
+                    SELECT * FROM table_2 as t2 LEFT JOIN table_3 as t3 INDEXED BY index_3
+                    ON t2.col2 = t3.col3
+                ) as t_complex
+                ON t1.col1 = t_complex.col1",
+            Statement::Update(expected_statement),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod update_statements_with_cte_tests {
