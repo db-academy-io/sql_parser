@@ -721,87 +721,86 @@ mod update_from_table_function_tests {
     }
 }
 
-// #[cfg(test)]
-// mod update_from_comma_separated_table_or_subqueries_tests {
-//     use super::test_utils::update_from;
-//     use crate::parser::select::test_utils::select_from;
-//     use crate::parser::test_utils::*;
-//     use crate::{
-//         FromClause, Identifier, IndexedType, JoinClause, JoinTable, JoinType, QualifiedTableName,
-//         SelectFromSubquery, Statement,
-//     };
+#[cfg(test)]
+mod update_from_comma_separated_subqueries_tests {
+    use super::test_utils::update_statement2;
+    use crate::parser::select::test_utils::select_star_from;
+    use crate::parser::test_utils::*;
+    use crate::{
+        FromClause, Identifier, IndexedType, JoinClause, JoinTable, JoinType, QualifiedTableName,
+        SelectFromSubquery, Statement,
+    };
 
-//     #[test]
-//     fn test_update_from_comma_separated_table_or_subqueries() {
-//         fn join(lhs: FromClause, rhs: FromClause) -> FromClause {
-//             FromClause::Join(JoinClause {
-//                 lhs_table: Box::new(lhs),
-//                 join_tables: vec![JoinTable {
-//                     join_type: JoinType::Cross,
-//                     table: Box::new(rhs),
-//                     constraints: None,
-//                 }],
-//             })
-//         }
+    #[test]
+    fn update_from_comma_separated_subqueries() {
+        fn join(lhs: FromClause, rhs: FromClause) -> FromClause {
+            FromClause::Join(JoinClause {
+                lhs_table: Box::new(lhs),
+                join_tables: vec![JoinTable {
+                    join_type: JoinType::Cross,
+                    table: Box::new(rhs),
+                    constraints: None,
+                }],
+            })
+        }
 
-//         let table_1 = FromClause::Table(QualifiedTableName::from(Identifier::Single(
-//             "table_1".to_string(),
-//         )));
-//         let schema2_table2 =
-//             FromClause::Table(QualifiedTableName::from(Identifier::Compound(vec![
-//                 "schema2".to_string(),
-//                 "table2".to_string(),
-//             ])));
+        let table_1 = FromClause::Table(QualifiedTableName::from(Identifier::Single(
+            "table_1".to_string(),
+        )));
+        let schema2_table2 =
+            FromClause::Table(QualifiedTableName::from(Identifier::Compound(vec![
+                "schema2".to_string(),
+                "table2".to_string(),
+            ])));
 
-//         let schema3_table3 = FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Compound(vec!["schema3".to_string(), "table3".to_string()]),
-//             alias: Some("table3_alias".to_string()),
-//             indexed_type: None,
-//         });
+        let schema3_table3 = FromClause::Table(QualifiedTableName {
+            table_id: Identifier::Compound(vec!["schema3".to_string(), "table3".to_string()]),
+            alias: Some("table3_alias".to_string()),
+            indexed_type: None,
+        });
 
-//         let indexed_table = FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Single("indexed_table".to_string()),
-//             alias: Some("t1".to_string()),
-//             indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
-//         });
+        let indexed_table = FromClause::Table(QualifiedTableName {
+            table_id: Identifier::Single("indexed_table".to_string()),
+            alias: Some("t1".to_string()),
+            indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
+        });
 
-//         let not_indexed_table = FromClause::Table(QualifiedTableName {
-//             table_id: Identifier::Single("not_indexed_table".to_string()),
-//             alias: Some("t2".to_string()),
-//             indexed_type: Some(IndexedType::NotIndexed),
-//         });
+        let not_indexed_table = FromClause::Table(QualifiedTableName {
+            table_id: Identifier::Single("not_indexed_table".to_string()),
+            alias: Some("t2".to_string()),
+            indexed_type: Some(IndexedType::NotIndexed),
+        });
 
-//         let subquery = FromClause::Subquery(SelectFromSubquery {
-//             subquery: Box::new(select_from(FromClause::Table(QualifiedTableName::from(
-//                 Identifier::Single("table_2".to_string()),
-//             )))),
-//             alias: Some("select_alias".to_string()),
-//         });
+        let subquery = FromClause::Subquery(SelectFromSubquery {
+            subquery: Box::new(select_star_from(Identifier::Single("table_2".to_string()))),
+            alias: Some("select_alias".to_string()),
+        });
 
-//         let expected_statement = update_from(FromClause::Froms(vec![join(
-//             table_1,
-//             join(
-//                 schema2_table2,
-//                 join(
-//                     schema3_table3,
-//                     join(indexed_table, join(not_indexed_table, subquery)),
-//                 ),
-//             ),
-//         )]));
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Froms(vec![join(
+            table_1,
+            join(
+                schema2_table2,
+                join(
+                    schema3_table3,
+                    join(indexed_table, join(not_indexed_table, subquery)),
+                ),
+            ),
+        )]));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM (
-//                     table_1,
-//                     schema2.table2,
-//                     schema3.table3 as table3_alias,
-//                     indexed_table as t1 INDEXED BY index_1,
-//                     not_indexed_table as t2 NOT INDEXED,
-//                     (SELECT * FROM table_2) as select_alias
-//                 )",
-//             Statement::Update(expected_statement),
-//         );
-//     }
-// }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM (
+                    table_1,
+                    schema2.table2,
+                    schema3.table3 as table3_alias,
+                    indexed_table as t1 INDEXED BY index_1,
+                    not_indexed_table as t2 NOT INDEXED,
+                    (SELECT * FROM table_2) as select_alias
+                )",
+            Statement::Update(expected_statement),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod update_from_with_join_clause_tests {
