@@ -18,6 +18,9 @@ pub enum ParsingError {
     /// Unexpected token
     UnexpectedToken(String),
 
+    /// Unexpected token type
+    UnexpectedTokenType(String),
+
     /// Tokenizer error
     TokenizerError(String),
 

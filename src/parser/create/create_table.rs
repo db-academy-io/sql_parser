@@ -38,7 +38,6 @@ impl<'a> CreateTableStatementParser for Parser<'a> {
         let if_not_exists = self.parse_if_not_exists()?;
         let table_name = self.parse_identifier()?;
 
-        dbg!(&self.peek_token()?);
         let create_table_option = self.parse_create_table_option()?;
 
         Ok(CreateTableStatement {
@@ -54,11 +53,9 @@ impl<'a> CreateTableStatementParser for Parser<'a> {
             let select_statement = self.parse_select_statement()?;
             return Ok(CreateTableOption::SelectStatement(select_statement));
         }
-        dbg!(&self.peek_token()?);
         self.consume_as(TokenType::LeftParen)?;
 
         let column_definitions = self.parse_column_definitions()?;
-        dbg!(&self.peek_token()?);
 
         let table_constraints = if self.peek_as(TokenType::RightParen).is_ok() {
             vec![]
@@ -79,17 +76,14 @@ impl<'a> CreateTableStatementParser for Parser<'a> {
 
     fn parse_column_definitions(&mut self) -> Result<Vec<ColumnDefinition>, ParsingError> {
         let mut column_definitions = vec![];
-        dbg!(&self.peek_token()?);
 
         // Column definitions starts with an identifier, otherwise it's a table constraint
         while self.peek_as_id_or_star().is_ok() {
             column_definitions.push(self.parse_column_definition()?);
-            dbg!(&self.peek_token()?);
             if self.consume_as(TokenType::Comma).is_err() {
                 break;
             }
         }
-        dbg!(&self.peek_token()?);
         Ok(column_definitions)
     }
 
@@ -116,9 +110,8 @@ impl<'a> CreateTableStatementParser for Parser<'a> {
                 None
             }
         };
-        dbg!(&self.peek_token()?);
+
         let constraint_type = self.parse_table_constraint_type()?;
-        dbg!(&self.peek_token()?);
         Ok(TableConstraint {
             constraint_name,
             constraint_type,
@@ -127,7 +120,6 @@ impl<'a> CreateTableStatementParser for Parser<'a> {
 
     fn parse_table_constraint_type(&mut self) -> Result<TableConstraintType, ParsingError> {
         let keyword = self.peek_as_keyword()?;
-        dbg!(&self.peek_token()?);
         match keyword {
             Keyword::Primary => {
                 self.consume_as_keyword(Keyword::Primary)?;

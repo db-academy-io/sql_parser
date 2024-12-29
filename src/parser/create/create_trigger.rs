@@ -134,18 +134,14 @@ impl<'a> CreateTriggerStatementParser for Parser<'a> {
 
     fn parse_trigger_statements(&mut self) -> Result<Vec<TriggerStatement>, ParsingError> {
         self.consume_as_keyword(Keyword::Begin)?;
-        dbg!(&self.peek_token());
         let mut statements = vec![];
 
-        dbg!(&self.peek_token());
         loop {
-            dbg!(&self.peek_token());
             if self.consume_as_keyword(Keyword::End).is_ok() {
                 break;
             }
 
             let statement = self.parse_statement()?;
-            dbg!(&statement);
             statements.push(TriggerStatement::try_from(statement)?);
 
             if self.consume_as(TokenType::Semi).is_err() {
@@ -325,7 +321,6 @@ mod create_trigger_tests {
                 "CREATE TRIGGER trigger_name {} ON table_name BEGIN SELECT * FROM table_name; END;",
                 trigger_event_type.to_string()
             );
-            // dbg!(&query);
             run_sunny_day_test(&query, Statement::CreateTrigger(expected));
         }
     }

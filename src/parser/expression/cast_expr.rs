@@ -9,6 +9,7 @@ pub trait CastExpressionParser {
 
 impl<'a> CastExpressionParser for Parser<'a> {
     fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError> {
+        dbg!(&self.peek_token()?);
         self.consume_as_keyword(Keyword::Cast)?;
 
         self.consume_as(TokenType::LeftParen)?;
@@ -18,6 +19,7 @@ impl<'a> CastExpressionParser for Parser<'a> {
 
         let data_type = self.parse_data_type()?;
 
+        dbg!(&self.peek_token()?);
         self.consume_as(TokenType::RightParen)?;
 
         Ok(Expression::Cast(Box::new(expression), data_type))
@@ -88,4 +90,15 @@ mod cast_expression_tests {
             ),
         );
     }
+
+    // #[test]
+    // fn cast_with_multi_name() {
+    //     run_sunny_day_expression_test(
+    //         "SELECT CAST(1 AS DOUBLE PRECISION) as 1;",
+    //         &cast_expression(
+    //             numeric_literal_expression("1"),
+    //             DataType::BoundedDataType("DOUBLE PRECISION".to_string(), "1".to_string(), "10".to_string()),
+    //         ),
+    //     );
+    // }
 }

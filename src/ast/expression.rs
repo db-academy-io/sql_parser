@@ -194,8 +194,8 @@ impl<'a> TryFrom<&'a TokenType<'a>> for BinaryOp {
             TokenType::BitOr => Ok(BinaryOp::BitOr),
             TokenType::LeftShift => Ok(BinaryOp::LeftShift),
             TokenType::RightShift => Ok(BinaryOp::RightShift),
-            _ => Err(ParsingError::UnexpectedToken(format!(
-                "Unexpected token: {}",
+            _ => Err(ParsingError::UnexpectedTokenType(format!(
+                "Unexpected token type: {}",
                 token_type
             ))),
         }
