@@ -1,4 +1,4 @@
-use crate::{DataType, TokenType};
+use crate::{DataType, DataTypeName, TokenType};
 
 use super::Parser;
 use crate::parser::errors::ParsingError;
@@ -10,7 +10,24 @@ pub trait DataTypeParser {
 
 impl<'a> DataTypeParser for Parser<'a> {
     fn parse_data_type(&mut self) -> Result<DataType, ParsingError> {
-        let name = self.consume_as_id()?;
+        let mut names = Vec::new();
+
+        while let Ok(name) = self.consume_as_id() {
+            names.push(name);
+        }
+
+        if names.is_empty() {
+            return Err(ParsingError::UnexpectedToken(format!(
+                "Expected a data type name, got {}",
+                self.peek_token()?
+            )));
+        }
+
+        let name = if names.len() == 1 {
+            DataTypeName::Single(names.pop().unwrap())
+        } else {
+            DataTypeName::Compound(names)
+        };
 
         if self.consume_as(TokenType::LeftParen).is_ok() {
             let lower_bound = self.parse_signed_number()?;

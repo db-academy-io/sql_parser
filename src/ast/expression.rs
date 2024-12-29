@@ -357,8 +357,24 @@ pub enum FrameSpecExclude {
     Ties,
 }
 
-/// A String alias for a data type name
-pub type DataTypeName = String;
+/// A data type name
+#[derive(Debug, PartialEq, Clone)]
+pub enum DataTypeName {
+    /// A single data type name, e.g. INTEGER
+    Single(String),
+    /// A compound data type name, e.g. DOUBLE PRECISION
+    Compound(Vec<String>),
+}
+
+impl From<&str> for DataTypeName {
+    fn from(s: &str) -> Self {
+        if s.contains(" ") {
+            DataTypeName::Compound(s.split(" ").map(|s| s.to_string()).collect())
+        } else {
+            DataTypeName::Single(s.to_string())
+        }
+    }
+}
 
 /// A data type enum, representing the [sqlite-data-types](https://www.sqlite.org/datatype3.html)
 #[derive(Debug, PartialEq, Clone)]

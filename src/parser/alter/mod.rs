@@ -117,7 +117,7 @@ pub mod test_utils {
     pub fn alter_table_statement() -> AlterTableStatement {
         alter_table(AlterTableStatementType::AddColumn(ColumnDefinition {
             column_name: Identifier::Single("column_name".to_string()),
-            column_type: Some(DataType::PlainDataType("integer".to_string())),
+            column_type: Some(DataType::PlainDataType("integer".into())),
             column_constraints: vec![],
         }))
     }
@@ -138,7 +138,7 @@ pub mod test_utils {
     pub fn add_column_statement() -> AlterTableStatement {
         alter_table(AlterTableStatementType::AddColumn(ColumnDefinition {
             column_name: Identifier::Single("column_name".to_string()),
-            column_type: Some(DataType::PlainDataType("integer".to_string())),
+            column_type: Some(DataType::PlainDataType("integer".into())),
             column_constraints: vec![],
         }))
     }
@@ -146,7 +146,7 @@ pub mod test_utils {
     pub fn column_constraint_statement(constraint: ColumnConstraint) -> AlterTableStatement {
         alter_table(AlterTableStatementType::AddColumn(ColumnDefinition {
             column_name: Identifier::Single("column_name".to_string()),
-            column_type: Some(DataType::PlainDataType("integer".to_string())),
+            column_type: Some(DataType::PlainDataType("integer".into())),
             column_constraints: vec![constraint],
         }))
     }
@@ -264,10 +264,7 @@ mod add_column_tests {
         let mut expected_statement = add_column_statement();
         expected_statement.statement_type = AlterTableStatementType::AddColumn(ColumnDefinition {
             column_name: Identifier::Single("column_name".to_string()),
-            column_type: Some(DataType::SizedDataType(
-                "varchar".to_string(),
-                "10".to_string(),
-            )),
+            column_type: Some(DataType::SizedDataType("varchar".into(), "10".to_string())),
             column_constraints: vec![],
         });
 
@@ -283,7 +280,7 @@ mod add_column_tests {
         expected_statement.statement_type = AlterTableStatementType::AddColumn(ColumnDefinition {
             column_name: Identifier::Single("column_name".to_string()),
             column_type: Some(DataType::BoundedDataType(
-                "varchar".to_string(),
+                "varchar".into(),
                 "-10".to_string(),
                 "20".to_string(),
             )),

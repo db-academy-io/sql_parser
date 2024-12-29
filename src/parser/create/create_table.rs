@@ -257,15 +257,12 @@ mod create_table_tests {
                 columns: vec![
                     ColumnDefinition {
                         column_name: Identifier::from("column_name1"),
-                        column_type: Some(DataType::PlainDataType("INTEGER".to_string())),
+                        column_type: Some(DataType::PlainDataType("INTEGER".into())),
                         column_constraints: vec![],
                     },
                     ColumnDefinition {
                         column_name: Identifier::from("column_name2"),
-                        column_type: Some(DataType::SizedDataType(
-                            "VARCHAR".to_string(),
-                            "10".to_string(),
-                        )),
+                        column_type: Some(DataType::SizedDataType("VARCHAR".into(), "10".into())),
                         column_constraints: vec![ColumnConstraint {
                             name: Some(Identifier::from("not_null_constraint")),
                             constraint_type: ColumnConstraintType::NotNull(ConflictClause::None),
@@ -289,7 +286,7 @@ mod create_table_tests {
             CreateTableOption::ColumnDefinitions(CreateTableColumnDef {
                 columns: vec![ColumnDefinition {
                     column_name: Identifier::from("column_name1"),
-                    column_type: Some(DataType::PlainDataType("INTEGER".to_string())),
+                    column_type: Some(DataType::PlainDataType("INTEGER".into())),
                     column_constraints: vec![],
                 }],
                 table_constraints: vec![TableConstraint {
@@ -321,7 +318,7 @@ mod create_table_tests {
                 CreateTableOption::ColumnDefinitions(CreateTableColumnDef {
                     columns: vec![ColumnDefinition {
                         column_name: Identifier::from("column_name1"),
-                        column_type: Some(DataType::PlainDataType("INTEGER".to_string())),
+                        column_type: Some(DataType::PlainDataType("INTEGER".into())),
                         column_constraints: vec![],
                     }],
                     table_constraints: vec![],

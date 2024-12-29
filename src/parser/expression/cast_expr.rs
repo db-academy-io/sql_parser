@@ -38,7 +38,7 @@ mod cast_expression_tests {
             "SELECT CAST(1 AS INTEGER);",
             &cast_expression(
                 numeric_literal_expression("1"),
-                DataType::PlainDataType("INTEGER".to_string()),
+                DataType::PlainDataType("INTEGER".into()),
             ),
         );
     }
@@ -53,7 +53,7 @@ mod cast_expression_tests {
                     numeric_literal_expression("1"),
                     numeric_literal_expression("2"),
                 ),
-                DataType::PlainDataType("INTEGER".to_string()),
+                DataType::PlainDataType("INTEGER".into()),
             ),
         );
     }
@@ -64,7 +64,7 @@ mod cast_expression_tests {
             "SELECT CAST(NULL AS INTEGER);",
             &cast_expression(
                 null_literal_expression(),
-                DataType::PlainDataType("INTEGER".to_string()),
+                DataType::PlainDataType("INTEGER".into()),
             ),
         );
     }
@@ -75,7 +75,7 @@ mod cast_expression_tests {
             "SELECT CAST(1 AS VARCHAR(10));",
             &cast_expression(
                 numeric_literal_expression("1"),
-                DataType::SizedDataType("VARCHAR".to_string(), "10".to_string()),
+                DataType::SizedDataType("VARCHAR".into(), "10".into()),
             ),
         );
     }
@@ -86,23 +86,19 @@ mod cast_expression_tests {
             "SELECT CAST(1 AS VARCHAR(1, 10));",
             &cast_expression(
                 numeric_literal_expression("1"),
-                DataType::BoundedDataType("VARCHAR".to_string(), "1".to_string(), "10".to_string()),
+                DataType::BoundedDataType("VARCHAR".into(), "1".into(), "10".into()),
             ),
         );
     }
 
-    // #[test]
-    // fn cast_with_multi_name() {
-    //     run_sunny_day_expression_test(
-    //         "SELECT CAST(1 AS DOUBLE PRECISION) as 1;",
-    //         &cast_expression(
-    //             numeric_literal_expression("1"),
-    //             DataType::BoundedDataType(
-    //                 "DOUBLE PRECISION".to_string(),
-    //                 "1".to_string(),
-    //                 "10".to_string(),
-    //             ),
-    //         ),
-    //     );
-    // }
+    #[test]
+    fn cast_with_multi_name() {
+        run_sunny_day_expression_test(
+            "SELECT CAST(1 AS DOUBLE TRIPPLE PRECISION) as 1;",
+            &cast_expression(
+                numeric_literal_expression("1"),
+                DataType::PlainDataType("DOUBLE TRIPPLE PRECISION".into()),
+            ),
+        );
+    }
 }

@@ -920,7 +920,7 @@ mod parenthesized_expression_tests {
                 ),
                 cast_expression(
                     numeric_literal_expression("5"),
-                    DataType::PlainDataType("int".to_string()),
+                    DataType::PlainDataType("int".into()),
                 ),
                 unary_op_expression(UnaryOp::Minus, numeric_literal_expression("5")),
                 raise_expression(RaiseFunction::Ignore),
