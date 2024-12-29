@@ -98,29 +98,11 @@ impl<'a> UpdateStatementParser for Parser<'a> {
 #[cfg(test)]
 pub mod test_utils {
     use crate::{
-        expression::test_utils::numeric_literal_expression, ConflictClause, CteExpression,
-        Expression, FromClause, Identifier, LimitClause, OrderingTerm, QualifiedTableName,
-        ReturningClause, SetClause, Statement, UpdateStatement, WithCteStatement,
+        expression::test_utils::numeric_literal_expression, ConflictClause, Identifier,
+        QualifiedTableName, SetClause, UpdateStatement,
     };
 
-    pub fn update_statement(
-        table_name: QualifiedTableName,
-        set_clause: Vec<SetClause>,
-    ) -> Statement {
-        Statement::Update(UpdateStatement {
-            with_cte: None,
-            conflict_clause: ConflictClause::None,
-            table_name,
-            set_clause,
-            from_clause: None,
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: None,
-            limit: None,
-        })
-    }
-
-    pub fn update_statement2() -> UpdateStatement {
+    pub fn update_statement() -> UpdateStatement {
         UpdateStatement {
             with_cte: None,
             conflict_clause: ConflictClause::None,
@@ -135,134 +117,6 @@ pub mod test_utils {
             order_by: None,
             limit: None,
         }
-    }
-
-    pub fn update_statement_with_conflict_clause(conflict_clause: ConflictClause) -> Statement {
-        Statement::Update(UpdateStatement {
-            with_cte: None,
-            conflict_clause,
-            table_name: QualifiedTableName::from(Identifier::from("table1")),
-            set_clause: vec![SetClause::ColumnAssignment(
-                Identifier::from("column1"),
-                numeric_literal_expression("1"),
-            )],
-            from_clause: None,
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: None,
-            limit: None,
-        })
-    }
-
-    pub fn update_statement_with_where_clause(where_clause: Expression) -> Statement {
-        Statement::Update(UpdateStatement {
-            with_cte: None,
-            conflict_clause: ConflictClause::None,
-            table_name: QualifiedTableName::from(Identifier::from("table1")),
-            set_clause: vec![SetClause::ColumnAssignment(
-                Identifier::from("column1"),
-                numeric_literal_expression("1"),
-            )],
-            from_clause: None,
-            where_clause: Some(Box::new(where_clause)),
-            returning_clause: vec![],
-            order_by: None,
-            limit: None,
-        })
-    }
-
-    pub fn update_statement_with_returning_clause(
-        returning_clause: Vec<ReturningClause>,
-    ) -> Statement {
-        Statement::Update(UpdateStatement {
-            with_cte: None,
-            conflict_clause: ConflictClause::None,
-            table_name: QualifiedTableName::from(Identifier::from("table1")),
-            set_clause: vec![SetClause::ColumnAssignment(
-                Identifier::from("column1"),
-                numeric_literal_expression("1"),
-            )],
-            from_clause: None,
-            where_clause: None,
-            returning_clause: returning_clause,
-            order_by: None,
-            limit: None,
-        })
-    }
-
-    pub fn update_from(from_clause: FromClause) -> UpdateStatement {
-        UpdateStatement {
-            with_cte: None,
-            conflict_clause: ConflictClause::None,
-            table_name: QualifiedTableName::from(Identifier::from("table1")),
-            set_clause: vec![SetClause::ColumnAssignment(
-                Identifier::from("column1"),
-                numeric_literal_expression("1"),
-            )],
-            from_clause: Some(from_clause),
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: None,
-            limit: None,
-        }
-    }
-
-    pub fn update_statement_with_order_by_clause(order_by_clause: Vec<OrderingTerm>) -> Statement {
-        Statement::Update(UpdateStatement {
-            with_cte: None,
-            conflict_clause: ConflictClause::None,
-            table_name: QualifiedTableName::from(Identifier::from("table1")),
-            set_clause: vec![SetClause::ColumnAssignment(
-                Identifier::from("column1"),
-                numeric_literal_expression("1"),
-            )],
-            from_clause: None,
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: Some(order_by_clause),
-            limit: None,
-        })
-    }
-
-    pub fn update_statement_with_limit_clause(limit_clause: LimitClause) -> Statement {
-        Statement::Update(UpdateStatement {
-            with_cte: None,
-            conflict_clause: ConflictClause::None,
-            table_name: QualifiedTableName::from(Identifier::from("table1")),
-            set_clause: vec![SetClause::ColumnAssignment(
-                Identifier::from("column1"),
-                numeric_literal_expression("1"),
-            )],
-            from_clause: None,
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: None,
-            limit: Some(limit_clause),
-        })
-    }
-
-    pub fn update_statement_with_cte_clause(
-        recursive: bool,
-        cte_expressions: Vec<CteExpression>,
-        table_name: QualifiedTableName,
-    ) -> Statement {
-        Statement::Update(UpdateStatement {
-            with_cte: Some(WithCteStatement {
-                recursive,
-                cte_expressions,
-            }),
-            conflict_clause: ConflictClause::None,
-            table_name,
-            set_clause: vec![SetClause::ColumnAssignment(
-                Identifier::from("column1"),
-                numeric_literal_expression("1"),
-            )],
-            from_clause: None,
-            where_clause: None,
-            returning_clause: vec![],
-            order_by: None,
-            limit: None,
-        })
     }
 }
 
@@ -282,7 +136,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_basic() {
-        let expected = update_statement2();
+        let expected = update_statement();
         run_sunny_day_test(
             "UPDATE table_name1 SET col1 = 1",
             Statement::Update(expected),
@@ -301,7 +155,7 @@ mod update_statement_tests {
         ];
 
         for conflict_option in conflict_options {
-            let mut expected = update_statement2();
+            let mut expected = update_statement();
             expected.conflict_clause = conflict_option.clone();
             run_sunny_day_test(
                 &format!("UPDATE {} table_name1 SET col1 = 1", conflict_option),
@@ -312,7 +166,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_table_and_schema() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.table_name = QualifiedTableName::from(Identifier::Compound(vec![
             "schema_1".to_string(),
             "table_1".to_string(),
@@ -326,7 +180,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_alias() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.table_name = QualifiedTableName {
             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
             alias: Some("alias_1".to_string()),
@@ -341,7 +195,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_indexed_type() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.table_name.indexed_type =
             Some(IndexedType::Indexed("index_1".to_string()));
 
@@ -350,7 +204,7 @@ mod update_statement_tests {
             Statement::Update(expected_statement),
         );
 
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.table_name.indexed_type = Some(IndexedType::NotIndexed);
 
         run_sunny_day_test(
@@ -361,7 +215,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_multiple_set_clauses() {
-        let mut expected = update_statement2();
+        let mut expected = update_statement();
         expected.set_clause = vec![
             SetClause::ColumnAssignment(
                 Identifier::from("column1"),
@@ -385,7 +239,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_where_clause() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.where_clause = Some(Box::new(numeric_literal_expression("1")));
 
         run_sunny_day_test(
@@ -396,7 +250,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_where_clause_expression() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.where_clause = Some(Box::new(binary_op_expression(
             BinaryOp::Equals,
             identifier_expression(&["column1"]),
@@ -410,7 +264,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_returning_clause() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.returning_clause = vec![ReturningClause::Wildcard];
 
         run_sunny_day_test(
@@ -421,7 +275,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_returning_clauses() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.returning_clause = vec![
             ReturningClause::Wildcard,
             ReturningClause::Expr(numeric_literal_expression("1")),
@@ -439,7 +293,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_order_by_clause() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.order_by = Some(vec![
             OrderingTerm {
                 expression: Box::new(identifier_expression(&["column_1"])),
@@ -463,7 +317,7 @@ mod update_statement_tests {
 
     #[test]
     fn update_statement_with_limit_clause() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.limit = Some(LimitClause {
             limit: Box::new(numeric_literal_expression("10")),
             offset: None,
@@ -474,7 +328,7 @@ mod update_statement_tests {
             Statement::Update(expected_statement),
         );
 
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.limit = Some(LimitClause {
             limit: Box::new(numeric_literal_expression("10")),
             offset: Some(Box::new(numeric_literal_expression("4"))),
@@ -485,7 +339,7 @@ mod update_statement_tests {
             Statement::Update(expected_statement),
         );
 
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.limit = Some(LimitClause {
             limit: Box::new(numeric_literal_expression("10")),
             offset: None,
@@ -500,13 +354,13 @@ mod update_statement_tests {
 
 #[cfg(test)]
 mod update_from_table_tests {
-    use super::test_utils::update_statement2;
+    use super::test_utils::update_statement;
     use crate::parser::test_utils::*;
     use crate::{FromClause, Identifier, IndexedType, QualifiedTableName, Statement};
 
     #[test]
     fn update_from_table() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName::from(
             Identifier::Single("table_1".to_string()),
         )));
@@ -519,7 +373,7 @@ mod update_from_table_tests {
 
     #[test]
     fn update_from_table_with_schema() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName::from(
             Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
         )));
@@ -532,7 +386,7 @@ mod update_from_table_tests {
 
     #[test]
     fn update_from_table_with_alias() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName {
             table_id: Identifier::Compound(vec!["schema_1".to_string(), "table_1".to_string()]),
             alias: Some("alias".to_string()),
@@ -553,7 +407,7 @@ mod update_from_table_tests {
 
     #[test]
     fn update_from_table_indexed() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName {
             table_id: Identifier::Single("table_1".to_string()),
             alias: None,
@@ -568,7 +422,7 @@ mod update_from_table_tests {
 
     #[test]
     fn update_from_table_not_indexed() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Table(QualifiedTableName {
             table_id: Identifier::Single("table_1".to_string()),
             alias: None,
@@ -584,14 +438,14 @@ mod update_from_table_tests {
 
 #[cfg(test)]
 mod update_from_subquery_tests {
-    use super::test_utils::update_statement2;
+    use super::test_utils::update_statement;
     use crate::parser::select::test_utils::select_star_from;
     use crate::parser::test_utils::*;
     use crate::{FromClause, Identifier, SelectFromSubquery, Statement};
 
     #[test]
     fn update_from_subquery() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Subquery(SelectFromSubquery {
             subquery: Box::new(select_star_from(Identifier::Single("table_1".to_string()))),
             alias: None,
@@ -605,7 +459,7 @@ mod update_from_subquery_tests {
 
     #[test]
     fn test_update_from_subquery_aliased() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Subquery(SelectFromSubquery {
             subquery: Box::new(select_star_from(Identifier::Single("table_1".to_string()))),
             alias: Some("alias".to_string()),
@@ -626,7 +480,7 @@ mod update_from_subquery_tests {
 
 #[cfg(test)]
 mod update_from_table_function_tests {
-    use super::test_utils::update_statement2;
+    use super::test_utils::update_statement;
     use crate::expression::test_utils::{
         binary_op_expression, identifier_expression, numeric_literal_expression,
     };
@@ -635,7 +489,7 @@ mod update_from_table_function_tests {
 
     #[test]
     fn update_from_table_function() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Single("function_1".to_string()),
             arguments: vec![numeric_literal_expression("1")],
@@ -650,7 +504,7 @@ mod update_from_table_function_tests {
 
     #[test]
     fn update_from_table_function_with_schema() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Compound(vec![
                 "schema_1".to_string(),
@@ -672,7 +526,7 @@ mod update_from_table_function_tests {
 
     #[test]
     fn update_from_table_function_with_multiple_arguments() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Compound(vec![
                 "schema_1".to_string(),
@@ -694,7 +548,7 @@ mod update_from_table_function_tests {
 
     #[test]
     fn update_from_table_function_with_alias() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Compound(vec![
                 "schema_1".to_string(),
@@ -723,7 +577,7 @@ mod update_from_table_function_tests {
 
 #[cfg(test)]
 mod update_from_comma_separated_subqueries_tests {
-    use super::test_utils::update_statement2;
+    use super::test_utils::update_statement;
     use crate::parser::select::test_utils::select_star_from;
     use crate::parser::test_utils::*;
     use crate::{
@@ -776,7 +630,7 @@ mod update_from_comma_separated_subqueries_tests {
             alias: Some("select_alias".to_string()),
         });
 
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Froms(vec![join(
             table_1,
             join(
@@ -804,7 +658,7 @@ mod update_from_comma_separated_subqueries_tests {
 
 #[cfg(test)]
 mod update_from_with_join_clause_tests {
-    use super::test_utils::update_statement2;
+    use super::test_utils::update_statement;
     use crate::expression::test_utils::{binary_op_expression, identifier_expression};
     use crate::parser::select::test_utils::select_from;
     use crate::parser::test_utils::*;
@@ -821,7 +675,7 @@ mod update_from_with_join_clause_tests {
 
     #[test]
     fn update_from_with_join_clause() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Join(JoinClause {
             lhs_table: to_table("table_1"),
             join_tables: vec![JoinTable {
@@ -853,7 +707,7 @@ mod update_from_with_join_clause_tests {
         ];
 
         for join_type in join_types {
-            let mut expected_statement = update_statement2();
+            let mut expected_statement = update_statement();
             expected_statement.from_clause = Some(FromClause::Join(JoinClause {
                 lhs_table: to_table("table_1"),
                 join_tables: vec![JoinTable {
@@ -875,7 +729,7 @@ mod update_from_with_join_clause_tests {
 
     #[test]
     fn update_from_with_cross_join() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Join(JoinClause {
             lhs_table: to_table("table_1"),
             join_tables: vec![JoinTable {
@@ -900,7 +754,7 @@ mod update_from_with_join_clause_tests {
 
     #[test]
     fn update_from_with_join_clause_with_on_constraints() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Join(JoinClause {
             lhs_table: to_table("table_1"),
             join_tables: vec![JoinTable {
@@ -922,7 +776,7 @@ mod update_from_with_join_clause_tests {
 
     #[test]
     fn update_from_with_join_clause_with_using_constraints() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Join(JoinClause {
             lhs_table: to_table("table_1"),
             join_tables: vec![JoinTable {
@@ -942,7 +796,7 @@ mod update_from_with_join_clause_tests {
 
     #[test]
     fn update_from_with_multiple_join_clauses() {
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Join(JoinClause {
             lhs_table: to_table("table_1"),
             join_tables: vec![
@@ -1007,7 +861,7 @@ mod update_from_with_join_clause_tests {
             ))),
         };
 
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Join(JoinClause {
             lhs_table: to_table("table_1"),
             join_tables: vec![subquery],
@@ -1028,7 +882,7 @@ mod update_from_with_join_clause_tests {
 #[cfg(test)]
 mod update_statements_with_cte_tests {
     use super::super::cte::test_utils::cte_expression;
-    use super::test_utils::update_statement2;
+    use super::test_utils::update_statement;
     use crate::parser::select::test_utils::select_from;
     use crate::parser::test_utils::*;
     use crate::{FromClause, Identifier, QualifiedTableName, Statement, WithCteStatement};
@@ -1043,7 +897,7 @@ mod update_statements_with_cte_tests {
                 Identifier::from("cte_table"),
             ))),
         );
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.table_name =
             QualifiedTableName::from(Identifier::Single("cte_1".to_string()));
         expected_statement.with_cte = Some(WithCteStatement {
@@ -1077,7 +931,7 @@ mod update_statements_with_cte_tests {
             ))),
         );
 
-        let mut expected_statement = update_statement2();
+        let mut expected_statement = update_statement();
         expected_statement.table_name =
             QualifiedTableName::from(Identifier::Single("cte_2".to_string()));
         expected_statement.with_cte = Some(WithCteStatement {

@@ -196,7 +196,7 @@ mod create_trigger_tests {
             create::create_trigger::test_utils::create_trigger_statement,
             delete::test_utils::delete_statement, insert::test_utils::insert_statement,
             select::test_utils::select_statement, test_utils::run_sunny_day_test,
-            update::test_utils::update_statement2,
+            update::test_utils::update_statement,
         },
         BinaryOp, Identifier, Keyword, Statement, TriggerEvent, TriggerEventType,
         TriggerPreCondition, TriggerStatement,
@@ -360,7 +360,7 @@ mod create_trigger_tests {
     fn create_trigger_with_multiple_statements() {
         let mut expected = create_trigger_statement();
         expected.trigger_statements = vec![
-            TriggerStatement::Update(update_statement2()),
+            TriggerStatement::Update(update_statement()),
             TriggerStatement::Insert(insert_statement()),
             TriggerStatement::Delete(delete_statement()),
             TriggerStatement::Select(select_statement()),

@@ -64,7 +64,7 @@ mod explain_statement_tests {
     use crate::parser::trx::release::test_utils::release_statement;
     use crate::parser::trx::rollback::test_utils::rollback_statement;
     use crate::parser::trx::savepoint::test_utils::savepoint_statement;
-    use crate::parser::update::test_utils::update_statement2;
+    use crate::parser::update::test_utils::update_statement;
     use crate::ExplainStatement;
     use crate::{parser::test_utils::run_sunny_day_test, Statement};
 
@@ -378,7 +378,7 @@ mod explain_statement_tests {
     #[test]
     fn explain_update() {
         let explain_statement = ExplainStatement {
-            statement: Box::new(Statement::Update(update_statement2())),
+            statement: Box::new(Statement::Update(update_statement())),
             query_plan: false,
         };
 
