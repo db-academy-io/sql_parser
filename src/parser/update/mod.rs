@@ -582,68 +582,47 @@ mod update_from_table_tests {
     }
 }
 
-// #[cfg(test)]
-// mod update_from_subquery_tests {
-//     use super::test_utils::update_from;
-//     use crate::parser::select::test_utils::select_statement_with_columns;
-//     use crate::parser::test_utils::*;
-//     use crate::{
-//         DistinctType, Expression, FromClause, Identifier, SelectBody, SelectFromSubquery,
-//         SelectItem, SelectStatement, Statement,
-//     };
+#[cfg(test)]
+mod update_from_subquery_tests {
+    use super::test_utils::update_statement2;
+    use crate::parser::select::test_utils::select_star_from;
+    use crate::parser::test_utils::*;
+    use crate::{FromClause, Identifier, SelectFromSubquery, Statement};
 
-//     #[test]
-//     fn test_update_from_subquery() {
-//         let expected_statement = update_from(FromClause::Subquery(SelectFromSubquery {
-//             subquery: Box::new(SelectStatement {
-//                 with_cte: None,
-//                 select: SelectBody::Select(select_statement_with_columns(
-//                     DistinctType::None,
-//                     vec![SelectItem::Expression(Expression::Identifier(
-//                         Identifier::Single("col1".to_string()),
-//                     ))],
-//                 )),
-//                 order_by: None,
-//                 limit: None,
-//             }),
-//             alias: None,
-//         }));
+    #[test]
+    fn update_from_subquery() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Subquery(SelectFromSubquery {
+            subquery: Box::new(select_star_from(Identifier::Single("table_1".to_string()))),
+            alias: None,
+        }));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM (SELECT col1)",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM (SELECT * FROM table_1)",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_update_from_subquery_aliased() {
-//         let expected_statement = update_from(FromClause::Subquery(SelectFromSubquery {
-//             subquery: Box::new(SelectStatement {
-//                 with_cte: None,
-//                 select: SelectBody::Select(select_statement_with_columns(
-//                     DistinctType::None,
-//                     vec![SelectItem::Expression(Expression::Identifier(
-//                         Identifier::NameWithWildcard("t".to_string()),
-//                     ))],
-//                 )),
-//                 order_by: None,
-//                 limit: None,
-//             }),
-//             alias: Some("alias".to_string()),
-//         }));
+    #[test]
+    fn test_update_from_subquery_aliased() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Subquery(SelectFromSubquery {
+            subquery: Box::new(select_star_from(Identifier::Single("table_1".to_string()))),
+            alias: Some("alias".to_string()),
+        }));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM (SELECT t.* ) as alias",
-//             Statement::Update(expected_statement.clone()),
-//         );
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM (SELECT * FROM table_1) as alias",
+            Statement::Update(expected_statement.clone()),
+        );
 
-//         // without the as keyword
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM (SELECT t.* ) alias",
-//             Statement::Update(expected_statement.clone()),
-//         );
-//     }
-// }
+        // without the as keyword
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM (SELECT * FROM table_1) alias",
+            Statement::Update(expected_statement.clone()),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod update_from_table_function_tests {
