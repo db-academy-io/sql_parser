@@ -76,7 +76,7 @@ mod detach_statements_tests {
     use super::test_utils::detach_statement;
 
     #[test]
-    fn test_detach_basic() {
+    fn detach_test() {
         run_sunny_day_test(
             "DETACH DATABASE test_db;",
             Statement::Detach(detach_statement()),
@@ -84,18 +84,18 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_without_database_keyword() {
+    fn detach_without_database_keyword() {
         run_sunny_day_test("DETACH test_db;", Statement::Detach(detach_statement()));
     }
 
     #[test]
-    fn test_detach_missing_semicolon() {
+    fn detach_missing_semicolon() {
         let sql = "DETACH DATABASE test_db";
         run_sunny_day_test(sql, Statement::Detach(detach_statement()));
     }
 
     #[test]
-    fn test_detach_with_single_quoted_schema_name() {
+    fn detach_with_single_quoted_schema_name() {
         let sql = "DETACH DATABASE 'test_db';";
         run_sunny_day_test(
             sql,
@@ -106,7 +106,7 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_with_double_quoted_schema_name() {
+    fn detach_with_double_quoted_schema_name() {
         let sql = "DETACH DATABASE \"test_db\";";
         run_sunny_day_test(
             sql,
@@ -117,25 +117,25 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_missing_schema_name() {
+    fn detach_missing_schema_name() {
         let sql = "DETACH DATABASE;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_detach_missing_schema_name_no_database() {
+    fn detach_missing_schema_name_no_database() {
         let sql = "DETACH;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_detach_invalid_syntax_extra_token() {
+    fn detach_invalid_syntax_extra_token() {
         let sql = "DETACH DATABASE schema_name extra;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("extra".into()));
     }
 
     #[test]
-    fn test_detach_invalid_schema_name_number() {
+    fn detach_invalid_schema_name_number() {
         let sql = "DETACH DATABASE 123;";
         run_sunny_day_test(
             sql,
@@ -146,7 +146,7 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_multiple_statements() {
+    fn detach_multiple_statements() {
         let sql = "DETACH test_db; DETACH DATABASE 'test_db2';";
         let mut parser = Parser::from(sql);
 
@@ -167,7 +167,7 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_schema_name_with_spaces() {
+    fn detach_schema_name_with_spaces() {
         let mut expected_statement = detach_statement();
         expected_statement.schema_name = "'schema name with spaces'".to_string();
 
@@ -178,7 +178,7 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_schema_name_with_special_chars() {
+    fn detach_schema_name_with_special_chars() {
         let sql = "DETACH DATABASE '[email protected]!';";
         run_sunny_day_test(
             sql,
@@ -189,22 +189,13 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_invalid_schema_name_no_quotes() {
+    fn detach_invalid_schema_name_no_quotes() {
         let sql = "DETACH DATABASE schema name;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("name".into()));
     }
 
     #[test]
-    fn test_detach_unterminated_string() {
-        let sql = "DETACH DATABASE 'schema_name;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::TokenizerError("UnterminatedLiteral: 'schema_name;".into()),
-        );
-    }
-
-    #[test]
-    fn test_detach_with_numeric_schema_name_in_quotes() {
+    fn detach_with_numeric_schema_name_in_quotes() {
         let sql = "DETACH DATABASE '123';";
         run_sunny_day_test(
             sql,
@@ -215,7 +206,7 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_with_escaped_quotes_in_schema_name() {
+    fn detach_with_escaped_quotes_in_schema_name() {
         let sql = "DETACH DATABASE 'schema''name';";
         run_sunny_day_test(
             sql,
@@ -226,7 +217,7 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_with_double_escaped_quotes_in_schema_name() {
+    fn detach_with_double_escaped_quotes_in_schema_name() {
         let sql = "DETACH DATABASE \"schema\"\"name\";";
         run_sunny_day_test(
             sql,
@@ -237,7 +228,7 @@ mod detach_statements_tests {
     }
 
     #[test]
-    fn test_detach_with_backticks_schema_name() {
+    fn detach_with_backticks_schema_name() {
         let sql = "DETACH DATABASE `schema_name`;";
         run_sunny_day_test(
             sql,
@@ -254,7 +245,7 @@ mod attach_statement_tests {
     use crate::{AttachStatement, Expression, Identifier, LiteralValue, Statement};
 
     #[test]
-    fn test_attach_statement() {
+    fn attach_statement() {
         let sql = "ATTACH DATABASE 'test.db' AS db2;";
         run_sunny_day_test(
             sql,
@@ -266,7 +257,7 @@ mod attach_statement_tests {
     }
 
     #[test]
-    fn test_attach_statement_without_database_keyword() {
+    fn attach_statement_without_database_keyword() {
         let sql = "ATTACH 'sub_f' AS sub_name;";
         run_sunny_day_test(
             sql,

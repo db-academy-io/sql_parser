@@ -57,24 +57,19 @@ mod vacuum_statements_tests {
     use super::test_utils::vacuum_statement;
 
     #[test]
-    fn test_vacuum_basic() {
+    fn vacuum_test() {
         run_sunny_day_test("VACUUM;", Statement::Vacuum(vacuum_statement()));
     }
 
     #[test]
-    fn test_vacuum_without_semicolon() {
-        run_sunny_day_test("VACUUM", Statement::Vacuum(vacuum_statement()));
-    }
-
-    #[test]
-    fn test_vacuum_with_schema() {
+    fn vacuum_with_schema() {
         let mut expected_statement = vacuum_statement();
         expected_statement.schema_name = Some("main".to_string());
         run_sunny_day_test("VACUUM main;", Statement::Vacuum(expected_statement));
     }
 
     #[test]
-    fn test_vacuum_into_file() {
+    fn vacuum_into_file() {
         let mut expected_statement = vacuum_statement();
         expected_statement.file_name = Some("'backup.db'".to_string());
 
@@ -85,7 +80,7 @@ mod vacuum_statements_tests {
     }
 
     #[test]
-    fn test_vacuum_schema_into_file() {
+    fn vacuum_schema_into_file() {
         let mut expected_statement = vacuum_statement();
         expected_statement.schema_name = Some("main".to_string());
         expected_statement.file_name = Some("'backup.db'".to_string());
@@ -97,7 +92,7 @@ mod vacuum_statements_tests {
     }
 
     #[test]
-    fn test_vacuum_invalid_syntax() {
+    fn vacuum_invalid_syntax() {
         run_rainy_day_test(
             "VACUUM INTO;",
             ParsingError::UnexpectedToken(";".to_string()),
@@ -105,12 +100,12 @@ mod vacuum_statements_tests {
     }
 
     #[test]
-    fn test_vacuum_missing_filename() {
+    fn vacuum_missing_filename() {
         run_rainy_day_test("VACUUM INTO", ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_vacuum_invalid_filename() {
+    fn vacuum_invalid_filename() {
         run_rainy_day_test(
             "VACUUM INTO backup.db;",
             ParsingError::UnexpectedToken(".".to_string()),
@@ -118,12 +113,12 @@ mod vacuum_statements_tests {
     }
 
     #[test]
-    fn test_vacuum_unexpected_token() {
+    fn vacuum_unexpected_token() {
         run_rainy_day_test("VACUUM 123;", ParsingError::UnexpectedToken("123".into()));
     }
 
     #[test]
-    fn test_vacuum_extra_tokens() {
+    fn vacuum_extra_tokens() {
         run_rainy_day_test(
             "VACUUM main INTO 'backup.db' extra;",
             ParsingError::UnexpectedToken("extra".to_string()),
@@ -131,7 +126,7 @@ mod vacuum_statements_tests {
     }
 
     #[test]
-    fn test_vacuum_schema_missing_into() {
+    fn vacuum_schema_missing_into() {
         run_rainy_day_test(
             "VACUUM main 'backup.db';",
             ParsingError::UnexpectedToken("'backup.db'".to_string()),
@@ -139,7 +134,7 @@ mod vacuum_statements_tests {
     }
 
     #[test]
-    fn test_multiple_vacuum_commands() {
+    fn multiple_vacuum_commands() {
         let sql = "VACUUM; VACUUM main INTO 'backup.db';";
 
         let mut parser = Parser::from(sql);

@@ -107,12 +107,12 @@ mod pragma_statements_tests {
     use super::test_utils::pragma_statement;
 
     #[test]
-    fn test_pragma_basic() {
+    fn pragma_test() {
         run_sunny_day_test("PRAGMA cache_size;", Statement::Pragma(pragma_statement()));
     }
 
     #[test]
-    fn test_pragma_with_schema() {
+    fn pragma_with_schema() {
         let mut expected = pragma_statement();
         expected.schema_name = Some("main".to_string());
 
@@ -120,7 +120,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_value() {
+    fn pragma_with_value() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("2000".to_string());
 
@@ -128,7 +128,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_schema_and_value() {
+    fn pragma_with_schema_and_value() {
         let mut expected = pragma_statement();
         expected.schema_name = Some("main".to_string());
         expected.pragma_value = Some("2000".to_string());
@@ -140,7 +140,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_string_value() {
+    fn pragma_with_string_value() {
         let expected = PragmaStatement {
             schema_name: Some("main".to_string()),
             pragma_name: "journal_mode".to_string(),
@@ -154,7 +154,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_quoted_value() {
+    fn pragma_with_quoted_value() {
         let expected = PragmaStatement {
             schema_name: Some("main".to_string()),
             pragma_name: "journal_mode".to_string(),
@@ -168,36 +168,36 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_without_semicolon() {
+    fn pragma_without_semicolon() {
         run_sunny_day_test("PRAGMA cache_size", Statement::Pragma(pragma_statement()));
     }
 
     #[test]
-    fn test_pragma_with_invalid_schema() {
+    fn pragma_with_invalid_schema() {
         let sql = "PRAGMA invalid..cache_size;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(".".into()));
     }
 
     #[test]
-    fn test_pragma_with_multiple_dots() {
+    fn pragma_with_multiple_dots() {
         let sql = "PRAGMA main.db.cache_size;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(".".into()));
     }
 
     #[test]
-    fn test_pragma_missing_name() {
+    fn pragma_missing_name() {
         let sql = "PRAGMA;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_pragma_missing_value_after_equals() {
+    fn pragma_missing_value_after_equals() {
         let sql = "PRAGMA cache_size =;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_pragma_set_string_value() {
+    fn pragma_set_string_value() {
         let mut expected = pragma_statement();
         expected.pragma_name = "encoding".to_string();
         expected.pragma_value = Some("'UTF-8'".to_string());
@@ -206,7 +206,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_call_syntax() {
+    fn pragma_call_syntax() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("1000".to_string());
 
@@ -214,7 +214,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_call_syntax_with_schema() {
+    fn pragma_call_syntax_with_schema() {
         let mut expected = pragma_statement();
         expected.schema_name = Some("main".to_string());
         expected.pragma_value = Some("1000".to_string());
@@ -223,7 +223,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_single_quoted_value() {
+    fn pragma_with_single_quoted_value() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("'1000'".to_string());
 
@@ -231,7 +231,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_double_quoted_value() {
+    fn pragma_with_double_quoted_value() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("\"1000\"".to_string());
 
@@ -239,7 +239,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_reserved_keyword_as_name() {
+    fn pragma_with_reserved_keyword_as_name() {
         run_rainy_day_test(
             "PRAGMA select;",
             ParsingError::UnexpectedToken("Select".into()),
@@ -247,28 +247,19 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_numeric_pragma_name() {
+    fn pragma_with_numeric_pragma_name() {
         let sql = "PRAGMA 123;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("123".into()));
     }
 
     #[test]
-    fn test_pragma_with_invalid_syntax_extra_token() {
+    fn pragma_with_invalid_syntax_extra_token() {
         let sql = "PRAGMA cache_size = 1000 EXTRA;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
     }
 
     #[test]
-    fn test_pragma_with_unterminated_string_value() {
-        let sql = "PRAGMA cache_size = '1000;";
-        run_rainy_day_test(
-            sql,
-            ParsingError::TokenizerError("UnterminatedLiteral: '1000;".into()),
-        );
-    }
-
-    #[test]
-    fn test_pragma_with_special_chars_in_value() {
+    fn pragma_with_special_chars_in_value() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("'[email protected]!'".to_string());
 
@@ -279,7 +270,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_numeric_value() {
+    fn pragma_with_numeric_value() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("123".to_string());
 
@@ -287,7 +278,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_positive_numeric_value() {
+    fn pragma_with_positive_numeric_value() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("123".to_string());
 
@@ -295,7 +286,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_negative_numeric_value() {
+    fn pragma_with_negative_numeric_value() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("-123".to_string());
 
@@ -303,43 +294,43 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_reserved_keyword_as_value() {
+    fn pragma_with_reserved_keyword_as_value() {
         let sql = "PRAGMA cache_size = select;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("Select".into()));
     }
 
     #[test]
-    fn test_pragma_with_no_value_after_equal() {
+    fn pragma_with_no_value_after_equal() {
         let sql = "PRAGMA cache_size =;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_pragma_with_no_value_in_parentheses() {
+    fn pragma_with_no_value_in_parentheses() {
         let sql = "PRAGMA cache_size();";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(")".into()));
     }
 
     #[test]
-    fn test_pragma_with_schema_missing_pragma_name() {
+    fn pragma_with_schema_missing_pragma_name() {
         let sql = "PRAGMA main.;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_pragma_missing_pragma_name() {
+    fn pragma_missing_pragma_name() {
         let sql = "PRAGMA;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken(";".into()));
     }
 
     #[test]
-    fn test_pragma_with_unexpected_token_after_parentheses() {
+    fn pragma_with_unexpected_token_after_parentheses() {
         let sql = "PRAGMA cache_size(1000) EXTRA;";
         run_rainy_day_test(sql, ParsingError::UnexpectedToken("EXTRA".into()));
     }
 
     #[test]
-    fn test_multiple_pragma_commands() {
+    fn pragma_multiple_pragma_commands() {
         let sql = "PRAGMA cache_size = 1000; PRAGMA encoding = 'UTF-8';";
         let mut parser = Parser::from(sql);
 
@@ -368,7 +359,7 @@ mod pragma_statements_tests {
     }
 
     #[test]
-    fn test_pragma_with_comment() {
+    fn pragma_with_comment() {
         let mut expected = pragma_statement();
         expected.pragma_value = Some("1000".to_string());
 

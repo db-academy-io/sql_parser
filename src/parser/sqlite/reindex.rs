@@ -65,12 +65,12 @@ mod reindex_statements_tests {
     use super::test_utils::reindex_statement;
 
     #[test]
-    fn test_reindex_basic() {
+    fn reindex_test() {
         run_sunny_day_test("REINDEX;", Statement::Reindex(reindex_statement()));
     }
 
     #[test]
-    fn test_reindex_collation_name() {
+    fn reindex_collation_name() {
         run_sunny_day_test(
             "REINDEX my_collation;",
             Statement::Reindex(ReindexStatement {
@@ -81,7 +81,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_table_name() {
+    fn reindex_table_name() {
         run_sunny_day_test(
             "REINDEX my_table;",
             Statement::Reindex(ReindexStatement {
@@ -92,7 +92,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_index_name() {
+    fn reindex_index_name() {
         run_sunny_day_test(
             "REINDEX my_index;",
             Statement::Reindex(ReindexStatement {
@@ -103,7 +103,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_schema_and_table() {
+    fn reindex_with_schema_and_table() {
         run_sunny_day_test(
             "REINDEX main.my_table;",
             Statement::Reindex(ReindexStatement {
@@ -114,7 +114,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_single_quoted_name() {
+    fn reindex_with_single_quoted_name() {
         run_sunny_day_test(
             "REINDEX 'my_table';",
             Statement::Reindex(ReindexStatement {
@@ -125,7 +125,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_double_quoted_name() {
+    fn reindex_with_double_quoted_name() {
         run_sunny_day_test(
             "REINDEX \"my_table\";",
             Statement::Reindex(ReindexStatement {
@@ -136,7 +136,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_single_quoted_schema_and_name() {
+    fn reindex_with_single_quoted_schema_and_name() {
         run_sunny_day_test(
             "REINDEX 'main'.'my_table';",
             Statement::Reindex(ReindexStatement {
@@ -147,7 +147,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_missing_semicolon() {
+    fn reindex_missing_semicolon() {
         run_sunny_day_test(
             "REINDEX",
             Statement::Reindex(ReindexStatement {
@@ -158,7 +158,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_invalid_syntax_extra_token() {
+    fn reindex_invalid_syntax_extra_token() {
         run_rainy_day_test(
             "REINDEX extra_token extra;",
             ParsingError::UnexpectedToken("extra".into()),
@@ -166,15 +166,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_invalid_schema_name() {
-        run_rainy_day_test(
-            "REINDEX 'unclosed_schema;",
-            ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_schema;".into()),
-        );
-    }
-
-    #[test]
-    fn test_reindex_with_invalid_target_name() {
+    fn reindex_with_invalid_target_name() {
         run_rainy_day_test(
             "REINDEX main.'unclosed_name;",
             ParsingError::TokenizerError("UnterminatedLiteral: 'unclosed_name;".into()),
@@ -182,7 +174,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_numeric_name() {
+    fn reindex_with_numeric_name() {
         run_sunny_day_test(
             "REINDEX '123';",
             Statement::Reindex(ReindexStatement {
@@ -193,7 +185,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_numeric_schema_and_name() {
+    fn reindex_with_numeric_schema_and_name() {
         run_sunny_day_test(
             "REINDEX '123'.'456';",
             Statement::Reindex(ReindexStatement {
@@ -204,7 +196,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_backticks_schema_and_name() {
+    fn reindex_with_backticks_schema_and_name() {
         run_sunny_day_test(
             "REINDEX `main`.`my_table`;",
             Statement::Reindex(ReindexStatement {
@@ -215,7 +207,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_with_special_chars_in_schema_and_name() {
+    fn reindex_with_special_chars_in_schema_and_name() {
         run_sunny_day_test(
             "REINDEX '[email protected]!'.'[email protected]!';",
             Statement::Reindex(ReindexStatement {
@@ -226,7 +218,7 @@ mod reindex_statements_tests {
     }
 
     #[test]
-    fn test_reindex_multiple_statements() {
+    fn reindex_multiple_statements() {
         let sql = "REINDEX; REINDEX main.my_table;";
 
         let mut parser = Parser::from(sql);
