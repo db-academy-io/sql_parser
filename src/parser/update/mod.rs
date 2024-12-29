@@ -624,97 +624,102 @@ mod update_from_subquery_tests {
     }
 }
 
-// #[cfg(test)]
-// mod update_from_table_function_tests {
-//     use super::test_utils::update_from;
-//     use crate::expression::test_utils::{
-//         binary_op_expression, identifier_expression, numeric_literal_expression,
-//     };
-//     use crate::parser::test_utils::*;
-//     use crate::{BinaryOp, FromClause, Identifier, SelectFromFunction, Statement};
+#[cfg(test)]
+mod update_from_table_function_tests {
+    use super::test_utils::update_statement2;
+    use crate::expression::test_utils::{
+        binary_op_expression, identifier_expression, numeric_literal_expression,
+    };
+    use crate::parser::test_utils::*;
+    use crate::{BinaryOp, FromClause, Identifier, SelectFromFunction, Statement};
 
-//     #[test]
-//     fn test_update_from_table_function() {
-//         let expected_statement = update_from(FromClause::Function(SelectFromFunction {
-//             function_name: Identifier::Single("function_1".to_string()),
-//             arguments: vec![numeric_literal_expression("1")],
-//             alias: None,
-//         }));
+    #[test]
+    fn update_from_table_function() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
+            function_name: Identifier::Single("function_1".to_string()),
+            arguments: vec![numeric_literal_expression("1")],
+            alias: None,
+        }));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM function_1(1)",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM function_1(1)",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_update_from_table_function_with_schema() {
-//         let expected_statement = update_from(FromClause::Function(SelectFromFunction {
-//             function_name: Identifier::Compound(vec![
-//                 "schema_1".to_string(),
-//                 "function_1".to_string(),
-//             ]),
-//             arguments: vec![binary_op_expression(
-//                 BinaryOp::Plus,
-//                 numeric_literal_expression("1"),
-//                 numeric_literal_expression("2"),
-//             )],
-//             alias: None,
-//         }));
+    #[test]
+    fn update_from_table_function_with_schema() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
+            function_name: Identifier::Compound(vec![
+                "schema_1".to_string(),
+                "function_1".to_string(),
+            ]),
+            arguments: vec![binary_op_expression(
+                BinaryOp::Plus,
+                numeric_literal_expression("1"),
+                numeric_literal_expression("2"),
+            )],
+            alias: None,
+        }));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM schema_1.function_1(1+2)",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM schema_1.function_1(1+2)",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_update_from_table_function_with_multiple_arguments() {
-//         let expected_statement = update_from(FromClause::Function(SelectFromFunction {
-//             function_name: Identifier::Compound(vec![
-//                 "schema_1".to_string(),
-//                 "function_1".to_string(),
-//             ]),
-//             arguments: vec![
-//                 numeric_literal_expression("1"),
-//                 identifier_expression(&["col1"]),
-//                 numeric_literal_expression("3"),
-//             ],
-//             alias: None,
-//         }));
+    #[test]
+    fn update_from_table_function_with_multiple_arguments() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
+            function_name: Identifier::Compound(vec![
+                "schema_1".to_string(),
+                "function_1".to_string(),
+            ]),
+            arguments: vec![
+                numeric_literal_expression("1"),
+                identifier_expression(&["col1"]),
+                numeric_literal_expression("3"),
+            ],
+            alias: None,
+        }));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM schema_1.function_1(1, col1, 3)",
-//             Statement::Update(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM schema_1.function_1(1, col1, 3)",
+            Statement::Update(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_update_from_table_function_with_alias() {
-//         let expected_statement = update_from(FromClause::Function(SelectFromFunction {
-//             function_name: Identifier::Compound(vec![
-//                 "schema_1".to_string(),
-//                 "function_1".to_string(),
-//             ]),
-//             arguments: vec![
-//                 numeric_literal_expression("1"),
-//                 numeric_literal_expression("2"),
-//                 numeric_literal_expression("3"),
-//             ],
-//             alias: Some("alias".to_string()),
-//         }));
+    #[test]
+    fn update_from_table_function_with_alias() {
+        let mut expected_statement = update_statement2();
+        expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
+            function_name: Identifier::Compound(vec![
+                "schema_1".to_string(),
+                "function_1".to_string(),
+            ]),
+            arguments: vec![
+                numeric_literal_expression("1"),
+                numeric_literal_expression("2"),
+                numeric_literal_expression("3"),
+            ],
+            alias: Some("alias".to_string()),
+        }));
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM schema_1.function_1(1, 2, 3) AS alias",
-//             Statement::Update(expected_statement.clone()),
-//         );
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM schema_1.function_1(1, 2, 3) AS alias",
+            Statement::Update(expected_statement.clone()),
+        );
 
-//         run_sunny_day_test(
-//             "UPDATE table1 SET column1 = 1 FROM schema_1.function_1(1, 2, 3) alias",
-//             Statement::Update(expected_statement.clone()),
-//         );
-//     }
-// }
+        // without the AS keyword
+        run_sunny_day_test(
+            "UPDATE table_name1 SET col1 = 1 FROM schema_1.function_1(1, 2, 3) alias",
+            Statement::Update(expected_statement.clone()),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod update_from_comma_separated_table_or_subqueries_tests {
