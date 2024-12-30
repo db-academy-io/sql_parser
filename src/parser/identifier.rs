@@ -56,18 +56,21 @@ impl<'a> IdentifierParser for Parser<'a> {
 
 #[cfg(test)]
 mod identifier_expression_tests {
-    use crate::parser::expression::test_utils::*;
+    use crate::{
+        parser::{expression::test_utils::*, test_utils::run_sunny_day_test},
+        select::test_utils::select_expr,
+    };
 
     #[test]
-    fn test_expression_identifier_valid() {
-        run_sunny_day_expression_test("SELECT id;", &identifier_expr(&["id"]));
-        run_sunny_day_expression_test(
+    fn identifier_valid() {
+        run_sunny_day_test("SELECT id;", select_expr(identifier_expr(&["id"])).into());
+        run_sunny_day_test(
             "SELECT table1.column1;",
-            &identifier_expr(&["table1", "column1"]),
+            select_expr(identifier_expr(&["table1", "column1"])).into(),
         );
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT schema1.table1.column1;",
-            &identifier_expr(&["schema1", "table1", "column1"]),
+            select_expr(identifier_expr(&["schema1", "table1", "column1"])).into(),
         );
     }
 }

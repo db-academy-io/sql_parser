@@ -127,76 +127,11 @@ impl<'a> ExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 pub(crate) mod test_utils {
-    use crate::ast::{Expression, SelectItem};
+    use crate::ast::Expression;
     use crate::{
-        BinaryOp, CollateExpressionStatement, DataType, DistinctType, ExistsStatement, Function,
-        FunctionArg, Identifier, LiteralValue, OverClause, Parser, RaiseFunction, Select,
-        SelectBody, SelectStatement, Statement, UnaryOp,
+        BinaryOp, CollateExpressionStatement, DataType, ExistsStatement, Function, FunctionArg,
+        Identifier, LiteralValue, OverClause, RaiseFunction, SelectStatement, UnaryOp,
     };
-
-    pub fn select_expr(expression: Expression) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(expression)],
-                from: None,
-                where_clause: None,
-                group_by: None,
-                having: None,
-                window: None,
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
-
-    pub fn run_sunny_day_test_with_multiple_expressions(
-        sql: &str,
-        expected_expressions: &[&Expression],
-    ) {
-        let mut parser = Parser::from(sql);
-        let actual_statement = parser
-            .parse_statement()
-            .expect("Expected parsed Statement, got Parsing Error");
-
-        dbg!("actual_expression: {:?}", &actual_statement);
-
-        match actual_statement {
-            Statement::Select(SelectStatement {
-                with_cte: None,
-                select: SelectBody::Select(select_statement),
-                order_by: None,
-                limit: None,
-            }) => {
-                assert_eq!(
-                    expected_expressions.len(),
-                    select_statement.columns.len(),
-                    "Expected {} columns, got {:?}",
-                    expected_expressions.len(),
-                    select_statement.columns.len()
-                );
-
-                for (i, select_item) in select_statement.columns.iter().enumerate() {
-                    match select_item {
-                        SelectItem::Expression(actual_expression) => {
-                            assert_eq!(
-                                expected_expressions[i], actual_expression,
-                                "Expected expression {:?}, got {:?}",
-                                expected_expressions[i], actual_expression
-                            );
-                        }
-                        _ => panic!("Expected Expression, got {:?}", select_item),
-                    }
-                }
-            }
-            _ => panic!("Expected Select statement, got {:?}", actual_statement),
-        }
-    }
-
-    pub fn run_sunny_day_expression_test(sql: &str, expected_expression: &Expression) {
-        run_sunny_day_test_with_multiple_expressions(sql, &[expected_expression]);
-    }
 
     pub fn numeric_expr(value: &str) -> Expression {
         Expression::LiteralValue(LiteralValue::Number(value.to_string()))

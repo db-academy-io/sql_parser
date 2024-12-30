@@ -53,6 +53,8 @@ impl<'a> CaseExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 mod case_expression_tests {
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
     use crate::{BinaryOp, CaseExpression, Expression, WhenExpression};
 
     use crate::expression::test_utils::*;
@@ -70,7 +72,7 @@ mod case_expression_tests {
     }
 
     #[test]
-    fn test_expression_case_basic() {
+    fn case_expression_test() {
         let expression = None;
         let when_expressions = vec![WhenExpression {
             condition: Box::new(numeric_expr("1")),
@@ -78,14 +80,19 @@ mod case_expression_tests {
         }];
         let else_expression = Some(Box::new(numeric_expr("3")));
 
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT CASE WHEN 1 THEN 2 ELSE 3 END;",
-            &case_expression(expression, when_expressions, else_expression),
+            select_expr(case_expression(
+                expression,
+                when_expressions,
+                else_expression,
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_case_with_multiple_when_expressions() {
+    fn case_with_multiple_when_expressions() {
         let expression = None;
         let when_expressions = vec![
             WhenExpression {
@@ -99,14 +106,19 @@ mod case_expression_tests {
         ];
         let else_expression = Some(Box::new(numeric_expr("5")));
 
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT CASE WHEN 1 THEN 2 WHEN 3 THEN 4 ELSE 5 END;",
-            &case_expression(expression, when_expressions, else_expression),
+            select_expr(case_expression(
+                expression,
+                when_expressions,
+                else_expression,
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_case_with_main_expression() {
+    fn case_with_main_expression() {
         let expression = Some(Box::new(binary_op(
             BinaryOp::EqualsEquals,
             numeric_expr("1"),
@@ -118,9 +130,14 @@ mod case_expression_tests {
         }];
         let else_expression = Some(Box::new(numeric_expr("2")));
 
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT CASE 1 == 1 WHEN TRUE THEN 1 ELSE 2 END;",
-            &case_expression(expression, when_expressions, else_expression),
+            select_expr(case_expression(
+                expression,
+                when_expressions,
+                else_expression,
+            ))
+            .into(),
         );
     }
 }

@@ -20,55 +20,46 @@ impl<'a> ExistsExpressionParser for Parser<'a> {
         // Consume the enclosing right parenthesis
         self.consume_as(TokenType::RightParen)?;
 
-        if is_not {
-            Ok(Expression::ExistsStatement(ExistsStatement::NotExists(
-                select_statement,
-            )))
+        let exists_statement = if is_not {
+            ExistsStatement::NotExists(select_statement)
         } else {
-            Ok(Expression::ExistsStatement(ExistsStatement::Exists(
-                select_statement,
-            )))
-        }
+            ExistsStatement::Exists(select_statement)
+        };
+
+        Ok(Expression::ExistsStatement(exists_statement))
     }
 }
 
 #[cfg(test)]
 mod exists_expression_tests {
-    use crate::{Select, SelectBody, SelectItem, SelectStatement};
+    use crate::parser::select::test_utils::select_columns;
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
+    use crate::SelectItem;
 
     use crate::parser::expression::test_utils::*;
 
-    fn select_statement(columns: Vec<SelectItem>) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                columns,
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
-
     #[test]
-    fn test_expression_exists() {
-        run_sunny_day_expression_test(
+    fn exists_test() {
+        run_sunny_day_test(
             "SELECT EXISTS (SELECT 1);",
-            &exist_expr(
+            select_expr(exist_expr(
                 false,
-                select_statement(vec![SelectItem::Expression(numeric_expr("1"))]),
-            ),
+                select_columns(vec![SelectItem::Expression(numeric_expr("1"))]),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_not_exists() {
-        run_sunny_day_expression_test(
+    fn not_exists_test() {
+        run_sunny_day_test(
             "SELECT NOT EXISTS (SELECT 1);",
-            &exist_expr(
+            select_expr(exist_expr(
                 true,
-                select_statement(vec![SelectItem::Expression(numeric_expr("1"))]),
-            ),
+                select_columns(vec![SelectItem::Expression(numeric_expr("1"))]),
+            ))
+            .into(),
         );
     }
 }

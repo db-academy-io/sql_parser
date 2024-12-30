@@ -52,14 +52,13 @@ impl<'a> RegexpMatchExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 mod regexp_match_expression_tests {
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
     use crate::{BinaryMatchingExpression, Expression, Keyword};
 
     use crate::parser::expression::test_utils::*;
 
-    fn binary_matching_expression(
-        pattern: Expression,
-        keyword: Keyword,
-    ) -> BinaryMatchingExpression {
+    fn binary_matching_expr(pattern: Expression, keyword: Keyword) -> BinaryMatchingExpression {
         match keyword {
             Keyword::Glob => BinaryMatchingExpression::Glob(Box::new(pattern)),
             Keyword::Regexp => BinaryMatchingExpression::Regexp(Box::new(pattern)),
@@ -68,41 +67,53 @@ mod regexp_match_expression_tests {
         }
     }
 
-    fn regexp_match_expression(
+    fn regexp_match_expr(
         expression: Expression,
         pattern: Expression,
         keyword: Keyword,
         is_not: bool,
     ) -> Expression {
         let binary_matching_expression = if is_not {
-            BinaryMatchingExpression::Not(Box::new(binary_matching_expression(pattern, keyword)))
+            BinaryMatchingExpression::Not(Box::new(binary_matching_expr(pattern, keyword)))
         } else {
-            binary_matching_expression(pattern, keyword)
+            binary_matching_expr(pattern, keyword)
         };
 
         Expression::BinaryMatchingExpression(Box::new(expression), binary_matching_expression)
     }
 
     #[test]
-    fn test_expression_regexp_match_basic() {
+    fn regexp_match() {
         let keywords = vec![Keyword::Glob, Keyword::Regexp, Keyword::Match];
 
         for keyword in keywords {
-            run_sunny_day_expression_test(
+            run_sunny_day_test(
                 &format!("SELECT 1 {} 'a*';", keyword),
-                &regexp_match_expression(numeric_expr("1"), string_expr("'a*'"), keyword, false),
+                select_expr(regexp_match_expr(
+                    numeric_expr("1"),
+                    string_expr("'a*'"),
+                    keyword,
+                    false,
+                ))
+                .into(),
             );
         }
     }
 
     #[test]
-    fn test_expression_not_regexp_match_basic() {
+    fn not_regexp_match() {
         let keywords = vec![Keyword::Glob, Keyword::Regexp, Keyword::Match];
 
         for keyword in keywords {
-            run_sunny_day_expression_test(
+            run_sunny_day_test(
                 &format!("SELECT 1 NOT {} 'a*';", keyword),
-                &regexp_match_expression(numeric_expr("1"), string_expr("'a*'"), keyword, true),
+                select_expr(regexp_match_expr(
+                    numeric_expr("1"),
+                    string_expr("'a*'"),
+                    keyword,
+                    true,
+                ))
+                .into(),
             );
         }
     }

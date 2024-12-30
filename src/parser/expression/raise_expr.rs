@@ -59,42 +59,47 @@ impl<'a> RaiseExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 mod raise_expression_tests {
+    use crate::parser::test_utils::run_sunny_day_test;
     use crate::parser::ParsingError;
+    use crate::select::test_utils::select_expr;
     use crate::{parser::test_utils::run_rainy_day_test, RaiseFunction};
 
     use crate::expression::test_utils::*;
 
     #[test]
-    fn test_expression_raise_ignore() {
-        run_sunny_day_expression_test("SELECT RAISE(IGNORE);", &raise_expr(RaiseFunction::Ignore));
+    fn raise_ignore() {
+        run_sunny_day_test(
+            "SELECT RAISE(IGNORE);",
+            select_expr(raise_expr(RaiseFunction::Ignore)).into(),
+        );
     }
 
     #[test]
-    fn test_expression_raise_rollback() {
-        run_sunny_day_expression_test(
+    fn raise_rollback() {
+        run_sunny_day_test(
             "SELECT RAISE(ROLLBACK, 'Error');",
-            &raise_expr(RaiseFunction::Rollback("'Error'".to_string())),
+            select_expr(raise_expr(RaiseFunction::Rollback("'Error'".to_string()))).into(),
         );
     }
 
     #[test]
-    fn test_expression_raise_abort() {
-        run_sunny_day_expression_test(
+    fn raise_abort() {
+        run_sunny_day_test(
             "SELECT RAISE(ABORT, 'Error');",
-            &raise_expr(RaiseFunction::Abort("'Error'".to_string())),
+            select_expr(raise_expr(RaiseFunction::Abort("'Error'".to_string()))).into(),
         );
     }
 
     #[test]
-    fn test_expression_raise_fail() {
-        run_sunny_day_expression_test(
+    fn raise_fail() {
+        run_sunny_day_test(
             "SELECT RAISE(FAIL, 'Error');",
-            &raise_expr(RaiseFunction::Fail("'Error'".to_string())),
+            select_expr(raise_expr(RaiseFunction::Fail("'Error'".to_string()))).into(),
         );
     }
 
     #[test]
-    fn test_expression_raise_fail_with_empty_string() {
+    fn raise_fail_with_empty_string() {
         run_rainy_day_test(
             "SELECT RAISE(FAIL);",
             ParsingError::UnexpectedToken(") at position 17".to_string()),

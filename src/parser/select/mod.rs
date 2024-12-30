@@ -181,9 +181,8 @@ impl<'a> SelectStatementParser for Parser<'a> {
 #[cfg(test)]
 pub mod test_utils {
     use crate::{
-        CteExpression, DistinctType, Expression, FromClause, Identifier, LimitClause,
-        NamedWindowDefinition, OrderingTerm, QualifiedTableName, Select, SelectBody, SelectItem,
-        SelectStatement, Statement, UnionStatement, UnionStatementType, WithCteStatement,
+        DistinctType, Expression, FromClause, Identifier, QualifiedTableName, Select, SelectBody,
+        SelectItem, SelectStatement, Statement,
     };
 
     impl Into<Statement> for SelectStatement {
@@ -203,13 +202,12 @@ pub mod test_utils {
         }
     }
 
-    pub fn select_statement_with_columns(
-        distinct_type: DistinctType,
-        columns: Vec<SelectItem>,
-    ) -> Select {
+    pub fn select() -> Select {
         Select {
-            distinct_type,
-            columns,
+            distinct_type: DistinctType::None,
+            columns: vec![SelectItem::Expression(Expression::Identifier(
+                Identifier::Wildcard,
+            ))],
             ..Default::default()
         }
     }
@@ -234,13 +232,32 @@ pub mod test_utils {
         }
     }
 
-    pub fn select() -> Select {
-        Select {
-            distinct_type: DistinctType::None,
-            columns: vec![SelectItem::Expression(Expression::Identifier(
-                Identifier::Wildcard,
-            ))],
-            ..Default::default()
+    pub fn select_columns(columns: Vec<SelectItem>) -> SelectStatement {
+        SelectStatement {
+            with_cte: None,
+            select: SelectBody::Select(Select {
+                columns,
+                ..Default::default()
+            }),
+            order_by: None,
+            limit: None,
+        }
+    }
+
+    pub fn select_expr(expression: Expression) -> SelectStatement {
+        SelectStatement {
+            with_cte: None,
+            select: SelectBody::Select(Select {
+                distinct_type: DistinctType::None,
+                columns: vec![SelectItem::Expression(expression)],
+                from: None,
+                where_clause: None,
+                group_by: None,
+                having: None,
+                window: None,
+            }),
+            order_by: None,
+            limit: None,
         }
     }
 
@@ -262,182 +279,6 @@ pub mod test_utils {
 
     pub fn select_star_from(table_name: Identifier) -> SelectStatement {
         select_from(FromClause::Table(QualifiedTableName::from(table_name)))
-    }
-
-    pub fn select_statement_with_where_clause(where_clause: Expression) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(QualifiedTableName {
-                    table_id: Identifier::Single("table_1".to_string()),
-                    alias: None,
-                    indexed_type: None,
-                })),
-                where_clause: Some(Box::new(where_clause)),
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
-
-    pub fn select_statement_with_group_by_clause(group_by: Vec<Expression>) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(QualifiedTableName {
-                    table_id: Identifier::Single("table_1".to_string()),
-                    alias: None,
-                    indexed_type: None,
-                })),
-                where_clause: None,
-                group_by: Some(group_by),
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
-
-    pub fn select_statement_with_having_clause(having: Expression) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(QualifiedTableName {
-                    table_id: Identifier::Single("table_1".to_string()),
-                    alias: None,
-                    indexed_type: None,
-                })),
-                having: Some(Box::new(having)),
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
-
-    pub fn select_statement_with_window_clause(
-        windows: Vec<NamedWindowDefinition>,
-    ) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(QualifiedTableName {
-                    table_id: Identifier::Single("table_1".to_string()),
-                    alias: None,
-                    indexed_type: None,
-                })),
-                window: Some(windows),
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
-
-    pub fn select_statement_with_union_clause(
-        union_type: UnionStatementType,
-        left: SelectStatement,
-        right: SelectStatement,
-    ) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Union(UnionStatement {
-                union_type,
-                left: Box::new(left),
-                right: Box::new(right),
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
-
-    pub fn select_statement_with_order_by_clause(order_by: Vec<OrderingTerm>) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(QualifiedTableName {
-                    table_id: Identifier::Single("table_1".to_string()),
-                    alias: None,
-                    indexed_type: None,
-                })),
-                where_clause: None,
-                group_by: None,
-                having: None,
-                window: None,
-            }),
-            order_by: Some(order_by),
-            limit: None,
-        }
-    }
-
-    pub fn select_statement_with_limit_clause(limit: LimitClause) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(QualifiedTableName {
-                    table_id: Identifier::Single("table_1".to_string()),
-                    alias: None,
-                    indexed_type: None,
-                })),
-                where_clause: None,
-                group_by: None,
-                having: None,
-                window: None,
-            }),
-            order_by: None,
-            limit: Some(limit),
-        }
-    }
-
-    pub fn select_statement_with_cte_clause(
-        recursive: bool,
-        expressions: Vec<CteExpression>,
-    ) -> Statement {
-        Statement::Select(SelectStatement {
-            with_cte: Some(WithCteStatement {
-                recursive,
-                cte_expressions: expressions,
-            }),
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(QualifiedTableName {
-                    table_id: Identifier::Single("table_1".to_string()),
-                    alias: None,
-                    indexed_type: None,
-                })),
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        })
     }
 }
 

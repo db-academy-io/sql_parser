@@ -46,10 +46,7 @@ impl<'a> InExpressionParser for Parser<'a> {
             let id1 = self.peek_as_id()?;
             self.consume_as_id()?;
 
-            let identifier = if self.peek_as(TokenType::Dot).is_ok() {
-                // Consume the dot token
-                self.consume_as(TokenType::Dot)?;
-
+            let identifier = if self.consume_as(TokenType::Dot).is_ok() {
                 let id2 = self.peek_as_id()?;
                 self.consume_as_id()?;
                 Identifier::Compound(vec![id1.to_string(), id2.to_string()])
@@ -57,11 +54,8 @@ impl<'a> InExpressionParser for Parser<'a> {
                 Identifier::Single(id1.to_string())
             };
 
-            if self.peek_as(TokenType::LeftParen).is_ok() {
-                self.consume_as(TokenType::LeftParen)?;
-
-                if self.peek_as(TokenType::RightParen).is_ok() {
-                    self.consume_as(TokenType::RightParen)?;
+            if self.consume_as(TokenType::LeftParen).is_ok() {
+                if self.consume_as(TokenType::RightParen).is_ok() {
                     BinaryMatchingExpression::In(InExpression::TableFunction(identifier, vec![]))
                 } else {
                     let args = self.parse_comma_separated_expressions()?;
@@ -75,22 +69,23 @@ impl<'a> InExpressionParser for Parser<'a> {
             }
         };
 
-        if is_not {
-            Ok(Expression::BinaryMatchingExpression(
-                Box::new(expression),
-                BinaryMatchingExpression::Not(Box::new(in_expression)),
-            ))
+        let in_expression = if is_not {
+            BinaryMatchingExpression::Not(Box::new(in_expression))
         } else {
-            Ok(Expression::BinaryMatchingExpression(
-                Box::new(expression),
-                in_expression,
-            ))
-        }
+            in_expression
+        };
+
+        Ok(Expression::BinaryMatchingExpression(
+            Box::new(expression),
+            in_expression,
+        ))
     }
 }
 
 #[cfg(test)]
 mod expression_with_in_statement_tests {
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
     use crate::{
         BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression, Select,
         SelectBody, SelectItem, SelectStatement,
@@ -98,11 +93,7 @@ mod expression_with_in_statement_tests {
 
     use crate::parser::expression::test_utils::*;
 
-    fn expression_with_in_statement(
-        expression: Expression,
-        in_expression: InExpression,
-        is_not: bool,
-    ) -> Expression {
+    fn in_expr(expression: Expression, in_expression: InExpression, is_not: bool) -> Expression {
         let in_expression = if is_not {
             BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::In(in_expression)))
         } else {
@@ -113,26 +104,26 @@ mod expression_with_in_statement_tests {
     }
 
     #[test]
-    fn test_expression_with_empty_select_statement() {
-        run_sunny_day_expression_test(
+    fn in_empty() {
+        run_sunny_day_test(
             "SELECT 1 IN ();",
-            &expression_with_in_statement(numeric_expr("1"), InExpression::Empty, false),
+            select_expr(in_expr(numeric_expr("1"), InExpression::Empty, false)).into(),
         );
 
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT 1 NOT IN ();",
-            &expression_with_in_statement(numeric_expr("1"), InExpression::Empty, true),
+            select_expr(in_expr(numeric_expr("1"), InExpression::Empty, true)).into(),
         );
     }
 
     #[test]
-    fn test_expression_with_select_statement() {
+    fn in_select() {
         let mut select_statement = Select::default();
         select_statement.columns = vec![SelectItem::Expression(numeric_expr("2"))];
 
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT 1 IN (SELECT 2);",
-            &expression_with_in_statement(
+            select_expr(in_expr(
                 numeric_expr("1"),
                 InExpression::Select(SelectStatement {
                     with_cte: None,
@@ -141,15 +132,16 @@ mod expression_with_in_statement_tests {
                     limit: None,
                 }),
                 false,
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_with_multiple_expressions() {
-        run_sunny_day_expression_test(
+    fn in_multiple_expressions() {
+        run_sunny_day_test(
             "SELECT 1 IN (2, 3, 4 + 5);",
-            &expression_with_in_statement(
+            select_expr(in_expr(
                 numeric_expr("1"),
                 InExpression::Expression(vec![
                     numeric_expr("2"),
@@ -157,18 +149,19 @@ mod expression_with_in_statement_tests {
                     binary_op(BinaryOp::Plus, numeric_expr("4"), numeric_expr("5")),
                 ]),
                 false,
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_with_not_in_expression() {
+    fn not_in_select() {
         let mut select_statement = Select::default();
         select_statement.columns = vec![SelectItem::Expression(numeric_expr("2"))];
 
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT 1 NOT IN (SELECT 2);",
-            &expression_with_in_statement(
+            select_expr(in_expr(
                 numeric_expr("1"),
                 InExpression::Select(SelectStatement {
                     with_cte: None,
@@ -177,42 +170,45 @@ mod expression_with_in_statement_tests {
                     limit: None,
                 }),
                 true,
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_with_table_name() {
-        run_sunny_day_expression_test(
+    fn not_in_with_table_name() {
+        run_sunny_day_test(
             "SELECT 1 NOT IN table_name;",
-            &expression_with_in_statement(
+            select_expr(in_expr(
                 numeric_expr("1"),
                 InExpression::Identity(Identifier::Single("table_name".to_string())),
                 true,
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_with_schema_and_table_names() {
-        run_sunny_day_expression_test(
+    fn not_in_with_schema_and_table_names() {
+        run_sunny_day_test(
             "SELECT 1 NOT IN schema_name.table_name;",
-            &expression_with_in_statement(
+            select_expr(in_expr(
                 numeric_expr("1"),
                 InExpression::Identity(Identifier::Compound(vec![
                     "schema_name".to_string(),
                     "table_name".to_string(),
                 ])),
                 true,
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_with_schema_and_table_function_without_arguments() {
-        run_sunny_day_expression_test(
+    fn not_in_with_schema_and_function() {
+        run_sunny_day_test(
             "SELECT 1 NOT IN schema_name.table_function();",
-            &expression_with_in_statement(
+            select_expr(in_expr(
                 numeric_expr("1"),
                 InExpression::TableFunction(
                     Identifier::Compound(vec![
@@ -222,15 +218,16 @@ mod expression_with_in_statement_tests {
                     vec![],
                 ),
                 true,
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_with_schema_and_table_function_with_arguments() {
-        run_sunny_day_expression_test(
+    fn not_in_with_schema_and_function_with_arguments() {
+        run_sunny_day_test(
             "SELECT 1 NOT IN schema_name.table_function(1, 2, 3);",
-            &expression_with_in_statement(
+            select_expr(in_expr(
                 numeric_expr("1"),
                 InExpression::TableFunction(
                     Identifier::Compound(vec![
@@ -240,15 +237,16 @@ mod expression_with_in_statement_tests {
                     vec![numeric_expr("1"), numeric_expr("2"), numeric_expr("3")],
                 ),
                 true,
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_with_table_function_with_arguments() {
-        run_sunny_day_expression_test(
+    fn not_in_function_with_expr_arguments() {
+        run_sunny_day_test(
             "SELECT 1 NOT IN table_function(1+2, 3*4);",
-            &expression_with_in_statement(
+            select_expr(in_expr(
                 numeric_expr("1"),
                 InExpression::TableFunction(
                     Identifier::Single("table_function".to_string()),
@@ -258,7 +256,8 @@ mod expression_with_in_statement_tests {
                     ],
                 ),
                 true,
-            ),
+            ))
+            .into(),
         );
     }
 }

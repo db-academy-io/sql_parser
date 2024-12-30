@@ -197,6 +197,7 @@ mod literal_value_expression_tests {
     use crate::ast::{Expression, LiteralValue};
     use crate::parser::expression::test_utils::*;
     use crate::parser::test_utils::*;
+    use crate::select::test_utils::select_expr;
 
     #[test]
     fn literal_values() {
@@ -246,6 +247,7 @@ mod literal_value_expression_tests {
 mod bind_parameter_expression_tests {
     use crate::parser::expression::test_utils::*;
     use crate::parser::test_utils::*;
+    use crate::select::test_utils::select_expr;
 
     #[test]
     fn bind_parameter_expressions() {
@@ -260,6 +262,7 @@ mod bind_parameter_expression_tests {
 
 #[cfg(test)]
 mod unary_op_tests {
+    use crate::select::test_utils::select_expr;
     use crate::UnaryOp;
 
     use crate::parser::expression::test_utils::*;
@@ -325,6 +328,7 @@ mod unary_op_tests {
 mod binary_op_tests {
     use crate::parser::expression::test_utils::*;
     use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
     use crate::{BinaryOp, FunctionArg, FunctionArgType, UnaryOp};
 
     #[test]
@@ -470,6 +474,7 @@ mod binary_op_tests {
 #[cfg(test)]
 mod unary_matching_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
     use crate::{Expression, UnaryMatchingExpression};
 
     use crate::parser::expression::test_utils::*;
@@ -518,6 +523,7 @@ mod unary_matching_expression_tests {
 #[cfg(test)]
 mod parenthesized_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
     use crate::{BinaryOp, DataType, Expression, RaiseFunction, UnaryOp};
 
     use crate::parser::expression::test_utils::*;

@@ -15,8 +15,7 @@ impl<'a> IsExpressionParser for Parser<'a> {
         let is_not = self.consume_as_keyword(Keyword::Not).is_ok();
         let mut distinct = false;
 
-        if let Ok(Keyword::Distinct) = self.peek_as_keyword() {
-            self.consume_as_keyword(Keyword::Distinct)?;
+        if self.consume_as_keyword(Keyword::Distinct).is_ok() {
             distinct = true;
 
             // The FROM keyword is mandatory after the DISTINCT keyword
@@ -43,11 +42,13 @@ impl<'a> IsExpressionParser for Parser<'a> {
 
 #[cfg(test)]
 mod is_expression_tests {
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
     use crate::{AnIsExpression, BinaryMatchingExpression, Expression};
 
     use crate::parser::expression::test_utils::*;
 
-    fn expression_from_expression(
+    fn expr_from_expr(
         expression: Expression,
         is_expression: Expression,
         distinct: bool,
@@ -69,26 +70,44 @@ mod is_expression_tests {
     }
 
     #[test]
-    fn test_expression_is_another_expression() {
-        run_sunny_day_expression_test(
+    fn is_expr_test() {
+        run_sunny_day_test(
             "SELECT 1 IS 1;",
-            &expression_from_expression(numeric_expr("1"), numeric_expr("1"), false, false),
+            select_expr(expr_from_expr(
+                numeric_expr("1"),
+                numeric_expr("1"),
+                false,
+                false,
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_is_not_another_expression() {
-        run_sunny_day_expression_test(
+    fn is_not_expr_test() {
+        run_sunny_day_test(
             "SELECT 1 IS NOT 1;",
-            &expression_from_expression(numeric_expr("1"), numeric_expr("1"), false, true),
+            select_expr(expr_from_expr(
+                numeric_expr("1"),
+                numeric_expr("1"),
+                false,
+                true,
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_is_distinct_another_expression() {
-        run_sunny_day_expression_test(
+    fn is_distinct_expr_test() {
+        run_sunny_day_test(
             "SELECT 1 IS DISTINCT FROM 1;",
-            &expression_from_expression(numeric_expr("1"), numeric_expr("1"), true, false),
+            select_expr(expr_from_expr(
+                numeric_expr("1"),
+                numeric_expr("1"),
+                true,
+                false,
+            ))
+            .into(),
         );
     }
 }

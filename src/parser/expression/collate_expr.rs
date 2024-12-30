@@ -29,24 +29,27 @@ impl<'a> CollateExpressionParser for Parser<'a> {
 #[cfg(test)]
 mod collate_expression_tests {
     use crate::parser::expression::test_utils::*;
+    use crate::parser::test_utils::run_sunny_day_test;
+    use crate::select::test_utils::select_expr;
     use crate::BinaryOp;
 
     #[test]
-    fn test_expression_collate_basic() {
-        run_sunny_day_expression_test(
+    fn collate_test() {
+        run_sunny_day_test(
             "SELECT 1 COLLATE 'utf8';",
-            &collate_expr(numeric_expr("1"), "'utf8'".to_string()),
+            select_expr(collate_expr(numeric_expr("1"), "'utf8'".to_string())).into(),
         );
     }
 
     #[test]
-    fn test_expression_collate_with_expression() {
-        run_sunny_day_expression_test(
+    fn collate_with_expression() {
+        run_sunny_day_test(
             "SELECT 1 + 2 COLLATE 'utf8';",
-            &collate_expr(
+            select_expr(collate_expr(
                 binary_op(BinaryOp::Plus, numeric_expr("1"), numeric_expr("2")),
                 "'utf8'".to_string(),
-            ),
+            ))
+            .into(),
         );
     }
 }
