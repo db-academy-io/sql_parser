@@ -65,24 +65,24 @@ impl<'a> ExpressionParser for Parser<'a> {
         let expression = self.parse_expression_pratt(0)?;
 
         if let Ok(Keyword::Collate) = self.peek_as_keyword() {
-            return CollateExpressionParser::parse_collate_expression(self, expression);
+            CollateExpressionParser::parse_collate_expression(self, expression)
         } else if let Ok(Keyword::Isnull) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::Isnull)?;
-            return Ok(Expression::UnaryMatchingExpression(
+            Ok(Expression::UnaryMatchingExpression(
                 Box::new(expression),
                 UnaryMatchingExpression::IsNull,
-            ));
+            ))
         } else if let Ok(Keyword::Notnull) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::Notnull)?;
-            return Ok(Expression::UnaryMatchingExpression(
+            Ok(Expression::UnaryMatchingExpression(
                 Box::new(expression),
                 UnaryMatchingExpression::IsNotNull,
-            ));
+            ))
         } else if let Ok(Keyword::Not) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::Not)?;
 
             if let Ok(nested_keyword) = self.peek_as_keyword() {
-                return match nested_keyword {
+                match nested_keyword {
                     Keyword::Null => {
                         self.consume_as_keyword(Keyword::Null)?;
                         Ok(Expression::UnaryMatchingExpression(
@@ -105,9 +105,9 @@ impl<'a> ExpressionParser for Parser<'a> {
                     _ => {
                         return Err(ParsingError::UnexpectedKeyword(nested_keyword));
                     }
-                };
+                }
             } else {
-                return Err(ParsingError::UnexpectedKeyword(Keyword::Not));
+                Err(ParsingError::UnexpectedKeyword(Keyword::Not))
             }
         } else if let Ok(Keyword::Between) = self.peek_as_keyword() {
             return BetweenExpressionParser::parse_between_expression(self, expression, false);
