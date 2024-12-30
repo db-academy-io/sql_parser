@@ -1,16 +1,13 @@
-use super::create_table::CreateTableStatementParser;
 use super::CreateStatementParser;
 use crate::parser::errors::ParsingError;
-use crate::{
-    ColumnDefinition, CreateVirtualTableStatement, IdentifierParser, Keyword, Parser, TokenType,
-};
+use crate::{CreateVirtualTableStatement, IdentifierParser, Keyword, Parser, TokenType};
 
 pub trait CreateVirtualTableStatementParser {
     fn parse_create_virtual_table_statement(
         &mut self,
     ) -> Result<CreateVirtualTableStatement, ParsingError>;
 
-    fn parse_module_arguments(&mut self) -> Result<Vec<ColumnDefinition>, ParsingError>;
+    fn parse_module_arguments(&mut self) -> Result<Vec<String>, ParsingError>;
 }
 
 impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
@@ -37,13 +34,35 @@ impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
         })
     }
 
-    fn parse_module_arguments(&mut self) -> Result<Vec<ColumnDefinition>, ParsingError> {
+    fn parse_module_arguments(&mut self) -> Result<Vec<String>, ParsingError> {
         if self.consume_as(TokenType::LeftParen).is_ok() {
-            let args = self.parse_column_definitions()?;
+            let mut module_arguments = vec![];
+
+            let mut arg = String::new();
+
+            loop {
+                let token = self.peek_token()?;
+
+                if token.token_type == TokenType::RightParen {
+                    break;
+                }
+
+                if token.token_type == TokenType::Comma {
+                    if arg.is_empty() {
+                        return Err(ParsingError::UnexpectedToken(token.to_string()));
+                    }
+                    module_arguments.push(arg);
+                    arg = String::new();
+                    self.consume_as(TokenType::Comma)?;
+                } else {
+                    arg = format!("{} {}", arg, token.token_type);
+                    self.consume_token()?;
+                }
+            }
 
             self.consume_as(TokenType::RightParen)?;
 
-            Ok(args)
+            Ok(module_arguments)
         } else {
             Ok(vec![])
         }
@@ -68,10 +87,7 @@ pub mod test_utils {
 mod create_virtual_table_tests {
     use test_utils::create_virtual_table_statement;
 
-    use crate::{
-        parser::test_utils::run_sunny_day_test, ColumnConstraint, ColumnConstraintType,
-        ConflictClause, DataType, Identifier, PrimaryKeyConstraint, Statement,
-    };
+    use crate::{parser::test_utils::run_sunny_day_test, Identifier, Statement};
 
     use super::*;
 
@@ -110,38 +126,14 @@ mod create_virtual_table_tests {
     fn create_virtual_table_with_module_arguments() {
         let mut stmt = create_virtual_table_statement();
         stmt.module_arguments = vec![
-            ColumnDefinition {
-                column_name: Identifier::from("id"),
-                column_type: Some(DataType::PlainDataType("int".into())),
-                column_constraints: vec![ColumnConstraint {
-                    name: None,
-                    constraint_type: ColumnConstraintType::PrimaryKey(PrimaryKeyConstraint {
-                        auto_increment: false,
-                        conflict_clause: ConflictClause::None,
-                        ordering: None,
-                    }),
-                }],
-            },
-            ColumnDefinition {
-                column_name: Identifier::from("name"),
-                column_type: Some(DataType::SizedDataType("varchar".into(), "50".into())),
-                column_constraints: vec![],
-            },
-            ColumnDefinition {
-                column_name: Identifier::from("category"),
-                column_type: Some(DataType::SizedDataType("varchar".into(), "15".into())),
-                column_constraints: vec![],
-            },
-            ColumnDefinition {
-                column_name: Identifier::from("cost"),
-                column_type: Some(DataType::PlainDataType("int".into())),
-                column_constraints: vec![],
-            },
+            "id int PRIMARY KEY".to_string(),
+            "name varchar(50)".to_string(),
+            "category varchar(15)".to_string(),
+            "cost int".to_string(),
         ];
 
         run_sunny_day_test(
-            "CREATE VIRTUAL TABLE test_table 
-            USING test_module(
+            "CREATE VIRTUAL TABLE test_table USING test_module(
                 id int PRIMARY KEY,
                 name varchar(50),
                 category varchar(15),

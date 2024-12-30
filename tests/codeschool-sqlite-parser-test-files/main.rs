@@ -55,7 +55,8 @@ fn run_test(sql_content: &str) -> Result<Statement, ParsingError> {
 #[test]
 pub fn test() {
     let sql_content = fs::read_to_string(
-        "tests/codeschool-sqlite-parser-test-files/sql/create-virtual-table/create-virtual-table-alt-syntax.sql",
+        "tests/codeschool-sqlite-parser-test-files/sql/create-virtual-table/basic-create-virtual-table.sql"
+        // "tests/codeschool-sqlite-parser-test-files/sql/create-virtual-table/create-virtual-table-alt-syntax.sql",
     )
     .unwrap();
     let result = run_test(&sql_content);
