@@ -1,7 +1,9 @@
 use super::CreateStatementParser;
-use crate::expression::{ExpressionParser, IdentifierParser};
+use crate::expression::ExpressionParser;
 use crate::parser::errors::ParsingError;
-use crate::{CreateVirtualTableStatement, Expression, Keyword, Parser, TokenType};
+use crate::{
+    CreateVirtualTableStatement, Expression, IdentifierParser, Keyword, Parser, TokenType,
+};
 
 pub trait CreateVirtualTableStatementParser {
     fn parse_create_virtual_table_statement(

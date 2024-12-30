@@ -3,9 +3,9 @@ use crate::parser::{
     column::ColumnDefinitionParser, insert::InsertStatementParser, select::SelectStatementParser,
 };
 use crate::{
-    expression::{ExpressionParser, IdentifierParser},
-    ColumnDefinition, CreateTableColumnDef, CreateTableOption, CreateTableStatement, Keyword,
-    Parser, TableConstraint, TableConstraintType, TableOption, TokenType,
+    expression::ExpressionParser, ColumnDefinition, CreateTableColumnDef, CreateTableOption,
+    CreateTableStatement, IdentifierParser, Keyword, Parser, TableConstraint, TableConstraintType,
+    TableOption, TokenType,
 };
 
 use super::CreateStatementParser;

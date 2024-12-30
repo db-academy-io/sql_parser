@@ -4,11 +4,14 @@ pub mod alter;
 pub mod column;
 pub mod create;
 pub mod cte;
+mod data_type;
 pub mod delete;
 pub mod drop;
 pub mod errors;
 pub mod explain;
 pub mod expression;
+mod identifier;
+
 pub mod insert;
 pub mod select;
 pub mod sqlite;
@@ -23,13 +26,16 @@ use delete::*;
 use drop::*;
 use errors::*;
 use explain::*;
-use expression::*;
 use insert::*;
 use select::*;
 use sqlite::*;
 use trx::*;
 use update::*;
 use window::*;
+
+pub use data_type::DataTypeParser;
+pub use expression::ExpressionParser;
+pub use identifier::IdentifierParser;
 
 use crate::ast::{IndexedType, LimitClause, OrderingTerm, Statement};
 use crate::{Keyword, Ordering, Token, TokenType, Tokenizer};

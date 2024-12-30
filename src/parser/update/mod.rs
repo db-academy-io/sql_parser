@@ -1,10 +1,8 @@
 use crate::{ConflictClause, Keyword, SetClause, TokenType, UpdateStatement};
 
 use super::{
-    delete::DeleteStatementParser,
-    expression::{ExpressionParser, IdentifierParser},
-    select::SelectStatementParser,
-    Parser, ParsingError, SelectFromParser,
+    delete::DeleteStatementParser, select::SelectStatementParser, ExpressionParser,
+    IdentifierParser, Parser, ParsingError, SelectFromParser,
 };
 
 pub trait UpdateStatementParser {

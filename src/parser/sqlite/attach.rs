@@ -1,6 +1,6 @@
-use crate::expression::{ExpressionParser, IdentifierParser};
+use crate::expression::ExpressionParser;
 use crate::parser::errors::ParsingError;
-use crate::{AttachStatement, DetachStatement, Keyword, Parser, Statement};
+use crate::{AttachStatement, DetachStatement, IdentifierParser, Keyword, Parser, Statement};
 
 use super::sqlite3_name::SQLite3NameParser;
 

@@ -1,6 +1,6 @@
 use crate::{
-    expression::IdentifierParser, CteExpression, Identifier, Keyword, MaterializationType,
-    Statement, TokenType, WithCteStatement,
+    CteExpression, Identifier, IdentifierParser, Keyword, MaterializationType, Statement,
+    TokenType, WithCteStatement,
 };
 
 use super::{select::SelectStatementParser, Parser, ParsingError};

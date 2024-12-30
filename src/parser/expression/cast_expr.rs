@@ -1,7 +1,7 @@
 use crate::parser::errors::ParsingError;
-use crate::{Expression, Keyword, Parser, TokenType};
+use crate::{DataTypeParser, Expression, Keyword, Parser, TokenType};
 
-use super::{data_type::DataTypeParser, ExpressionParser};
+use super::ExpressionParser;
 
 pub trait CastExpressionParser {
     fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError>;

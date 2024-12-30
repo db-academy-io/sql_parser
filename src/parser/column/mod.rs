@@ -1,10 +1,10 @@
 use crate::{
-    ColumnConstraint, ColumnConstraintType, ColumnDefinition, ConflictClause, Expression, FKAction,
-    FKConstraintAction, FKDeferrableType, ForeignKeyClause, GeneratedColumnConstraint,
-    GeneratedColumnType, Identifier, Keyword, LiteralValue, PrimaryKeyConstraint, TokenType,
+    expression::ExpressionParser, ColumnConstraint, ColumnConstraintType, ColumnDefinition,
+    ConflictClause, DataTypeParser, Expression, FKAction, FKConstraintAction, FKDeferrableType,
+    ForeignKeyClause, GeneratedColumnConstraint, GeneratedColumnType, Identifier, IdentifierParser,
+    Keyword, LiteralValue, PrimaryKeyConstraint, TokenType,
 };
 
-use super::expression::{DataTypeParser, ExpressionParser, IdentifierParser};
 use super::{Parser, ParsingError};
 
 pub trait ColumnDefinitionParser {

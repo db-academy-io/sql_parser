@@ -1,6 +1,6 @@
 use crate::column::ColumnDefinitionParser;
-use crate::expression::IdentifierParser;
 use crate::parser::errors::ParsingError;
+use crate::IdentifierParser;
 use crate::{AlterTableStatement, AlterTableStatementType, Identifier, Keyword, Parser};
 
 pub trait AlterTableStatementParser {

@@ -5,10 +5,8 @@ use crate::{
 };
 
 use super::{
-    delete::DeleteStatementParser,
-    expression::{ExpressionParser, IdentifierParser},
-    update::UpdateStatementParser,
-    Parser, ParsingError,
+    delete::DeleteStatementParser, expression::ExpressionParser, update::UpdateStatementParser,
+    IdentifierParser, Parser, ParsingError,
 };
 
 pub trait InsertStatementParser {

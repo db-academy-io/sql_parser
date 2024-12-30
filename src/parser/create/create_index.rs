@@ -1,8 +1,7 @@
 use crate::parser::errors::ParsingError;
 use crate::{
-    expression::IdentifierParser,
     parser::{insert::InsertStatementParser, select::SelectStatementParser},
-    CreateIndexStatement, Keyword, Parser,
+    CreateIndexStatement, IdentifierParser, Keyword, Parser,
 };
 
 use super::CreateStatementParser;

@@ -1,9 +1,8 @@
 use super::CreateStatementParser;
-use crate::expression::{ExpressionParser, IdentifierParser};
 use crate::parser::errors::ParsingError;
 use crate::{
-    CreateTriggerStatement, Expression, Keyword, Parser, TokenType, TriggerEvent, TriggerEventType,
-    TriggerPreCondition, TriggerStatement,
+    CreateTriggerStatement, Expression, ExpressionParser, IdentifierParser, Keyword, Parser,
+    TokenType, TriggerEvent, TriggerEventType, TriggerPreCondition, TriggerStatement,
 };
 
 pub trait CreateTriggerStatementParser {

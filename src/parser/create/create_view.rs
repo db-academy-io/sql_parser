@@ -1,9 +1,8 @@
 use super::CreateStatementParser;
-use crate::expression::IdentifierParser;
 use crate::parser::errors::ParsingError;
 use crate::{
     parser::{insert::InsertStatementParser, select::SelectStatementParser},
-    CreateViewStatement, Keyword, Parser,
+    CreateViewStatement, IdentifierParser, Keyword, Parser,
 };
 
 pub trait CreateViewStatementParser {

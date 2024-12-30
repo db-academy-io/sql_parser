@@ -1,10 +1,11 @@
 use super::{
     case_expr::CaseExpressionParser, cast_expr::CastExpressionParser,
     exists_expr::ExistsExpressionParser, precedence::get_precedence,
-    raise_expr::RaiseExpressionParser, ExpressionParser, FunctionParser, IdentifierParser,
+    raise_expr::RaiseExpressionParser, ExpressionParser, FunctionParser,
 };
 use crate::{
-    parser::ParsingError, BinaryOp, Expression, Keyword, LiteralValue, Parser, TokenType, UnaryOp,
+    parser::ParsingError, BinaryOp, Expression, IdentifierParser, Keyword, LiteralValue, Parser,
+    TokenType, UnaryOp,
 };
 
 pub trait PrattParser {

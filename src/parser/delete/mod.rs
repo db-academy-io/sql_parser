@@ -1,6 +1,5 @@
 use crate::{
-    expression::IdentifierParser, DeleteStatement, Keyword, QualifiedTableName, ReturningClause,
-    TokenType,
+    DeleteStatement, IdentifierParser, Keyword, QualifiedTableName, ReturningClause, TokenType,
 };
 
 use super::{expression::ExpressionParser, select::SelectStatementParser, Parser, ParsingError};
