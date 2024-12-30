@@ -145,8 +145,6 @@ pub fn test() {
        "tests/codeschool-sqlite-parser-test-files/sql/official-suite/boundary1-2.sql"
        "tests/codeschool-sqlite-parser-test-files/sql/official-suite/fts3ad-1.sql"
        "tests/codeschool-sqlite-parser-test-files/sql/official-suite/randexpr1-11.sql"
-       "tests/codeschool-sqlite-parser-test-files/sql/datatypes/basic-datatypes.sql"
-       "tests/codeschool-sqlite-parser-test-files/sql/parse-errors/parse-error-1.sql"
        "tests/codeschool-sqlite-parser-test-files/sql/expressions/expression-unary-1.sql"
        "tests/codeschool-sqlite-parser-test-files/sql/expressions/expression-grouping-9.sql"
        "tests/codeschool-sqlite-parser-test-files/sql/expressions/expression-grouping-8.sql"
@@ -157,7 +155,7 @@ pub fn test() {
     */
 
     let sql_content = fs::read_to_string(
-        "tests/codeschool-sqlite-parser-test-files/sql/datatypes/basic-datatypes.sql",
+        "tests/codeschool-sqlite-parser-test-files/sql/expressions/expression-unary-1.sql",
     )
     .unwrap();
     let result = run_test(&sql_content);

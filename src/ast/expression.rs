@@ -210,6 +210,9 @@ pub enum UnaryOp {
 
     /// Minus (-)
     Minus,
+
+    /// Not (!) or NOT
+    Not,
 }
 
 /// An SQL function
