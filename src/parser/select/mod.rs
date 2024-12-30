@@ -634,73 +634,77 @@ mod order_by_clause_tests {
     }
 }
 
-// #[cfg(test)]
-// mod test_select_limit_clause {
-//     use super::test_utils::select_statement_with_limit_clause;
-//     use crate::expression::test_utils::{binary_op_expression, numeric_literal_expression};
-//     use crate::parser::test_utils::*;
-//     use crate::{BinaryOp, LimitClause, Statement};
+#[cfg(test)]
+mod limit_clause_tests {
+    use super::test_utils::select_stmt;
+    use crate::expression::test_utils::{binary_op, numeric_expr};
+    use crate::parser::test_utils::*;
+    use crate::{BinaryOp, LimitClause, Statement};
 
-//     #[test]
-//     fn test_select_limit_clause_basic() {
-//         let expected_statement = select_statement_with_limit_clause(LimitClause {
-//             limit: Box::new(numeric_literal_expression("1")),
-//             offset: None,
-//             additional_limit: None,
-//         });
+    #[test]
+    fn limit_clause() {
+        let mut expected_statement = select_stmt();
+        expected_statement.limit = Some(LimitClause {
+            limit: Box::new(numeric_expr("1")),
+            offset: None,
+            additional_limit: None,
+        });
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 LIMIT 1",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "SELECT * FROM table_name1 LIMIT 1",
+            Statement::Select(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_select_limit_clause_basic_expression() {
-//         let expected_statement = select_statement_with_limit_clause(LimitClause {
-//             limit: Box::new(binary_op_expression(
-//                 BinaryOp::Plus,
-//                 numeric_literal_expression("1"),
-//                 numeric_literal_expression("2"),
-//             )),
-//             offset: None,
-//             additional_limit: None,
-//         });
+    #[test]
+    fn limit_clause_basic_expression() {
+        let mut expected_statement = select_stmt();
+        expected_statement.limit = Some(LimitClause {
+            limit: Box::new(binary_op(
+                BinaryOp::Plus,
+                numeric_expr("1"),
+                numeric_expr("2"),
+            )),
+            offset: None,
+            additional_limit: None,
+        });
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 LIMIT 1 + 2",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "SELECT * FROM table_name1 LIMIT 1 + 2",
+            Statement::Select(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_select_limit_clause_with_offset() {
-//         let expected_statement = select_statement_with_limit_clause(LimitClause {
-//             limit: Box::new(numeric_literal_expression("1")),
-//             offset: Some(Box::new(numeric_literal_expression("2"))),
-//             additional_limit: None,
-//         });
+    #[test]
+    fn limit_clause_with_offset() {
+        let mut expected_statement = select_stmt();
+        expected_statement.limit = Some(LimitClause {
+            limit: Box::new(numeric_expr("1")),
+            offset: Some(Box::new(numeric_expr("2"))),
+            additional_limit: None,
+        });
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 LIMIT 1 OFFSET 2",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+        run_sunny_day_test(
+            "SELECT * FROM table_name1 LIMIT 1 OFFSET 2",
+            Statement::Select(expected_statement),
+        );
+    }
 
-//     #[test]
-//     fn test_select_limit_clause_with_additional_limit() {
-//         let expected_statement = select_statement_with_limit_clause(LimitClause {
-//             limit: Box::new(numeric_literal_expression("1")),
-//             offset: None,
-//             additional_limit: Some(Box::new(numeric_literal_expression("2"))),
-//         });
+    #[test]
+    fn limit_clause_with_additional_limit() {
+        let mut expected_statement = select_stmt();
+        expected_statement.limit = Some(LimitClause {
+            limit: Box::new(numeric_expr("1")),
+            offset: None,
+            additional_limit: Some(Box::new(numeric_expr("2"))),
+        });
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 LIMIT 1, 2",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-// }
+        run_sunny_day_test(
+            "SELECT * FROM table_name1 LIMIT 1, 2",
+            Statement::Select(expected_statement),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod test_select_with_cte {
