@@ -283,7 +283,7 @@ pub mod test_utils {
 }
 
 #[cfg(test)]
-mod select_where_clause_tests {
+mod where_clause_tests {
     use super::test_utils::{select, select_star_from};
     use crate::expression::test_utils::{binary_op, identifier_expr, numeric_expr};
     use crate::parser::test_utils::*;
@@ -358,7 +358,7 @@ mod select_where_clause_tests {
 }
 
 #[cfg(test)]
-mod select_group_by_clause_tests {
+mod group_by_clause_tests {
     use crate::expression::test_utils::{binary_op, identifier_expr};
     use crate::parser::test_utils::*;
     use crate::BinaryOp;
@@ -401,130 +401,118 @@ mod select_group_by_clause_tests {
     }
 }
 
-// #[cfg(test)]
-// mod test_select_having_clause {
-//     use super::test_utils::select_statement_with_having_clause;
-//     use crate::expression::test_utils::{
-//         binary_op_expression, identifier_expression, numeric_literal_expression,
-//     };
-//     use crate::parser::test_utils::*;
-//     use crate::{BinaryOp, Statement};
+#[cfg(test)]
+mod having_clause_tests {
+    use super::test_utils::select;
+    use crate::expression::test_utils::{binary_op, identifier_expr, numeric_expr};
+    use crate::parser::test_utils::*;
+    use crate::BinaryOp;
 
-//     #[test]
-//     fn test_select_having_clause() {
-//         let expected_statement = select_statement_with_having_clause(binary_op_expression(
-//             BinaryOp::GreaterThan,
-//             identifier_expression(&["col1"]),
-//             numeric_literal_expression("1"),
-//         ));
+    #[test]
+    fn having_clause() {
+        let mut expected_statement = select();
+        expected_statement.having = Some(Box::new(binary_op(
+            BinaryOp::GreaterThan,
+            identifier_expr(&["col1"]),
+            numeric_expr("1"),
+        )));
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 HAVING col1 > 1",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-// }
+        run_sunny_day_test("SELECT * HAVING col1 > 1", expected_statement.into());
+    }
+}
 
-// #[cfg(test)]
-// mod test_select_window_clause {
-//     use super::test_utils::select_statement_with_window_clause;
-//     use crate::expression::test_utils::{
-//         collate_expression, identifier_expression, numeric_literal_expression,
-//     };
-//     use crate::parser::test_utils::*;
-//     use crate::{
-//         BetweenFrameSpec, BetweenFrameSpecType, FrameSpec, FrameSpecExclude, FrameSpecType,
-//         FrameType, NamedWindowDefinition, NullsOrdering, Ordering, OrderingTerm, Statement,
-//         WindowDefinition,
-//     };
+#[cfg(test)]
+mod window_clause_tests {
+    use super::test_utils::select;
+    use crate::expression::test_utils::{collate_expr, identifier_expr, numeric_expr};
+    use crate::parser::test_utils::*;
+    use crate::{
+        BetweenFrameSpec, BetweenFrameSpecType, FrameSpec, FrameSpecExclude, FrameSpecType,
+        FrameType, NamedWindowDefinition, NullsOrdering, Ordering, OrderingTerm, WindowDefinition,
+    };
 
-//     #[test]
-//     fn test_select_with_single_window_clause() {
-//         let expected_statement = select_statement_with_window_clause(vec![NamedWindowDefinition {
-//             window_name: "window_1".to_string(),
-//             window_definition: WindowDefinition::default(),
-//         }]);
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 WINDOW window_1 as ()",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn single_window_clause() {
+        let mut expected_statement = select();
+        expected_statement.window = Some(vec![NamedWindowDefinition {
+            window_name: "window_1".to_string(),
+            window_definition: WindowDefinition::default(),
+        }]);
 
-//     #[test]
-//     fn test_select_with_single_window_clause_complex() {
-//         let expected_statement = select_statement_with_window_clause(vec![NamedWindowDefinition {
-//             window_name: "window_1".to_string(),
-//             window_definition: WindowDefinition {
-//                 base_window_name: Some("base_window_name".to_string()),
-//                 partition_by: Some(vec![
-//                     identifier_expression(&["col1"]),
-//                     identifier_expression(&["col2"]),
-//                 ]),
-//                 order_by: Some(vec![
-//                     OrderingTerm {
-//                         expression: Box::new(identifier_expression(&["col3"])),
-//                         ordering: None,
-//                         nulls_ordering: None,
-//                     },
-//                     OrderingTerm {
-//                         expression: Box::new(collate_expression(
-//                             identifier_expression(&["col4"]),
-//                             "binary".to_string(),
-//                         )),
-//                         ordering: Some(Ordering::Asc),
-//                         nulls_ordering: Some(NullsOrdering::Last),
-//                     },
-//                 ]),
-//                 frame_spec: Some(FrameSpec {
-//                     frame_type: FrameType::Range,
-//                     frame_spec_type: FrameSpecType::Between(BetweenFrameSpec {
-//                         start: BetweenFrameSpecType::Preceding(Box::new(
-//                             numeric_literal_expression("1"),
-//                         )),
-//                         end: BetweenFrameSpecType::Following(Box::new(numeric_literal_expression(
-//                             "2",
-//                         ))),
-//                     }),
-//                     exclude: Some(FrameSpecExclude::CurrentRow),
-//                 }),
-//             },
-//         }]);
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1
-//                     WINDOW window_1 as (
-//                         base_window_name
-//                         PARTITION BY col1, col2
-//                         ORDER BY col3, col4 COLLATE binary ASC NULLS LAST
-//                         RANGE BETWEEN 1 PRECEDING AND 2 FOLLOWING
-//                         EXCLUDE CURRENT ROW
-//                     )",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+        run_sunny_day_test("SELECT * WINDOW window_1 as ()", expected_statement.into());
+    }
 
-//     #[test]
-//     fn test_select_with_multiple_window_clause() {
-//         let expected_statement = select_statement_with_window_clause(vec![
-//             NamedWindowDefinition {
-//                 window_name: "window_1".to_string(),
-//                 window_definition: WindowDefinition::default(),
-//             },
-//             NamedWindowDefinition {
-//                 window_name: "window_2".to_string(),
-//                 window_definition: WindowDefinition::default(),
-//             },
-//             NamedWindowDefinition {
-//                 window_name: "window_3".to_string(),
-//                 window_definition: WindowDefinition::default(),
-//             },
-//         ]);
+    #[test]
+    fn single_complex_window_clause() {
+        let mut expected_statement = select();
+        expected_statement.window = Some(vec![NamedWindowDefinition {
+            window_name: "window_1".to_string(),
+            window_definition: WindowDefinition {
+                base_window_name: Some("base_window_name".to_string()),
+                partition_by: Some(vec![identifier_expr(&["col1"]), identifier_expr(&["col2"])]),
+                order_by: Some(vec![
+                    OrderingTerm {
+                        expression: Box::new(identifier_expr(&["col3"])),
+                        ordering: None,
+                        nulls_ordering: None,
+                    },
+                    OrderingTerm {
+                        expression: Box::new(collate_expr(
+                            identifier_expr(&["col4"]),
+                            "binary".to_string(),
+                        )),
+                        ordering: Some(Ordering::Asc),
+                        nulls_ordering: Some(NullsOrdering::Last),
+                    },
+                ]),
+                frame_spec: Some(FrameSpec {
+                    frame_type: FrameType::Range,
+                    frame_spec_type: FrameSpecType::Between(BetweenFrameSpec {
+                        start: BetweenFrameSpecType::Preceding(Box::new(numeric_expr("1"))),
+                        end: BetweenFrameSpecType::Following(Box::new(numeric_expr("2"))),
+                    }),
+                    exclude: Some(FrameSpecExclude::CurrentRow),
+                }),
+            },
+        }]);
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 WINDOW window_1 as (), window_2 as (), window_3 as ()",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-// }
+        run_sunny_day_test(
+            "SELECT * 
+                    WINDOW window_1 as (
+                        base_window_name
+                        PARTITION BY col1, col2
+                        ORDER BY col3, col4 COLLATE binary ASC NULLS LAST
+                        RANGE BETWEEN 1 PRECEDING AND 2 FOLLOWING
+                        EXCLUDE CURRENT ROW
+                    )",
+            expected_statement.into(),
+        );
+    }
+
+    #[test]
+    fn multiple_window_clauses() {
+        let mut expected_statement = select();
+        expected_statement.window = Some(vec![
+            NamedWindowDefinition {
+                window_name: "window_1".to_string(),
+                window_definition: WindowDefinition::default(),
+            },
+            NamedWindowDefinition {
+                window_name: "window_2".to_string(),
+                window_definition: WindowDefinition::default(),
+            },
+            NamedWindowDefinition {
+                window_name: "window_3".to_string(),
+                window_definition: WindowDefinition::default(),
+            },
+        ]);
+
+        run_sunny_day_test(
+            "SELECT * WINDOW window_1 as (), window_2 as (), window_3 as ()",
+            expected_statement.into(),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod test_select_union_clause {
