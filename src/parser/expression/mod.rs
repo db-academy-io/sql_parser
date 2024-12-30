@@ -55,6 +55,9 @@ pub trait ExpressionParser {
     fn parse_infix(&mut self, left: Expression, precedence: u8)
         -> Result<Expression, ParsingError>;
 
+    /// Parse an expression which starts with the NOT keyword
+    fn parse_not_expression(&mut self) -> Result<Expression, ParsingError>;
+
     // /// Get the precedence of the given operator
     // fn get_precedence(&mut self, operator: &TokenType) -> u8;
 }
@@ -215,10 +218,7 @@ impl<'a> ExpressionParser for Parser<'a> {
             match keyword {
                 Keyword::Case => return CaseExpressionParser::parse_case_expression(self),
                 Keyword::Cast => return CastExpressionParser::parse_cast_expression(self),
-                Keyword::Not => {
-                    self.consume_as_keyword(Keyword::Not)?;
-                    return ExistsExpressionParser::parse_exists_expression(self, true);
-                }
+                Keyword::Not => return self.parse_not_expression(),
                 Keyword::Exists => {
                     return ExistsExpressionParser::parse_exists_expression(self, false)
                 }
@@ -328,6 +328,19 @@ impl<'a> ExpressionParser for Parser<'a> {
                 "Unexpected token: {}",
                 token.token_type
             ))),
+        }
+    }
+
+    fn parse_not_expression(&mut self) -> Result<Expression, ParsingError> {
+        self.consume_as_keyword(Keyword::Not)?;
+
+        if let Ok(Keyword::Exists) = self.peek_as_keyword() {
+            ExistsExpressionParser::parse_exists_expression(self, true)
+        } else {
+            Ok(Expression::UnaryOp(
+                UnaryOp::Not,
+                Box::new(self.parse_expression()?),
+            ))
         }
     }
 }
@@ -535,8 +548,6 @@ mod bind_parameter_expression_tests {
         run_sunny_day_expression_test("SELECT @var;", &bind_parameter_expression("@var"));
         run_sunny_day_expression_test("SELECT $value;", &bind_parameter_expression("$value"));
         run_sunny_day_expression_test("SELECT #param;", &bind_parameter_expression("#param"));
-
-        // TODO: Add tests for invalid bind parameters
     }
 }
 
@@ -578,6 +589,14 @@ mod unary_op_expression_tests {
                 UnaryOp::Plus,
                 unary_op_expression(UnaryOp::Plus, numeric_literal_expression("1")),
             ),
+        );
+    }
+
+    #[test]
+    fn test_expression_not_value() {
+        run_sunny_day_expression_test(
+            "SELECT NOT 1;",
+            &unary_op_expression(UnaryOp::Not, numeric_literal_expression("1")),
         );
     }
 }
