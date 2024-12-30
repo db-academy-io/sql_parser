@@ -706,60 +706,66 @@ mod limit_clause_tests {
     }
 }
 
-// #[cfg(test)]
-// mod test_select_with_cte {
-//     use super::super::cte::test_utils::cte_expression;
-//     use super::test_utils::{select_from, select_statement_with_cte_clause};
-//     use crate::parser::test_utils::*;
-//     use crate::{FromClause, Identifier, QualifiedTableName};
+#[cfg(test)]
+mod with_cte_tests {
+    use super::test_utils::{select_from, select_stmt};
+    use crate::parser::cte::test_utils::cte_expression;
+    use crate::parser::test_utils::*;
+    use crate::{CteExpression, FromClause, Identifier, QualifiedTableName, WithCteStatement};
 
-//     #[test]
-//     fn test_select_cte_clause() {
-//         let expected_statement = select_statement_with_cte_clause(
-//             true,
-//             vec![cte_expression(
-//                 Identifier::Single("cte_1".to_string()),
-//                 vec![],
-//                 None,
-//                 select_from(FromClause::Table(QualifiedTableName::from(
-//                     Identifier::Single("cte_table".to_string()),
-//                 ))),
-//             )],
-//         );
+    #[test]
+    fn cte_clause() {
+        let mut expected_statement = select_stmt();
+        expected_statement.with_cte = Some(WithCteStatement {
+            recursive: true,
+            cte_expressions: vec![CteExpression {
+                name: Identifier::Single("cte_1".to_string()),
+                column_names: vec![],
+                materialized: None,
+                select: select_from(FromClause::Table(QualifiedTableName::from(
+                    Identifier::Single("cte_table".to_string()),
+                ))),
+            }],
+        });
 
-//         run_sunny_day_test(
-//             "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) SELECT * FROM table_1",
-//             expected_statement,
-//         );
-//     }
+        run_sunny_day_test(
+            "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table) SELECT * FROM table_name1",
+            expected_statement.into(),
+        );
+    }
 
-//     #[test]
-//     fn test_select_with_multiple_ctes() {
-//         let expected_statement = select_statement_with_cte_clause(
-//             true,
-//             vec![
-//                 cte_expression(
-//                     Identifier::Single("cte_1".to_string()),
-//                     vec![],
-//                     None,
-//                     select_from(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("cte_table1".to_string()),
-//                     ))),
-//                 ),
-//                 cte_expression(
-//                     Identifier::Single("cte_2".to_string()),
-//                     vec![],
-//                     None,
-//                     select_from(FromClause::Table(QualifiedTableName::from(
-//                         Identifier::Single("cte_table2".to_string()),
-//                     ))),
-//                 ),
-//             ],
-//         );
+    #[test]
+    fn with_multiple_ctes() {
+        let mut expected_statement = select_stmt();
 
-//         run_sunny_day_test(
-//             "WITH RECURSIVE cte_1 AS (SELECT * FROM cte_table1), cte_2 AS (SELECT * FROM cte_table2) SELECT * FROM table_1",
-//             expected_statement,
-//         );
-//     }
-// }
+        expected_statement.with_cte = Some(WithCteStatement {
+            recursive: true,
+            cte_expressions: vec![
+                cte_expression(
+                    Identifier::Single("cte_1".to_string()),
+                    vec![],
+                    None,
+                    select_from(FromClause::Table(QualifiedTableName::from(
+                        Identifier::Single("cte_table1".to_string()),
+                    ))),
+                ),
+                cte_expression(
+                    Identifier::Single("cte_2".to_string()),
+                    vec![],
+                    None,
+                    select_from(FromClause::Table(QualifiedTableName::from(
+                        Identifier::Single("cte_table2".to_string()),
+                    ))),
+                ),
+            ],
+        });
+
+        run_sunny_day_test(
+            "WITH RECURSIVE 
+                    cte_1 AS (SELECT * FROM cte_table1), 
+                    cte_2 AS (SELECT * FROM cte_table2) 
+                  SELECT * FROM table_name1",
+            expected_statement.into(),
+        );
+    }
+}
