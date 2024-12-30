@@ -15,7 +15,7 @@ use crate::ast::{Select, SelectStatement};
 use crate::parser::errors::ParsingError;
 
 pub use column::SelectColumnsParser;
-pub use from::*;
+pub use from::SelectFromParser;
 use values::ValuesStatementParser;
 
 /// Trait for parsing SELECT statements
@@ -54,7 +54,7 @@ impl<'a> SelectStatementParser for Parser<'a> {
 
         let select_statement = self.parse_select_statement_core()?;
 
-        let select_statement1 = if let Some(union_type) = self.parse_union_clause()? {
+        let mut select_statement1 = if let Some(union_type) = self.parse_union_clause()? {
             let left = Box::new(select_statement);
             let right = Box::new(self.parse_select_statement()?);
             SelectStatement {
@@ -70,6 +70,9 @@ impl<'a> SelectStatementParser for Parser<'a> {
         } else {
             select_statement
         };
+
+        select_statement1.order_by = self.parse_order_by_clause()?;
+        select_statement1.limit = self.parse_limit_clause()?;
 
         Ok(select_statement1)
     }
@@ -213,23 +216,11 @@ pub mod test_utils {
     }
 
     pub fn select_stmt() -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(Expression::Identifier(
-                    Identifier::Wildcard,
-                ))],
-                from: Some(FromClause::Table(QualifiedTableName {
-                    table_id: Identifier::Single("table_name1".to_string()),
-                    alias: None,
-                    indexed_type: None,
-                })),
-                ..Default::default()
-            }),
-            order_by: None,
-            limit: None,
-        }
+        select_from(FromClause::Table(QualifiedTableName {
+            table_id: Identifier::Single("table_name1".to_string()),
+            alias: None,
+            indexed_type: None,
+        }))
     }
 
     pub fn select_columns(columns: Vec<SelectItem>) -> SelectStatement {
@@ -514,127 +505,134 @@ mod window_clause_tests {
     }
 }
 
-// #[cfg(test)]
-// mod test_select_union_clause {
-//     use super::test_utils::{select_from, select_statement_with_union_clause};
-//     use crate::parser::test_utils::*;
-//     use crate::{FromClause, Identifier, QualifiedTableName, Statement, UnionStatementType};
+#[cfg(test)]
+mod union_clause_tests {
+    use super::test_utils::select_stmt;
+    use crate::parser::test_utils::*;
+    use crate::{SelectBody, SelectStatement, UnionStatement, UnionStatementType};
 
-//     #[test]
-//     fn test_select_union_clause() {
-//         let union_types = vec![
-//             UnionStatementType::Union,
-//             UnionStatementType::UnionAll,
-//             UnionStatementType::Intersect,
-//             UnionStatementType::Except,
-//         ];
+    #[test]
+    fn union_clauses() {
+        let union_types = vec![
+            UnionStatementType::Union,
+            UnionStatementType::UnionAll,
+            UnionStatementType::Intersect,
+            UnionStatementType::Except,
+        ];
 
-//         let left = select_from(FromClause::Table(QualifiedTableName::from(
-//             Identifier::Single("table_1".to_string()),
-//         )));
+        for union_type in union_types {
+            let left_statement = select_stmt().into();
+            let right_statement = select_stmt().into();
 
-//         let right = select_from(FromClause::Table(QualifiedTableName::from(
-//             Identifier::Single("table_2".to_string()),
-//         )));
+            let expected_statement = SelectStatement {
+                with_cte: None,
+                select: SelectBody::Union(UnionStatement {
+                    union_type: union_type.clone(),
+                    left: Box::new(left_statement),
+                    right: Box::new(right_statement),
+                }),
+                order_by: None,
+                limit: None,
+            };
 
-//         for union_type in union_types {
-//             let expected_statement =
-//                 select_statement_with_union_clause(union_type.clone(), left.clone(), right.clone());
+            run_sunny_day_test(
+                &format!(
+                    "SELECT * FROM table_name1 {} SELECT * FROM table_name1",
+                    union_type
+                ),
+                expected_statement.into(),
+            );
+        }
+    }
+}
 
-//             run_sunny_day_test(
-//                 &format!("SELECT * FROM table_1 {} SELECT * FROM table_2", union_type),
-//                 Statement::Select(expected_statement),
-//             );
-//         }
-//     }
-// }
+#[cfg(test)]
+mod order_by_clause_tests {
+    use super::test_utils::select_stmt;
+    use crate::expression::test_utils::{collate_expr, identifier_expr};
+    use crate::parser::test_utils::*;
+    use crate::{NullsOrdering, Ordering, OrderingTerm, Statement};
 
-// #[cfg(test)]
-// mod test_select_order_by_clause {
-//     use super::test_utils::select_statement_with_order_by_clause;
-//     use crate::expression::test_utils::{collate_expression, identifier_expression};
-//     use crate::parser::test_utils::*;
-//     use crate::{NullsOrdering, Ordering, OrderingTerm, Statement};
+    #[test]
+    fn order_by_clause() {
+        let mut expected_statement = select_stmt();
+        expected_statement.order_by = Some(vec![OrderingTerm {
+            expression: Box::new(identifier_expr(&["col1"])),
+            ordering: Some(Ordering::Asc),
+            nulls_ordering: None,
+        }]);
 
-//     #[test]
-//     fn test_select_order_by_clause() {
-//         let expected_statement = select_statement_with_order_by_clause(vec![OrderingTerm {
-//             expression: Box::new(identifier_expression(&["col1"])),
-//             ordering: Some(Ordering::Asc),
-//             nulls_ordering: None,
-//         }]);
+        run_sunny_day_test(
+            "SELECT * FROM table_name1 ORDER BY col1 ASC",
+            expected_statement.into(),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 ORDER BY col1 ASC",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn order_by_clause_with_multiple_columns() {
+        let mut expected_statement = select_stmt();
+        expected_statement.order_by = Some(vec![
+            OrderingTerm {
+                expression: Box::new(identifier_expr(&["col1"])),
+                ordering: None,
+                nulls_ordering: None,
+            },
+            OrderingTerm {
+                expression: Box::new(identifier_expr(&["col2"])),
+                ordering: Some(Ordering::Desc),
+                nulls_ordering: None,
+            },
+        ]);
 
-//     #[test]
-//     fn test_select_order_by_clause_with_multiple_columns() {
-//         let expected_statement = select_statement_with_order_by_clause(vec![
-//             OrderingTerm {
-//                 expression: Box::new(identifier_expression(&["col1"])),
-//                 ordering: None,
-//                 nulls_ordering: None,
-//             },
-//             OrderingTerm {
-//                 expression: Box::new(identifier_expression(&["col2"])),
-//                 ordering: Some(Ordering::Desc),
-//                 nulls_ordering: None,
-//             },
-//         ]);
+        run_sunny_day_test(
+            "SELECT * FROM table_name1 ORDER BY col1, col2 DESC",
+            expected_statement.into(),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 ORDER BY col1, col2 DESC",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn order_by_clause_with_nulls_ordering() {
+        let mut expected_statement = select_stmt();
+        expected_statement.order_by = Some(vec![OrderingTerm {
+            expression: Box::new(identifier_expr(&["col1"])),
+            ordering: Some(Ordering::Asc),
+            nulls_ordering: Some(NullsOrdering::Last),
+        }]);
 
-//     #[test]
-//     fn test_select_order_by_clause_with_nulls_ordering() {
-//         let expected_statement = select_statement_with_order_by_clause(vec![OrderingTerm {
-//             expression: Box::new(identifier_expression(&["col1"])),
-//             ordering: Some(Ordering::Asc),
-//             nulls_ordering: Some(NullsOrdering::Last),
-//         }]);
+        run_sunny_day_test(
+            "SELECT * FROM table_name1 ORDER BY col1 ASC NULLS LAST",
+            expected_statement.into(),
+        );
+    }
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 ORDER BY col1 ASC NULLS LAST",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn order_by_clause_with_collation_and_nulls_ordering() {
+        let mut expected_statement = select_stmt();
+        expected_statement.order_by = Some(vec![
+            OrderingTerm {
+                expression: Box::new(collate_expr(
+                    identifier_expr(&["col1"]),
+                    "binary".to_string(),
+                )),
+                ordering: Some(Ordering::Asc),
+                nulls_ordering: Some(NullsOrdering::Last),
+            },
+            OrderingTerm {
+                expression: Box::new(collate_expr(identifier_expr(&["col2"]), "utf8".to_string())),
+                ordering: Some(Ordering::Desc),
+                nulls_ordering: Some(NullsOrdering::First),
+            },
+        ]);
 
-//     #[test]
-//     fn test_select_order_by_clause_with_collation_and_nulls_ordering() {
-//         let expected_statement = select_statement_with_order_by_clause(vec![
-//             OrderingTerm {
-//                 expression: Box::new(collate_expression(
-//                     identifier_expression(&["col1"]),
-//                     "binary".to_string(),
-//                 )),
-//                 ordering: Some(Ordering::Asc),
-//                 nulls_ordering: Some(NullsOrdering::Last),
-//             },
-//             OrderingTerm {
-//                 expression: Box::new(collate_expression(
-//                     identifier_expression(&["col2"]),
-//                     "utf8".to_string(),
-//                 )),
-//                 ordering: Some(Ordering::Desc),
-//                 nulls_ordering: Some(NullsOrdering::First),
-//             },
-//         ]);
-
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1
-//                     ORDER BY
-//                         col1 COLLATE binary ASC NULLS LAST,
-//                         col2 COLLATE utf8 DESC NULLS FIRST",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-// }
+        run_sunny_day_test(
+            "SELECT * FROM table_name1
+                    ORDER BY
+                        col1 COLLATE binary ASC NULLS LAST,
+                        col2 COLLATE utf8 DESC NULLS FIRST",
+            Statement::Select(expected_statement),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod test_select_limit_clause {
