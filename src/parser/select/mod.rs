@@ -244,15 +244,6 @@ pub mod test_utils {
         }
     }
 
-    pub fn to_statement(select: Select) -> Statement {
-        Statement::Select(SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(select),
-            order_by: None,
-            limit: None,
-        })
-    }
-
     pub fn select_from(from: FromClause) -> SelectStatement {
         SelectStatement {
             with_cte: None,

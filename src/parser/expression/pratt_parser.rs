@@ -197,65 +197,47 @@ mod literal_value_expression_tests {
     use crate::ast::{Expression, LiteralValue};
     use crate::parser::expression::test_utils::*;
     use crate::parser::test_utils::*;
-    use crate::{DistinctType, Select, SelectBody, SelectItem, SelectStatement};
-
-    fn select(expression: Expression) -> SelectStatement {
-        SelectStatement {
-            with_cte: None,
-            select: SelectBody::Select(Select {
-                distinct_type: DistinctType::None,
-                columns: vec![SelectItem::Expression(expression)],
-                from: None,
-                where_clause: None,
-                group_by: None,
-                having: None,
-                window: None,
-            }),
-            order_by: None,
-            limit: None,
-        }
-    }
 
     #[test]
     fn literal_values() {
-        run_sunny_day_test("SELECT 1;", select(numeric_expr("1")).into());
+        run_sunny_day_test("SELECT 1;", select_expr(numeric_expr("1")).into());
 
-        run_sunny_day_test("SELECT 1.2;", select(numeric_expr("1.2")).into());
+        run_sunny_day_test("SELECT 1.2;", select_expr(numeric_expr("1.2")).into());
 
         run_sunny_day_test(
             "SELECT 1.234567890;",
-            select(numeric_expr("1.234567890")).into(),
+            select_expr(numeric_expr("1.234567890")).into(),
         );
 
         run_sunny_day_test(
             "SELECT 'Hello, world!';",
-            select(string_expr("'Hello, world!'")).into(),
+            select_expr(string_expr("'Hello, world!'")).into(),
         );
 
         run_sunny_day_test(
             "SELECT X'DEADBEEF';",
-            select(blob_expr("X'DEADBEEF'")).into(),
+            select_expr(blob_expr("X'DEADBEEF'")).into(),
         );
 
-        run_sunny_day_test("SELECT TRUE;", select(boolean_expr(true)).into());
+        run_sunny_day_test("SELECT TRUE;", select_expr(boolean_expr(true)).into());
 
-        run_sunny_day_test("SELECT FALSE;", select(boolean_expr(false)).into());
+        run_sunny_day_test("SELECT FALSE;", select_expr(boolean_expr(false)).into());
 
-        run_sunny_day_test("SELECT NULL;", select(null_expr()).into());
+        run_sunny_day_test("SELECT NULL;", select_expr(null_expr()).into());
 
         run_sunny_day_test(
             "SELECT CURRENT_TIME;",
-            select(Expression::LiteralValue(LiteralValue::CurrentTime)).into(),
+            select_expr(Expression::LiteralValue(LiteralValue::CurrentTime)).into(),
         );
 
         run_sunny_day_test(
             "SELECT CURRENT_DATE;",
-            select(Expression::LiteralValue(LiteralValue::CurrentDate)).into(),
+            select_expr(Expression::LiteralValue(LiteralValue::CurrentDate)).into(),
         );
 
         run_sunny_day_test(
             "SELECT CURRENT_TIMESTAMP;",
-            select(Expression::LiteralValue(LiteralValue::CurrentTimestamp)).into(),
+            select_expr(Expression::LiteralValue(LiteralValue::CurrentTimestamp)).into(),
         );
     }
 }
@@ -263,60 +245,90 @@ mod literal_value_expression_tests {
 #[cfg(test)]
 mod bind_parameter_expression_tests {
     use crate::parser::expression::test_utils::*;
+    use crate::parser::test_utils::*;
 
     #[test]
-    fn test_expression_bind_parameter_valid() {
-        run_sunny_day_expression_test("SELECT ?;", &bind_expr("?"));
-        run_sunny_day_expression_test("SELECT ?1;", &bind_expr("?1"));
-        run_sunny_day_expression_test("SELECT :name;", &bind_expr(":name"));
-        run_sunny_day_expression_test("SELECT @var;", &bind_expr("@var"));
-        run_sunny_day_expression_test("SELECT $value;", &bind_expr("$value"));
-        run_sunny_day_expression_test("SELECT #param;", &bind_expr("#param"));
+    fn bind_parameter_expressions() {
+        run_sunny_day_test("SELECT ?;", select_expr(bind_expr("?")).into());
+        run_sunny_day_test("SELECT ?1;", select_expr(bind_expr("?1")).into());
+        run_sunny_day_test("SELECT :name;", select_expr(bind_expr(":name")).into());
+        run_sunny_day_test("SELECT @var;", select_expr(bind_expr("@var")).into());
+        run_sunny_day_test("SELECT $value;", select_expr(bind_expr("$value")).into());
+        run_sunny_day_test("SELECT #param;", select_expr(bind_expr("#param")).into());
     }
 }
 
 #[cfg(test)]
-mod unary_op_expression_tests {
+mod unary_op_tests {
     use crate::UnaryOp;
 
     use crate::parser::expression::test_utils::*;
+    use crate::parser::test_utils::*;
 
     #[test]
-    fn test_expression_unary_op_valid() {
-        run_sunny_day_expression_test("SELECT +1;", &unary_op(UnaryOp::Plus, numeric_expr("1")));
-        run_sunny_day_expression_test("SELECT -1;", &unary_op(UnaryOp::Minus, numeric_expr("1")));
-        run_sunny_day_expression_test(
-            "SELECT -abc;",
-            &unary_op(UnaryOp::Minus, identifier_expr(&["abc"])),
+    fn unary_ops() {
+        run_sunny_day_test(
+            "SELECT +1;",
+            select_expr(unary_op(UnaryOp::Plus, numeric_expr("1"))).into(),
         );
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
+            "SELECT -1;",
+            select_expr(unary_op(UnaryOp::Minus, numeric_expr("1"))).into(),
+        );
+        run_sunny_day_test(
+            "SELECT -abc;",
+            select_expr(unary_op(UnaryOp::Minus, identifier_expr(&["abc"]))).into(),
+        );
+        run_sunny_day_test(
             "SELECT +abc;",
-            &unary_op(UnaryOp::Plus, identifier_expr(&["abc"])),
+            select_expr(unary_op(UnaryOp::Plus, identifier_expr(&["abc"]))).into(),
         );
 
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT -+1;",
-            &unary_op(UnaryOp::Minus, unary_op(UnaryOp::Plus, numeric_expr("1"))),
+            select_expr(unary_op(
+                UnaryOp::Minus,
+                unary_op(UnaryOp::Plus, numeric_expr("1")),
+            ))
+            .into(),
         );
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT ++1;",
-            &unary_op(UnaryOp::Plus, unary_op(UnaryOp::Plus, numeric_expr("1"))),
+            select_expr(unary_op(
+                UnaryOp::Plus,
+                unary_op(UnaryOp::Plus, numeric_expr("1")),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_not_value() {
-        run_sunny_day_expression_test("SELECT NOT 1;", &unary_op(UnaryOp::Not, numeric_expr("1")));
+    fn not_value_expressions() {
+        run_sunny_day_test(
+            "SELECT NOT 1;",
+            select_expr(unary_op(UnaryOp::Not, numeric_expr("1"))).into(),
+        );
+
+        run_sunny_day_test(
+            "SELECT NOT TRUE;",
+            select_expr(unary_op(UnaryOp::Not, boolean_expr(true))).into(),
+        );
+
+        run_sunny_day_test(
+            "SELECT NOT col1;",
+            select_expr(unary_op(UnaryOp::Not, identifier_expr(&["col1"]))).into(),
+        );
     }
 }
 
 #[cfg(test)]
-mod binary_op_expression_tests {
+mod binary_op_tests {
     use crate::parser::expression::test_utils::*;
+    use crate::parser::test_utils::run_sunny_day_test;
     use crate::{BinaryOp, FunctionArg, FunctionArgType, UnaryOp};
 
     #[test]
-    fn test_expression_binary_ops() {
+    fn binary_ops() {
         use BinaryOp::*;
         let operators = [
             Plus,
@@ -339,78 +351,67 @@ mod binary_op_expression_tests {
         ];
 
         for op in operators {
-            run_sunny_day_expression_test(
+            run_sunny_day_test(
                 &format!("SELECT 1 {} 2;", op),
-                &binary_op(op, numeric_expr("1"), numeric_expr("2")),
+                select_expr(binary_op(op, numeric_expr("1"), numeric_expr("2"))).into(),
             );
         }
     }
 
     #[test]
-    fn test_expression_binary_operation() {
-        run_sunny_day_expression_test(
-            "SELECT col1 + col2;",
-            &binary_op(
-                BinaryOp::Plus,
-                identifier_expr(&["col1"]),
-                identifier_expr(&["col2"]),
-            ),
-        );
-    }
-
-    #[test]
-    fn test_expression_binary_with_prefix() {
-        run_sunny_day_expression_test(
+    fn binary_with_prefix() {
+        run_sunny_day_test(
             "SELECT 1 ++ 2;",
-            &binary_op(
+            select_expr(binary_op(
                 BinaryOp::Plus,
                 numeric_expr("1"),
                 unary_op(UnaryOp::Plus, numeric_expr("2")),
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_binary_operation_the_same_precedence() {
-        run_sunny_day_expression_test(
+    fn binary_operation_the_same_precedence() {
+        run_sunny_day_test(
             "SELECT 1 + 2 + 3;",
-            &binary_op(
+            select_expr(binary_op(
                 BinaryOp::Plus,
                 binary_op(BinaryOp::Plus, numeric_expr("1"), numeric_expr("2")),
                 numeric_expr("3"),
-            ),
+            ))
+            .into(),
         );
-    }
 
-    #[test]
-    fn test_expression_binary_operation_the_same_precedence2() {
-        run_sunny_day_expression_test(
+        run_sunny_day_test(
             "SELECT 1 * 2 / 3;",
-            &binary_op(
+            select_expr(binary_op(
                 BinaryOp::Div,
                 binary_op(BinaryOp::Mul, numeric_expr("1"), numeric_expr("2")),
                 numeric_expr("3"),
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_binary_operation_precedence() {
-        run_sunny_day_expression_test(
+    fn binary_operation_different_precedence() {
+        run_sunny_day_test(
             "SELECT 1 + 2 * 3;",
-            &binary_op(
+            select_expr(binary_op(
                 BinaryOp::Plus,
                 numeric_expr("1"),
                 binary_op(BinaryOp::Mul, numeric_expr("2"), numeric_expr("3")),
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_binary_operation_precedence2() {
-        run_sunny_day_expression_test(
+    fn binary_operation_different_precedence2() {
+        run_sunny_day_test(
             "SELECT 1 + 2 * 3 - 4",
-            &binary_op(
+            select_expr(binary_op(
                 BinaryOp::Minus,
                 binary_op(
                     BinaryOp::Plus,
@@ -418,27 +419,29 @@ mod binary_op_expression_tests {
                     binary_op(BinaryOp::Mul, numeric_expr("2"), numeric_expr("3")),
                 ),
                 numeric_expr("4"),
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_binary_operation_precedence3() {
-        run_sunny_day_expression_test(
+    fn binary_operation_different_precedence3() {
+        run_sunny_day_test(
             "SELECT col1 + col2 * 3;",
-            &binary_op(
+            select_expr(binary_op(
                 BinaryOp::Plus,
                 identifier_expr(&["col1"]),
                 binary_op(BinaryOp::Mul, identifier_expr(&["col2"]), numeric_expr("3")),
-            ),
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_binary_operation_precedence_with_function() {
-        run_sunny_day_expression_test(
+    fn binary_operation_precedence_with_function() {
+        run_sunny_day_test(
             "SELECT col1 + col2 * max(1, 3, 4);",
-            &binary_op(
+            select_expr(binary_op(
                 BinaryOp::Plus,
                 identifier_expr(&["col1"]),
                 binary_op(
@@ -458,13 +461,15 @@ mod binary_op_expression_tests {
                         None,
                     ),
                 ),
-            ),
+            ))
+            .into(),
         );
     }
 }
 
 #[cfg(test)]
 mod unary_matching_expression_tests {
+    use crate::parser::test_utils::run_sunny_day_test;
     use crate::{Expression, UnaryMatchingExpression};
 
     use crate::parser::expression::test_utils::*;
@@ -477,66 +482,100 @@ mod unary_matching_expression_tests {
     }
 
     #[test]
-    fn test_expression_matching_isnull() {
-        run_sunny_day_expression_test(
+    fn isnull() {
+        run_sunny_day_test(
             "SELECT 1 ISNULL;",
-            &unary_matching_expression(numeric_expr("1"), UnaryMatchingExpression::IsNull),
+            select_expr(unary_matching_expression(
+                numeric_expr("1"),
+                UnaryMatchingExpression::IsNull,
+            ))
+            .into(),
         );
     }
 
     #[test]
-    fn test_expression_matching_notnull() {
-        run_sunny_day_expression_test(
+    fn notnull() {
+        run_sunny_day_test(
             "SELECT 1 NOT NULL;",
-            &unary_matching_expression(numeric_expr("1"), UnaryMatchingExpression::IsNotNull),
+            select_expr(unary_matching_expression(
+                numeric_expr("1"),
+                UnaryMatchingExpression::IsNotNull,
+            ))
+            .into(),
         );
-        run_sunny_day_expression_test(
+
+        run_sunny_day_test(
             "SELECT 1 NOTNULL;",
-            &unary_matching_expression(numeric_expr("1"), UnaryMatchingExpression::IsNotNull),
+            select_expr(unary_matching_expression(
+                numeric_expr("1"),
+                UnaryMatchingExpression::IsNotNull,
+            ))
+            .into(),
         );
     }
 }
 
 #[cfg(test)]
 mod parenthesized_expression_tests {
+    use crate::parser::test_utils::run_sunny_day_test;
     use crate::{BinaryOp, DataType, Expression, RaiseFunction, UnaryOp};
 
     use crate::parser::expression::test_utils::*;
 
     #[test]
-    fn test_parenthesized_expression() {
-        run_sunny_day_expression_test(
+    fn parenthesized_expression() {
+        run_sunny_day_test(
             "SELECT (1 + 2 * 3)",
-            &Expression::ExpressionList(vec![binary_op(
+            select_expr(Expression::ExpressionList(vec![binary_op(
                 BinaryOp::Plus,
                 numeric_expr("1"),
                 binary_op(BinaryOp::Mul, numeric_expr("2"), numeric_expr("3")),
-            )]),
+            )]))
+            .into(),
         );
     }
 
     #[test]
-    fn test_parenthesized_two_expressions() {
-        run_sunny_day_expression_test(
+    fn parenthesized_binary_expression() {
+        run_sunny_day_test(
+            "SELECT (1 + 2) * 3;",
+            select_expr(binary_op(
+                BinaryOp::Mul,
+                Expression::ExpressionList(vec![binary_op(
+                    BinaryOp::Plus,
+                    numeric_expr("1"),
+                    numeric_expr("2"),
+                )]),
+                numeric_expr("3"),
+            ))
+            .into(),
+        );
+    }
+
+    #[test]
+    fn parenthesized_two_expressions() {
+        run_sunny_day_test(
             "SELECT (1 + 2, 3 / 4);",
-            &Expression::ExpressionList(vec![
+            select_expr(Expression::ExpressionList(vec![
                 binary_op(BinaryOp::Plus, numeric_expr("1"), numeric_expr("2")),
                 binary_op(BinaryOp::Div, numeric_expr("3"), numeric_expr("4")),
-            ]),
+            ]))
+            .into(),
         );
     }
 
     #[test]
-    fn test_parenthesized_multiple_expressions() {
-        run_sunny_day_expression_test(
+    fn parenthesized_multiple_expressions() {
+        run_sunny_day_test(
             "SELECT (1 + 2, 3 / 4, cast(5 as int), -5, raise (ignore));",
-            &Expression::ExpressionList(vec![
+            select_expr(Expression::ExpressionList(vec![
                 binary_op(BinaryOp::Plus, numeric_expr("1"), numeric_expr("2")),
                 binary_op(BinaryOp::Div, numeric_expr("3"), numeric_expr("4")),
                 cast_expr(numeric_expr("5"), DataType::PlainDataType("int".into())),
                 unary_op(UnaryOp::Minus, numeric_expr("5")),
                 raise_expr(RaiseFunction::Ignore),
-            ]),
+            ]))
+            .into(),
         );
     }
 }

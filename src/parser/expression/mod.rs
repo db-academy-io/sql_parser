@@ -129,10 +129,27 @@ impl<'a> ExpressionParser for Parser<'a> {
 pub(crate) mod test_utils {
     use crate::ast::{Expression, SelectItem};
     use crate::{
-        BinaryOp, CollateExpressionStatement, DataType, ExistsStatement, Function, FunctionArg,
-        Identifier, LiteralValue, OverClause, Parser, RaiseFunction, SelectBody, SelectStatement,
-        Statement, UnaryOp,
+        BinaryOp, CollateExpressionStatement, DataType, DistinctType, ExistsStatement, Function,
+        FunctionArg, Identifier, LiteralValue, OverClause, Parser, RaiseFunction, Select,
+        SelectBody, SelectStatement, Statement, UnaryOp,
     };
+
+    pub fn select_expr(expression: Expression) -> SelectStatement {
+        SelectStatement {
+            with_cte: None,
+            select: SelectBody::Select(Select {
+                distinct_type: DistinctType::None,
+                columns: vec![SelectItem::Expression(expression)],
+                from: None,
+                where_clause: None,
+                group_by: None,
+                having: None,
+                window: None,
+            }),
+            order_by: None,
+            limit: None,
+        }
+    }
 
     pub fn run_sunny_day_test_with_multiple_expressions(
         sql: &str,
