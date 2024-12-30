@@ -422,10 +422,10 @@ mod math_functions {
         select::test_utils::select_expr, BinaryOp, FunctionArg, FunctionArgType,
     };
 
-    const CORE_FUNCTIONS: [&str; 26] = [
-        "acos", "acosh", "asin", "asinh", "atan", "atan2", "atanh", "ceil", "ceiling", "cos",
-        "cosh", "degrees", "exp", "floor", "ln", "log", "log10", "log2", "pi", "radians", "sin",
-        "sinh", "sqrt", "tan", "tanh", "trunc",
+    const CORE_FUNCTIONS: [&str; 23] = [
+        "acos", "acosh", "asin", "asinh", "atan", "ceil", "ceiling", "cos", "cosh", "degrees",
+        "exp", "floor", "ln", "log10", "log2", "pi", "radians", "sin", "sinh", "sqrt", "tan",
+        "tanh", "trunc",
     ];
 
     #[test]
@@ -453,7 +453,7 @@ mod math_functions {
 
     #[test]
     fn functions_test2() {
-        for function_name in ["log", "mod", "pow", "power"] {
+        for function_name in ["atan2", "log", "mod", "pow", "power"] {
             run_sunny_day_test(
                 &format!("SELECT {}(1+2, 3*4);", function_name),
                 select_expr(function(
