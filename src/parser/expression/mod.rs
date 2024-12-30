@@ -319,11 +319,6 @@ impl<'a> ExpressionParser for Parser<'a> {
                 self.consume_as(TokenType::False)?;
                 Ok(Expression::LiteralValue(LiteralValue::Boolean(false)))
             }
-
-            // TokenType:: => {
-            //     self.consume_token()?;
-            //     Ok(Expression::LiteralValue(LiteralValue::Null))
-            // }
             _ => Err(ParsingError::UnexpectedToken(format!(
                 "Unexpected token: {}",
                 token.token_type
