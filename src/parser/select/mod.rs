@@ -357,53 +357,49 @@ mod select_where_clause_tests {
     }
 }
 
-// #[cfg(test)]
-// mod test_select_group_by_clause {
-//     use super::test_utils::select_statement_with_group_by_clause;
-//     use crate::expression::test_utils::{binary_op_expression, identifier_expression};
-//     use crate::parser::test_utils::*;
-//     use crate::{BinaryOp, Statement};
+#[cfg(test)]
+mod select_group_by_clause_tests {
+    use crate::expression::test_utils::{binary_op, identifier_expr};
+    use crate::parser::test_utils::*;
+    use crate::BinaryOp;
 
-//     #[test]
-//     fn test_select_group_by_clause() {
-//         let expected_statement =
-//             select_statement_with_group_by_clause(vec![identifier_expression(&["col1"])]);
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 GROUP BY col1",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    use super::test_utils::select;
 
-//     #[test]
-//     fn test_select_group_by_clause_with_multiple_columns() {
-//         let expected_statement = select_statement_with_group_by_clause(vec![
-//             identifier_expression(&["col1"]),
-//             identifier_expression(&["col2"]),
-//         ]);
+    #[test]
+    fn group_by_clause() {
+        let mut expected_statement = select();
+        expected_statement.group_by = Some(vec![identifier_expr(&["col1"])]);
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 GROUP BY col1, col2",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+        run_sunny_day_test("SELECT * GROUP BY col1", expected_statement.into());
+    }
 
-//     #[test]
-//     fn test_select_group_by_clause_with_expressions() {
-//         let expected_statement = select_statement_with_group_by_clause(vec![
-//             identifier_expression(&["col1"]),
-//             binary_op_expression(
-//                 BinaryOp::Plus,
-//                 identifier_expression(&["col2"]),
-//                 identifier_expression(&["col3"]),
-//             ),
-//         ]);
+    #[test]
+    fn group_by_clause_with_multiple_columns() {
+        let mut expected_statement = select();
+        expected_statement.group_by =
+            Some(vec![identifier_expr(&["col1"]), identifier_expr(&["col2"])]);
 
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 GROUP BY col1, col2 + col3",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-// }
+        run_sunny_day_test("SELECT * GROUP BY col1, col2", expected_statement.into());
+    }
+
+    #[test]
+    fn group_by_clause_with_expressions() {
+        let mut expected_statement = select();
+        expected_statement.group_by = Some(vec![
+            identifier_expr(&["col1"]),
+            binary_op(
+                BinaryOp::Plus,
+                identifier_expr(&["col2"]),
+                identifier_expr(&["col3"]),
+            ),
+        ]);
+
+        run_sunny_day_test(
+            "SELECT * GROUP BY col1, col2 + col3",
+            expected_statement.into(),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod test_select_having_clause {
