@@ -60,133 +60,78 @@ pub trait ExpressionParser {
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
-    /// Parse an SQLite3 [expr](https://www.sqlite.org/lang_expr.html#the_expr_list)
+    /// Parse an SQLite3 [expr](https://www.sqlite.org/lang_expr.html)
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
-        // Check if it's one of the special expressions
-        if let Ok(keyword) = self.peek_as_keyword() {
-            match keyword {
-                Keyword::Case => return CaseExpressionParser::parse_case_expression(self),
-                Keyword::Cast => return CastExpressionParser::parse_cast_expression(self),
-                Keyword::Not => {
-                    self.consume_as_keyword(Keyword::Not)?;
-                    return ExistsExpressionParser::parse_exists_expression(self, true);
-                }
-                Keyword::Exists => {
-                    return ExistsExpressionParser::parse_exists_expression(self, false)
-                }
-                Keyword::Raise => return RaiseExpressionParser::parse_raise_expression(self),
-                Keyword::Null
-                | Keyword::CurrentTime
-                | Keyword::CurrentDate
-                | Keyword::CurrentTimestamp => {
-                    // These are literals, so we don't need to do anything here
-                    // as the pratt parser will handle them
-                }
-                _ => return Err(ParsingError::UnexpectedKeyword(keyword)),
-            }
-        }
-
-        if self.peek_as(TokenType::LeftParen).is_ok() {
-            // Consume the left parenthesis
-            self.consume_as(TokenType::LeftParen)?;
-
-            // TODO: Handle EXISTS (SELECT ...)
-            let expression = if let Ok(Keyword::Select) = self.peek_as_keyword() {
-                ExistsExpressionParser::parse_exists_expression(self, false)?
-            } else {
-                Expression::ExpressionList(self.parse_comma_separated_expressions()?)
-            };
-            // The right parenthesis must be in the last token in the expression list
-            self.consume_as(TokenType::RightParen)?;
-            return Ok(expression);
-        }
-
         let expression = self.parse_expression_pratt(0)?;
 
-        if let Ok(keyword) = self.peek_as_keyword() {
-            match keyword {
-                Keyword::Collate => {
-                    return CollateExpressionParser::parse_collate_expression(self, expression);
-                }
-                Keyword::Isnull => {
-                    self.consume_as_keyword(Keyword::Isnull)?;
-                    return Ok(Expression::UnaryMatchingExpression(
-                        Box::new(expression),
-                        UnaryMatchingExpression::IsNull,
-                    ));
-                }
-                Keyword::Notnull => {
-                    self.consume_as_keyword(Keyword::Notnull)?;
-                    return Ok(Expression::UnaryMatchingExpression(
-                        Box::new(expression),
-                        UnaryMatchingExpression::IsNotNull,
-                    ));
-                }
-                Keyword::Not => {
-                    self.consume_as_keyword(Keyword::Not)?;
+        if let Ok(Keyword::Collate) = self.peek_as_keyword() {
+            return CollateExpressionParser::parse_collate_expression(self, expression);
+        } else if let Ok(Keyword::Isnull) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Isnull)?;
+            return Ok(Expression::UnaryMatchingExpression(
+                Box::new(expression),
+                UnaryMatchingExpression::IsNull,
+            ));
+        } else if let Ok(Keyword::Notnull) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Notnull)?;
+            return Ok(Expression::UnaryMatchingExpression(
+                Box::new(expression),
+                UnaryMatchingExpression::IsNotNull,
+            ));
+        } else if let Ok(Keyword::Not) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Not)?;
 
-                    if let Ok(nested_keyword) = self.peek_as_keyword() {
-                        return match nested_keyword {
-                            Keyword::Null => {
-                                self.consume_as_keyword(Keyword::Null)?;
-                                Ok(Expression::UnaryMatchingExpression(
-                                    Box::new(expression),
-                                    UnaryMatchingExpression::IsNotNull,
-                                ))
-                            }
-                            Keyword::Between => BetweenExpressionParser::parse_between_expression(
-                                self, expression, true,
-                            ),
-                            Keyword::Like => {
-                                LikeExpressionParser::parse_like_expression(self, expression, true)
-                            }
-                            Keyword::Glob | Keyword::Regexp | Keyword::Match => {
-                                RegexpMatchExpressionParser::parse_regexp_match_expression(
-                                    self, expression, true,
-                                )
-                            }
-                            Keyword::In => {
-                                InExpressionParser::parse_in_expression(self, expression, true)
-                            }
-                            _ => {
-                                return Err(ParsingError::UnexpectedKeyword(nested_keyword));
-                            }
-                        };
-                    } else {
-                        return Err(ParsingError::UnexpectedKeyword(keyword));
+            if let Ok(nested_keyword) = self.peek_as_keyword() {
+                return match nested_keyword {
+                    Keyword::Null => {
+                        self.consume_as_keyword(Keyword::Null)?;
+                        Ok(Expression::UnaryMatchingExpression(
+                            Box::new(expression),
+                            UnaryMatchingExpression::IsNotNull,
+                        ))
                     }
-                }
-                Keyword::Between => {
-                    // No need to consume the BETWEEN keyword, as the between parser will handle it
-                    return BetweenExpressionParser::parse_between_expression(
-                        self, expression, false,
-                    );
-                }
-                Keyword::Like => {
-                    // No need to consume the LIKE keyword, as the like parser will handle it
-                    return LikeExpressionParser::parse_like_expression(self, expression, false);
-                }
-                Keyword::Glob | Keyword::Regexp | Keyword::Match => {
-                    // No need to consume the keyword, as the regexp match parser will handle it
-                    return RegexpMatchExpressionParser::parse_regexp_match_expression(
-                        self, expression, false,
-                    );
-                }
-                Keyword::Is => {
-                    // No need to consume the IS keyword, as the is parser will handle it
-                    return IsExpressionParser::parse_is_expression(self, expression);
-                }
-                Keyword::In => {
-                    // No need to consume the IN keyword, as the in parser will handle it
-                    return InExpressionParser::parse_in_expression(self, expression, false);
-                }
-                _ => {
-                    // return Err(ParsingError::UnexpectedKeyword(keyword));
-                }
+                    Keyword::Between => {
+                        BetweenExpressionParser::parse_between_expression(self, expression, true)
+                    }
+                    Keyword::Like => {
+                        LikeExpressionParser::parse_like_expression(self, expression, true)
+                    }
+                    Keyword::Glob | Keyword::Regexp | Keyword::Match => {
+                        RegexpMatchExpressionParser::parse_regexp_match_expression(
+                            self, expression, true,
+                        )
+                    }
+                    Keyword::In => InExpressionParser::parse_in_expression(self, expression, true),
+                    _ => {
+                        return Err(ParsingError::UnexpectedKeyword(nested_keyword));
+                    }
+                };
+            } else {
+                return Err(ParsingError::UnexpectedKeyword(Keyword::Not));
             }
+        } else if let Ok(Keyword::Between) = self.peek_as_keyword() {
+            return BetweenExpressionParser::parse_between_expression(self, expression, false);
+        } else if let Ok(Keyword::Like) = self.peek_as_keyword() {
+            return LikeExpressionParser::parse_like_expression(self, expression, false);
+        } else if let Ok(Keyword::Is) = self.peek_as_keyword() {
+            return IsExpressionParser::parse_is_expression(self, expression);
+        } else if let Ok(Keyword::In) = self.peek_as_keyword() {
+            return InExpressionParser::parse_in_expression(self, expression, false);
+        } else if let Ok(Keyword::Glob) = self.peek_as_keyword() {
+            return RegexpMatchExpressionParser::parse_regexp_match_expression(
+                self, expression, false,
+            );
+        } else if let Ok(Keyword::Regexp) = self.peek_as_keyword() {
+            return RegexpMatchExpressionParser::parse_regexp_match_expression(
+                self, expression, false,
+            );
+        } else if let Ok(Keyword::Match) = self.peek_as_keyword() {
+            return RegexpMatchExpressionParser::parse_regexp_match_expression(
+                self, expression, false,
+            );
+        } else {
+            Ok(expression)
         }
-
-        Ok(expression)
     }
 
     /// Parse a comma separated list of expressions
@@ -245,6 +190,7 @@ impl<'a> ExpressionParser for Parser<'a> {
     /// A prefix expression is an expression that does not have a left operand.
     fn parse_prefix(&mut self) -> Result<Expression, ParsingError> {
         if let Ok(keyword) = self.peek_as_keyword() {
+            // Check if it's one of the special expressions
             if keyword == Keyword::Null
                 || keyword == Keyword::CurrentTime
                 || keyword == Keyword::CurrentDate
@@ -266,8 +212,40 @@ impl<'a> ExpressionParser for Parser<'a> {
                     _ => {}
                 }
             }
-        }
+            match keyword {
+                Keyword::Case => return CaseExpressionParser::parse_case_expression(self),
+                Keyword::Cast => return CastExpressionParser::parse_cast_expression(self),
+                Keyword::Not => {
+                    self.consume_as_keyword(Keyword::Not)?;
+                    return ExistsExpressionParser::parse_exists_expression(self, true);
+                }
+                Keyword::Exists => {
+                    return ExistsExpressionParser::parse_exists_expression(self, false)
+                }
+                Keyword::Raise => return RaiseExpressionParser::parse_raise_expression(self),
+                Keyword::Null
+                | Keyword::CurrentTime
+                | Keyword::CurrentDate
+                | Keyword::CurrentTimestamp => {
+                    // These are literals, so we don't need to do anything here
+                    // as the pratt parser will handle them
+                }
+                _ => return Err(ParsingError::UnexpectedKeyword(keyword)),
+            }
+        } else if self.peek_as(TokenType::LeftParen).is_ok() {
+            // Consume the left parenthesis
+            self.consume_as(TokenType::LeftParen)?;
 
+            // TODO: Handle EXISTS (SELECT ...)
+            let expression = if let Ok(Keyword::Select) = self.peek_as_keyword() {
+                ExistsExpressionParser::parse_exists_expression(self, false)?
+            } else {
+                Expression::ExpressionList(self.parse_comma_separated_expressions()?)
+            };
+            // The right parenthesis must be in the last token in the expression list
+            self.consume_as(TokenType::RightParen)?;
+            return Ok(expression);
+        }
         let token = self.peek_token()?;
 
         match token.token_type {
@@ -352,11 +330,6 @@ impl<'a> ExpressionParser for Parser<'a> {
             ))),
         }
     }
-
-    // /// Get the precedence of the given operator
-    // fn get_precedence(&mut self, operator: &TokenType) -> u8 {
-    //     *PRECEDENCE.get(operator).unwrap_or(&0)
-    // }
 }
 
 #[cfg(test)]
