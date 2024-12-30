@@ -37,9 +37,7 @@ impl<'a> SelectFromFunctionParser for Parser<'a> {
 
 #[cfg(test)]
 mod select_from_function_tests {
-    use crate::expression::test_utils::{
-        binary_op_expression, identifier_expression, numeric_literal_expression,
-    };
+    use crate::expression::test_utils::{binary_op, identifier_expr, numeric_expr};
     use crate::parser::select::from::test_utils::select_from_function;
     use crate::parser::test_utils::*;
     use crate::{BinaryOp, Identifier, SelectFromFunction, Statement};
@@ -62,7 +60,7 @@ mod select_from_function_tests {
     fn select_from_function_with_one_argument() {
         let expected_statement = select_from_function(SelectFromFunction {
             function_name: Identifier::Single("function_1".to_string()),
-            arguments: vec![numeric_literal_expression("1")],
+            arguments: vec![numeric_expr("1")],
             alias: None,
         });
 
@@ -93,10 +91,10 @@ mod select_from_function_tests {
     fn select_from_function_with_expression() {
         let expected_statement = select_from_function(SelectFromFunction {
             function_name: Identifier::Single("function_1".to_string()),
-            arguments: vec![binary_op_expression(
+            arguments: vec![binary_op(
                 BinaryOp::Plus,
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
+                numeric_expr("1"),
+                numeric_expr("2"),
             )],
             alias: None,
         });
@@ -112,9 +110,9 @@ mod select_from_function_tests {
         let expected_statement = select_from_function(SelectFromFunction {
             function_name: Identifier::Single("function_1".to_string()),
             arguments: vec![
-                numeric_literal_expression("1"),
-                identifier_expression(&["col1"]),
-                numeric_literal_expression("3"),
+                numeric_expr("1"),
+                identifier_expr(&["col1"]),
+                numeric_expr("3"),
             ],
             alias: None,
         });
@@ -129,11 +127,7 @@ mod select_from_function_tests {
     fn select_from_function_with_alias() {
         let expected_statement = select_from_function(SelectFromFunction {
             function_name: Identifier::Single("function_1".to_string()),
-            arguments: vec![
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-                numeric_literal_expression("3"),
-            ],
+            arguments: vec![numeric_expr("1"), numeric_expr("2"), numeric_expr("3")],
             alias: Some("alias".to_string()),
         });
 

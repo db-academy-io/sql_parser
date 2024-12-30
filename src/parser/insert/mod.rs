@@ -235,8 +235,7 @@ mod insert_statement_tests {
     use super::test_utils::*;
     use crate::{
         expression::test_utils::{
-            binary_op_expression, collate_expression, expression_list, identifier_expression,
-            numeric_literal_expression,
+            binary_op, collate_expr, expr_list, identifier_expr, numeric_expr,
         },
         parser::{select::test_utils::select_from, test_utils::run_sunny_day_test},
         BinaryOp, ConflictClause, FromClause, Identifier, IndexedColumn, InsertValues,
@@ -284,14 +283,8 @@ mod insert_statement_tests {
     fn insert_statement_with_values() {
         let mut statement = insert_statement();
         statement.values = InsertValues::Values(vec![
-            vec![
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-            ],
-            vec![
-                numeric_literal_expression("3"),
-                numeric_literal_expression("4"),
-            ],
+            vec![numeric_expr("1"), numeric_expr("2")],
+            vec![numeric_expr("3"), numeric_expr("4")],
         ]);
         run_sunny_day_test(
             "INSERT INTO table_name1 VALUES (1, 2), (3, 4)",
@@ -308,14 +301,8 @@ mod insert_statement_tests {
         ];
 
         statement.values = InsertValues::Values(vec![
-            vec![
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-            ],
-            vec![
-                numeric_literal_expression("3"),
-                numeric_literal_expression("4"),
-            ],
+            vec![numeric_expr("1"), numeric_expr("2")],
+            vec![numeric_expr("3"), numeric_expr("4")],
         ]);
         run_sunny_day_test(
             "INSERT INTO table_name1 (col1, col2) VALUES (1, 2), (3, 4)",
@@ -377,7 +364,7 @@ mod insert_statement_tests {
             UpsertClause {
                 conflict_target: Some(UpsertConflictTarget {
                     columns: vec![IndexedColumn {
-                        column: identifier_expression(&["col1"]),
+                        column: identifier_expr(&["col1"]),
                         ordering: None,
                     }],
                     where_clause: None,
@@ -387,25 +374,22 @@ mod insert_statement_tests {
             UpsertClause {
                 conflict_target: Some(UpsertConflictTarget {
                     columns: vec![IndexedColumn {
-                        column: collate_expression(
-                            identifier_expression(&["col2"]),
-                            "utf8".to_string(),
-                        ),
+                        column: collate_expr(identifier_expr(&["col2"]), "utf8".to_string()),
                         ordering: None,
                     }],
-                    where_clause: Some(Box::new(binary_op_expression(
+                    where_clause: Some(Box::new(binary_op(
                         BinaryOp::GreaterThan,
-                        identifier_expression(&["col2"]),
-                        numeric_literal_expression("10"),
+                        identifier_expr(&["col2"]),
+                        numeric_expr("10"),
                     ))),
                 }),
                 action: UpsertAction::Update(UpsertUpdate {
                     set_clauses: vec![SetClause::ColumnAssignment(
                         Identifier::Single("col2".to_string()),
-                        binary_op_expression(
+                        binary_op(
                             BinaryOp::Plus,
-                            identifier_expression(&["col2"]),
-                            numeric_literal_expression("1"),
+                            identifier_expr(&["col2"]),
+                            numeric_expr("1"),
                         ),
                     )],
                     where_clause: None,
@@ -415,18 +399,18 @@ mod insert_statement_tests {
                 conflict_target: Some(UpsertConflictTarget {
                     columns: vec![
                         IndexedColumn {
-                            column: identifier_expression(&["col3"]),
+                            column: identifier_expr(&["col3"]),
                             ordering: None,
                         },
                         IndexedColumn {
-                            column: identifier_expression(&["col4"]),
+                            column: identifier_expr(&["col4"]),
                             ordering: None,
                         },
                     ],
-                    where_clause: Some(Box::new(binary_op_expression(
+                    where_clause: Some(Box::new(binary_op(
                         BinaryOp::EqualsEquals,
-                        identifier_expression(&["col3"]),
-                        numeric_literal_expression("1"),
+                        identifier_expr(&["col3"]),
+                        numeric_expr("1"),
                     ))),
                 }),
                 action: UpsertAction::Update(UpsertUpdate {
@@ -435,15 +419,12 @@ mod insert_statement_tests {
                             Identifier::Single("col3".to_string()),
                             Identifier::Single("col4".to_string()),
                         ],
-                        expression_list(vec![
-                            identifier_expression(&["col4"]),
-                            identifier_expression(&["col3"]),
-                        ]),
+                        expr_list(vec![identifier_expr(&["col4"]), identifier_expr(&["col3"])]),
                     )],
-                    where_clause: Some(Box::new(binary_op_expression(
+                    where_clause: Some(Box::new(binary_op(
                         BinaryOp::Equals,
-                        identifier_expression(&["col4"]),
-                        numeric_literal_expression("2"),
+                        identifier_expr(&["col4"]),
+                        numeric_expr("2"),
                     ))),
                 }),
             },
@@ -467,11 +448,8 @@ mod insert_statement_tests {
         let mut expected_statement = insert_statement();
         expected_statement.returning_clause = vec![
             ReturningClause::Wildcard,
-            ReturningClause::Expr(numeric_literal_expression("1")),
-            ReturningClause::ExprWithAlias(
-                identifier_expression(&["column1"]),
-                "alias1".to_string(),
-            ),
+            ReturningClause::Expr(numeric_expr("1")),
+            ReturningClause::ExprWithAlias(identifier_expr(&["column1"]), "alias1".to_string()),
         ];
         run_sunny_day_test(
             "INSERT INTO table_name1 DEFAULT VALUES RETURNING *, 1, column1 AS alias1",

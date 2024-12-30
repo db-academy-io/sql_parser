@@ -60,14 +60,14 @@ mod identifier_expression_tests {
 
     #[test]
     fn test_expression_identifier_valid() {
-        run_sunny_day_expression_test("SELECT id;", &identifier_expression(&["id"]));
+        run_sunny_day_expression_test("SELECT id;", &identifier_expr(&["id"]));
         run_sunny_day_expression_test(
             "SELECT table1.column1;",
-            &identifier_expression(&["table1", "column1"]),
+            &identifier_expr(&["table1", "column1"]),
         );
         run_sunny_day_expression_test(
             "SELECT schema1.table1.column1;",
-            &identifier_expression(&["schema1", "table1", "column1"]),
+            &identifier_expr(&["schema1", "table1", "column1"]),
         );
     }
 }

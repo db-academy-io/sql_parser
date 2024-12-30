@@ -69,7 +69,7 @@ mod test_select_result_columns {
     fn select_star() {
         let expected = select();
 
-        run_sunny_day_test("SELECT * ", to_statement(expected));
+        run_sunny_day_test("SELECT * ", expected.into());
     }
 
     #[test]
@@ -77,7 +77,7 @@ mod test_select_result_columns {
         let mut expected = select();
         expected.distinct_type = DistinctType::Distinct;
 
-        run_sunny_day_test("SELECT DISTINCT *", to_statement(expected));
+        run_sunny_day_test("SELECT DISTINCT *", expected.into());
     }
 
     #[test]
@@ -85,7 +85,7 @@ mod test_select_result_columns {
         let mut expected = select();
         expected.distinct_type = DistinctType::All;
 
-        run_sunny_day_test("SELECT ALL *", to_statement(expected));
+        run_sunny_day_test("SELECT ALL *", expected.into());
     }
 
     #[test]
@@ -104,9 +104,9 @@ mod test_select_result_columns {
     #[test]
     fn select_single_literal_value() {
         let mut expected = select();
-        expected.columns = vec![SelectItem::Expression(numeric_literal_expression("1"))];
+        expected.columns = vec![SelectItem::Expression(numeric_expr("1"))];
 
-        run_sunny_day_test("SELECT 1", to_statement(expected));
+        run_sunny_day_test("SELECT 1", expected.into());
     }
 
     #[test]
@@ -115,31 +115,31 @@ mod test_select_result_columns {
         expected.columns = vec![SelectItem::Expression(Expression::Identifier(
             Identifier::Single("column1".to_string()),
         ))];
-        run_sunny_day_test("SELECT column1", to_statement(expected));
+        run_sunny_day_test("SELECT column1", expected.into());
     }
 
     #[test]
     fn select_multiple_literal_values() {
         let mut expected = select();
         expected.columns = vec![
-            SelectItem::Expression(numeric_literal_expression("1")),
-            SelectItem::Expression(numeric_literal_expression("2")),
-            SelectItem::Expression(numeric_literal_expression("3")),
+            SelectItem::Expression(numeric_expr("1")),
+            SelectItem::Expression(numeric_expr("2")),
+            SelectItem::Expression(numeric_expr("3")),
         ];
 
-        run_sunny_day_test("SELECT 1, 2, 3", to_statement(expected));
+        run_sunny_day_test("SELECT 1, 2, 3", expected.into());
     }
 
     #[test]
     fn select_multiple_identifiers() {
         let mut expected = select();
         expected.columns = vec![
-            SelectItem::Expression(identifier_expression(&["id"])),
-            SelectItem::Expression(identifier_expression(&["name"])),
-            SelectItem::Expression(identifier_expression(&["age"])),
+            SelectItem::Expression(identifier_expr(&["id"])),
+            SelectItem::Expression(identifier_expr(&["name"])),
+            SelectItem::Expression(identifier_expr(&["age"])),
         ];
 
-        run_sunny_day_test("SELECT id, name, age", to_statement(expected));
+        run_sunny_day_test("SELECT id, name, age", expected.into());
     }
 
     #[test]
@@ -149,7 +149,7 @@ mod test_select_result_columns {
             Identifier::NameWithWildcard("table_1".to_string()),
         ))];
 
-        run_sunny_day_test("SELECT table_1.*", to_statement(expected));
+        run_sunny_day_test("SELECT table_1.*", expected.into());
     }
 
     #[test]
@@ -159,43 +159,40 @@ mod test_select_result_columns {
             Identifier::Compound(vec!["table_1".to_string(), "column1".to_string()]),
         ))];
 
-        run_sunny_day_test("SELECT table_1.column1", to_statement(expected));
+        run_sunny_day_test("SELECT table_1.column1", expected.into());
     }
 
     #[test]
     fn select_column_with_alias() {
         let mut expected = select();
         expected.columns = vec![SelectItem::ExpressionWithAlias(
-            identifier_expression(&["column1"]),
+            identifier_expr(&["column1"]),
             "alias".to_string(),
         )];
 
-        run_sunny_day_test("SELECT column1 AS alias", to_statement(expected));
+        run_sunny_day_test("SELECT column1 AS alias", expected.into());
     }
 
     #[test]
     fn select_column_with_alias_without_as_keyword() {
         let mut expected = select();
         expected.columns = vec![SelectItem::ExpressionWithAlias(
-            identifier_expression(&["column1"]),
+            identifier_expr(&["column1"]),
             "alias".to_string(),
         )];
 
-        run_sunny_day_test("SELECT column1 alias", to_statement(expected));
+        run_sunny_day_test("SELECT column1 alias", expected.into());
     }
 
     #[test]
     fn select_multiple_columns() {
         let mut expected = select();
         expected.columns = vec![
-            SelectItem::Expression(identifier_expression(&["column1"])),
-            SelectItem::ExpressionWithAlias(
-                identifier_expression(&["column2"]),
-                "alias2".to_string(),
-            ),
+            SelectItem::Expression(identifier_expr(&["column1"])),
+            SelectItem::ExpressionWithAlias(identifier_expr(&["column2"]), "alias2".to_string()),
         ];
 
-        run_sunny_day_test("SELECT column1, column2 AS alias2", to_statement(expected));
+        run_sunny_day_test("SELECT column1, column2 AS alias2", expected.into());
     }
 
     #[test]
@@ -203,22 +200,22 @@ mod test_select_result_columns {
         let mut expected = select();
         expected.columns = vec![
             SelectItem::ExpressionWithAlias(
-                binary_op_expression(
+                binary_op(
                     BinaryOp::Plus,
-                    numeric_literal_expression("1"),
-                    identifier_expression(&["col1"]),
+                    numeric_expr("1"),
+                    identifier_expr(&["col1"]),
                 ),
                 "incremented".to_string(),
             ),
             SelectItem::ExpressionWithAlias(
-                binary_op_expression(
+                binary_op(
                     BinaryOp::Minus,
-                    binary_op_expression(
+                    binary_op(
                         BinaryOp::Mul,
-                        identifier_expression(&["column2"]),
-                        numeric_literal_expression("2"),
+                        identifier_expr(&["column2"]),
+                        numeric_expr("2"),
                     ),
-                    numeric_literal_expression("1"),
+                    numeric_expr("1"),
                 ),
                 "doubled".to_string(),
             ),
@@ -226,7 +223,7 @@ mod test_select_result_columns {
 
         run_sunny_day_test(
             "SELECT 1 + col1 as incremented, column2 * 2 - 1 as doubled",
-            to_statement(expected),
+            expected.into(),
         );
     }
 }

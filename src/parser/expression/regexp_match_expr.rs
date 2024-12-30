@@ -90,12 +90,7 @@ mod regexp_match_expression_tests {
         for keyword in keywords {
             run_sunny_day_expression_test(
                 &format!("SELECT 1 {} 'a*';", keyword),
-                &regexp_match_expression(
-                    numeric_literal_expression("1"),
-                    string_literal_expression("'a*'"),
-                    keyword,
-                    false,
-                ),
+                &regexp_match_expression(numeric_expr("1"), string_expr("'a*'"), keyword, false),
             );
         }
     }
@@ -107,12 +102,7 @@ mod regexp_match_expression_tests {
         for keyword in keywords {
             run_sunny_day_expression_test(
                 &format!("SELECT 1 NOT {} 'a*';", keyword),
-                &regexp_match_expression(
-                    numeric_literal_expression("1"),
-                    string_literal_expression("'a*'"),
-                    keyword,
-                    true,
-                ),
+                &regexp_match_expression(numeric_expr("1"), string_expr("'a*'"), keyword, true),
             );
         }
     }

@@ -194,7 +194,7 @@ pub mod test_utils {
 #[cfg(test)]
 mod create_table_tests {
     use crate::{
-        expression::test_utils::identifier_expression, parser::test_utils::run_sunny_day_test,
+        expression::test_utils::identifier_expr, parser::test_utils::run_sunny_day_test,
         ColumnConstraint, ColumnConstraintType, ColumnDefinition, ConflictClause,
         CreateTableColumnDef, CreateTableOption, DataType, Identifier, IndexedColumn, Ordering,
         Statement, TableConstraint, TableConstraintType, TableOption,
@@ -293,7 +293,7 @@ mod create_table_tests {
                     constraint_name: Some(Identifier::from("pk_column_name1")),
                     constraint_type: TableConstraintType::PrimaryKey(
                         vec![IndexedColumn {
-                            column: identifier_expression(&["column_name1"]),
+                            column: identifier_expr(&["column_name1"]),
                             ordering: Some(Ordering::Asc),
                         }],
                         ConflictClause::None,

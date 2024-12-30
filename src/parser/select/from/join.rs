@@ -168,7 +168,7 @@ mod test_utils {
 #[cfg(test)]
 mod select_from_with_join_clause_tests {
     use super::test_utils::{join, joins};
-    use crate::expression::test_utils::{binary_op_expression, identifier_expression};
+    use crate::expression::test_utils::{binary_op, identifier_expr};
     use crate::parser::test_utils::*;
     use crate::select::from::test_utils::select_from_join;
     use crate::{
@@ -243,10 +243,10 @@ mod select_from_with_join_clause_tests {
         let expected_statement = join(
             JoinType::Inner(false),
             QualifiedTableName::from(Identifier::Single("table_2".to_string())),
-            Some(JoinConstraint::On(binary_op_expression(
+            Some(JoinConstraint::On(binary_op(
                 BinaryOp::Equals,
-                identifier_expression(&["table_1", "col1"]),
-                identifier_expression(&["table_2", "col1"]),
+                identifier_expr(&["table_1", "col1"]),
+                identifier_expr(&["table_2", "col1"]),
             ))),
         );
 
@@ -280,10 +280,10 @@ mod select_from_with_join_clause_tests {
                 table: Box::new(FromClause::Table(QualifiedTableName::from(
                     Identifier::Single("table_2".to_string()),
                 ))),
-                constraints: Some(JoinConstraint::On(binary_op_expression(
+                constraints: Some(JoinConstraint::On(binary_op(
                     BinaryOp::Equals,
-                    identifier_expression(&["table_1", "col1"]),
-                    identifier_expression(&["table_2", "col2"]),
+                    identifier_expr(&["table_1", "col1"]),
+                    identifier_expr(&["table_2", "col2"]),
                 ))),
             },
             JoinTable {
@@ -324,19 +324,19 @@ mod select_from_with_join_clause_tests {
                             alias: Some("t3".to_string()),
                             indexed_type: Some(IndexedType::Indexed("index_3".to_string())),
                         })),
-                        constraints: Some(JoinConstraint::On(binary_op_expression(
+                        constraints: Some(JoinConstraint::On(binary_op(
                             BinaryOp::Equals,
-                            identifier_expression(&["t2", "col2"]),
-                            identifier_expression(&["t3", "col3"]),
+                            identifier_expr(&["t2", "col2"]),
+                            identifier_expr(&["t3", "col3"]),
                         ))),
                     }],
                 })),
                 alias: Some("t_complex".to_string()),
             })),
-            constraints: Some(JoinConstraint::On(binary_op_expression(
+            constraints: Some(JoinConstraint::On(binary_op(
                 BinaryOp::Equals,
-                identifier_expression(&["t1", "col1"]),
-                identifier_expression(&["t_complex", "col1"]),
+                identifier_expr(&["t1", "col1"]),
+                identifier_expr(&["t_complex", "col1"]),
             ))),
         };
 

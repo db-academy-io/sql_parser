@@ -74,8 +74,8 @@ mod create_virtual_table_tests {
     use test_utils::create_virtual_table_statement;
 
     use crate::{
-        expression::test_utils::string_literal_expression, parser::test_utils::run_sunny_day_test,
-        Identifier, Statement,
+        expression::test_utils::string_expr, parser::test_utils::run_sunny_day_test, Identifier,
+        Statement,
     };
 
     use super::*;
@@ -114,10 +114,7 @@ mod create_virtual_table_tests {
     #[test]
     fn create_virtual_table_with_module_arguments() {
         let mut stmt = create_virtual_table_statement();
-        stmt.module_arguments = vec![
-            string_literal_expression("'arg1'"),
-            string_literal_expression("'arg2'"),
-        ];
+        stmt.module_arguments = vec![string_expr("'arg1'"), string_expr("'arg2'")];
 
         run_sunny_day_test(
             "CREATE VIRTUAL TABLE test_table USING test_module('arg1', 'arg2')",

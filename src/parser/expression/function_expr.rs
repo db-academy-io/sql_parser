@@ -157,7 +157,7 @@ mod function_expression_tests {
     fn test_expression_function_basic_empty_args() {
         run_sunny_day_expression_test(
             "SELECT abc();",
-            &function_expression("abc", FunctionArg::default(), None, None),
+            &function("abc", FunctionArg::default(), None, None),
         );
     }
 
@@ -167,33 +167,27 @@ mod function_expression_tests {
             distinct: false,
             arguments: vec![FunctionArgType::Wildcard],
         };
-        run_sunny_day_expression_test(
-            "SELECT abc(*);",
-            &function_expression("abc", expected_arg, None, None),
-        );
+        run_sunny_day_expression_test("SELECT abc(*);", &function("abc", expected_arg, None, None));
     }
 
     #[test]
     fn test_expression_function_basic_literal_arg() {
         let expected_arg = FunctionArg {
             distinct: false,
-            arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
+            arguments: vec![FunctionArgType::Expression(numeric_expr("1"))],
         };
-        run_sunny_day_expression_test(
-            "SELECT abc(1);",
-            &function_expression("abc", expected_arg, None, None),
-        );
+        run_sunny_day_expression_test("SELECT abc(1);", &function("abc", expected_arg, None, None));
     }
 
     #[test]
     fn test_expression_function_basic_distinct_literal_arg() {
         let expected_arg = FunctionArg {
             distinct: true,
-            arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
+            arguments: vec![FunctionArgType::Expression(numeric_expr("1"))],
         };
         run_sunny_day_expression_test(
             "SELECT abc(distinct 1);",
-            &function_expression("abc", expected_arg, None, None),
+            &function("abc", expected_arg, None, None),
         );
     }
 
@@ -202,13 +196,13 @@ mod function_expression_tests {
         let expected_arg = FunctionArg {
             distinct: false,
             arguments: vec![
-                FunctionArgType::Expression(numeric_literal_expression("1")),
-                FunctionArgType::Expression(numeric_literal_expression("2")),
+                FunctionArgType::Expression(numeric_expr("1")),
+                FunctionArgType::Expression(numeric_expr("2")),
             ],
         };
         run_sunny_day_expression_test(
             "SELECT abc(1, 2);",
-            &function_expression("abc", expected_arg, None, None),
+            &function("abc", expected_arg, None, None),
         );
     }
 
@@ -217,25 +211,21 @@ mod function_expression_tests {
         let expected_arg = FunctionArg {
             distinct: false,
             arguments: vec![
-                FunctionArgType::Expression(binary_op_expression(
+                FunctionArgType::Expression(binary_op(
                     BinaryOp::Plus,
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
+                    numeric_expr("1"),
+                    numeric_expr("2"),
                 )),
-                FunctionArgType::Expression(binary_op_expression(
+                FunctionArgType::Expression(binary_op(
                     BinaryOp::Plus,
-                    numeric_literal_expression("4"),
-                    binary_op_expression(
-                        BinaryOp::Div,
-                        numeric_literal_expression("5"),
-                        numeric_literal_expression("6"),
-                    ),
+                    numeric_expr("4"),
+                    binary_op(BinaryOp::Div, numeric_expr("5"), numeric_expr("6")),
                 )),
             ],
         };
         run_sunny_day_expression_test(
             "SELECT abc(1 + 2, 4 + 5 / 6);",
-            &function_expression("abc", expected_arg, None, None),
+            &function("abc", expected_arg, None, None),
         );
     }
 
@@ -244,9 +234,9 @@ mod function_expression_tests {
         let expected_arg = FunctionArg {
             distinct: false,
             arguments: vec![FunctionArgType::OrderedBy(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 vec![OrderingTerm {
-                    expression: Box::new(numeric_literal_expression("2")),
+                    expression: Box::new(numeric_expr("2")),
                     ordering: None,
                     nulls_ordering: None,
                 }],
@@ -254,7 +244,7 @@ mod function_expression_tests {
         };
         run_sunny_day_expression_test(
             "SELECT abc(1 order by 2);",
-            &function_expression("abc", expected_arg, None, None),
+            &function("abc", expected_arg, None, None),
         );
     }
 
@@ -263,25 +253,25 @@ mod function_expression_tests {
         let expected_arg = FunctionArg {
             distinct: false,
             arguments: vec![FunctionArgType::OrderedBy(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 vec![
                     OrderingTerm {
-                        expression: Box::new(numeric_literal_expression("2")),
+                        expression: Box::new(numeric_expr("2")),
                         ordering: Some(Ordering::Asc),
                         nulls_ordering: None,
                     },
                     OrderingTerm {
-                        expression: Box::new(numeric_literal_expression("3")),
+                        expression: Box::new(numeric_expr("3")),
                         ordering: Some(Ordering::Desc),
                         nulls_ordering: None,
                     },
                     OrderingTerm {
-                        expression: Box::new(numeric_literal_expression("4")),
+                        expression: Box::new(numeric_expr("4")),
                         ordering: None,
                         nulls_ordering: Some(NullsOrdering::First),
                     },
                     OrderingTerm {
-                        expression: Box::new(numeric_literal_expression("5")),
+                        expression: Box::new(numeric_expr("5")),
                         ordering: Some(Ordering::Desc),
                         nulls_ordering: Some(NullsOrdering::Last),
                     },
@@ -290,7 +280,7 @@ mod function_expression_tests {
         };
         run_sunny_day_expression_test(
             "SELECT abc(1 order by 2 asc, 3 desc, 4 nulls first, 5 desc nulls last);",
-            &function_expression("abc", expected_arg, None, None),
+            &function("abc", expected_arg, None, None),
         );
     }
 
@@ -298,18 +288,14 @@ mod function_expression_tests {
     fn test_expression_function_with_filter_clause() {
         let expected_arg = FunctionArg {
             distinct: false,
-            arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
+            arguments: vec![FunctionArgType::Expression(numeric_expr("1"))],
         };
 
-        let filter_clause = binary_op_expression(
-            BinaryOp::GreaterThan,
-            numeric_literal_expression("2"),
-            numeric_literal_expression("3"),
-        );
+        let filter_clause = binary_op(BinaryOp::GreaterThan, numeric_expr("2"), numeric_expr("3"));
 
         run_sunny_day_expression_test(
             "SELECT abc(1) filter (where 2 > 3);",
-            &function_expression("abc", expected_arg, Some(Box::new(filter_clause)), None),
+            &function("abc", expected_arg, Some(Box::new(filter_clause)), None),
         );
     }
 
@@ -317,12 +303,12 @@ mod function_expression_tests {
     fn test_expression_function_with_over_clause_window_name() {
         let expected_arg = FunctionArg {
             distinct: false,
-            arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
+            arguments: vec![FunctionArgType::Expression(numeric_expr("1"))],
         };
 
         run_sunny_day_expression_test(
             "SELECT abc(1) over a;",
-            &function_expression(
+            &function(
                 "abc",
                 expected_arg,
                 None,
@@ -335,19 +321,19 @@ mod function_expression_tests {
     fn test_expression_function_with_over_clause_partition_by() {
         let expected_arg = FunctionArg {
             distinct: false,
-            arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
+            arguments: vec![FunctionArgType::Expression(numeric_expr("1"))],
         };
 
         let over_clause = WindowDefinition {
             base_window_name: None,
-            partition_by: Some(vec![numeric_literal_expression("1")]),
+            partition_by: Some(vec![numeric_expr("1")]),
             order_by: None,
             frame_spec: None,
         };
 
         run_sunny_day_expression_test(
             "SELECT abc(1) over (partition by 1);",
-            &function_expression(
+            &function(
                 "abc",
                 expected_arg,
                 None,
@@ -360,14 +346,14 @@ mod function_expression_tests {
     fn test_expression_function_with_over_clause_order_by() {
         let expected_arg = FunctionArg {
             distinct: false,
-            arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
+            arguments: vec![FunctionArgType::Expression(numeric_expr("1"))],
         };
 
         let over_clause = WindowDefinition {
             base_window_name: None,
             partition_by: None,
             order_by: Some(vec![OrderingTerm {
-                expression: Box::new(numeric_literal_expression("1")),
+                expression: Box::new(numeric_expr("1")),
                 ordering: Some(Ordering::Asc),
                 nulls_ordering: Some(NullsOrdering::Last),
             }]),
@@ -376,7 +362,7 @@ mod function_expression_tests {
 
         run_sunny_day_expression_test(
             "SELECT abc(1) over (order by 1 asc nulls last);",
-            &function_expression(
+            &function(
                 "abc",
                 expected_arg,
                 None,
@@ -389,7 +375,7 @@ mod function_expression_tests {
     fn test_expression_function_with_over_clause_frame_spec() {
         let expected_arg = FunctionArg {
             distinct: false,
-            arguments: vec![FunctionArgType::Expression(numeric_literal_expression("1"))],
+            arguments: vec![FunctionArgType::Expression(numeric_expr("1"))],
         };
 
         let over_clause = WindowDefinition {
@@ -399,9 +385,7 @@ mod function_expression_tests {
             frame_spec: Some(FrameSpec {
                 frame_type: FrameType::Groups,
                 frame_spec_type: FrameSpecType::Between(BetweenFrameSpec {
-                    start: BetweenFrameSpecType::Preceding(Box::new(numeric_literal_expression(
-                        "1",
-                    ))),
+                    start: BetweenFrameSpecType::Preceding(Box::new(numeric_expr("1"))),
                     end: BetweenFrameSpecType::CurrentRow,
                 }),
                 exclude: Some(FrameSpecExclude::CurrentRow),
@@ -410,7 +394,7 @@ mod function_expression_tests {
 
         run_sunny_day_expression_test(
             "SELECT abc(1) over (a groups between 1 preceding and current row exclude current row);",
-            &function_expression("abc", expected_arg, None, Some(OverClause::WindowDefinition(over_clause))),
+            &function("abc", expected_arg, None, Some(OverClause::WindowDefinition(over_clause))),
         );
     }
 }

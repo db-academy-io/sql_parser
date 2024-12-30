@@ -36,10 +36,7 @@ mod cast_expression_tests {
     fn test_expression_cast_basic() {
         run_sunny_day_expression_test(
             "SELECT CAST(1 AS INTEGER);",
-            &cast_expression(
-                numeric_literal_expression("1"),
-                DataType::PlainDataType("INTEGER".into()),
-            ),
+            &cast_expr(numeric_expr("1"), DataType::PlainDataType("INTEGER".into())),
         );
     }
 
@@ -47,12 +44,8 @@ mod cast_expression_tests {
     fn test_expression_cast_expression() {
         run_sunny_day_expression_test(
             "SELECT CAST(1 + 2 AS INTEGER);",
-            &cast_expression(
-                binary_op_expression(
-                    BinaryOp::Plus,
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
-                ),
+            &cast_expr(
+                binary_op(BinaryOp::Plus, numeric_expr("1"), numeric_expr("2")),
                 DataType::PlainDataType("INTEGER".into()),
             ),
         );
@@ -62,10 +55,7 @@ mod cast_expression_tests {
     fn test_expression_cast_with_null() {
         run_sunny_day_expression_test(
             "SELECT CAST(NULL AS INTEGER);",
-            &cast_expression(
-                null_literal_expression(),
-                DataType::PlainDataType("INTEGER".into()),
-            ),
+            &cast_expr(null_expr(), DataType::PlainDataType("INTEGER".into())),
         );
     }
 
@@ -73,8 +63,8 @@ mod cast_expression_tests {
     fn test_expression_cast_with_complex_type() {
         run_sunny_day_expression_test(
             "SELECT CAST(1 AS VARCHAR(10));",
-            &cast_expression(
-                numeric_literal_expression("1"),
+            &cast_expr(
+                numeric_expr("1"),
                 DataType::SizedDataType("VARCHAR".into(), "10".into()),
             ),
         );
@@ -84,8 +74,8 @@ mod cast_expression_tests {
     fn test_expression_cast_with_complex_type2() {
         run_sunny_day_expression_test(
             "SELECT CAST(1 AS VARCHAR(1, 10));",
-            &cast_expression(
-                numeric_literal_expression("1"),
+            &cast_expr(
+                numeric_expr("1"),
                 DataType::BoundedDataType("VARCHAR".into(), "1".into(), "10".into()),
             ),
         );
@@ -95,8 +85,8 @@ mod cast_expression_tests {
     fn cast_with_multi_name() {
         run_sunny_day_expression_test(
             "SELECT CAST(1 AS DOUBLE TRIPPLE PRECISION) as 1;",
-            &cast_expression(
-                numeric_literal_expression("1"),
+            &cast_expr(
+                numeric_expr("1"),
                 DataType::PlainDataType("DOUBLE TRIPPLE PRECISION".into()),
             ),
         );

@@ -79,9 +79,9 @@ mod between_expression_tests {
         run_sunny_day_expression_test(
             "SELECT 1 BETWEEN 2 AND 3;",
             &between_expression(
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-                numeric_literal_expression("3"),
+                numeric_expr("1"),
+                numeric_expr("2"),
+                numeric_expr("3"),
                 false,
             ),
         );
@@ -92,13 +92,9 @@ mod between_expression_tests {
         run_sunny_day_expression_test(
             "SELECT 1 + 2 BETWEEN 3 AND 4;",
             &between_expression(
-                binary_op_expression(
-                    BinaryOp::Plus,
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
-                ),
-                numeric_literal_expression("3"),
-                numeric_literal_expression("4"),
+                binary_op(BinaryOp::Plus, numeric_expr("1"), numeric_expr("2")),
+                numeric_expr("3"),
+                numeric_expr("4"),
                 false,
             ),
         );
@@ -109,13 +105,9 @@ mod between_expression_tests {
         run_sunny_day_expression_test(
             "SELECT 1 + 2 NOT BETWEEN 3 AND 4;",
             &between_expression(
-                binary_op_expression(
-                    BinaryOp::Plus,
-                    numeric_literal_expression("1"),
-                    numeric_literal_expression("2"),
-                ),
-                numeric_literal_expression("3"),
-                numeric_literal_expression("4"),
+                binary_op(BinaryOp::Plus, numeric_expr("1"), numeric_expr("2")),
+                numeric_expr("3"),
+                numeric_expr("4"),
                 true,
             ),
         );

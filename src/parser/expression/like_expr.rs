@@ -84,8 +84,8 @@ mod like_expression_tests {
         run_sunny_day_expression_test(
             "SELECT 1 LIKE 'a%';",
             &like_expression(
-                numeric_literal_expression("1"),
-                LikeExpressionType::Expression(Box::new(string_literal_expression("'a%'"))),
+                numeric_expr("1"),
+                LikeExpressionType::Expression(Box::new(string_expr("'a%'"))),
                 false,
             ),
         );
@@ -96,8 +96,8 @@ mod like_expression_tests {
         run_sunny_day_expression_test(
             "SELECT 1 NOT LIKE 'a%';",
             &like_expression(
-                numeric_literal_expression("1"),
-                LikeExpressionType::Expression(Box::new(string_literal_expression("'a%'"))),
+                numeric_expr("1"),
+                LikeExpressionType::Expression(Box::new(string_expr("'a%'"))),
                 true,
             ),
         );
@@ -108,10 +108,10 @@ mod like_expression_tests {
         run_sunny_day_expression_test(
             "SELECT 1 LIKE 'a%' ESCAPE 'b';",
             &like_expression(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 LikeExpressionType::EscapeExpression(EscapeExpression {
-                    expression: Box::new(string_literal_expression("'a%'")),
-                    escape_expression: Some(Box::new(string_literal_expression("'b'"))),
+                    expression: Box::new(string_expr("'a%'")),
+                    escape_expression: Some(Box::new(string_expr("'b'"))),
                 }),
                 false,
             ),

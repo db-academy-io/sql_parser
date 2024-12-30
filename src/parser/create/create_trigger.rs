@@ -184,9 +184,7 @@ mod create_trigger_tests {
     use std::fmt::Display;
 
     use crate::{
-        expression::test_utils::{
-            binary_op_expression, identifier_expression, numeric_literal_expression,
-        },
+        expression::test_utils::{binary_op, identifier_expr, numeric_expr},
         parser::{
             create::create_trigger::test_utils::create_trigger_statement,
             delete::test_utils::delete_statement, insert::test_utils::insert_statement,
@@ -338,10 +336,10 @@ mod create_trigger_tests {
     #[test]
     fn create_trigger_with_when_clause() {
         let mut expected = create_trigger_statement();
-        expected.when_clause = Some(binary_op_expression(
+        expected.when_clause = Some(binary_op(
             BinaryOp::Equals,
-            identifier_expression(&["col1"]),
-            numeric_literal_expression("1"),
+            identifier_expr(&["col1"]),
+            numeric_expr("1"),
         ));
 
         run_sunny_day_test(

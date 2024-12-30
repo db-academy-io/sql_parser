@@ -181,31 +181,31 @@ pub(crate) mod test_utils {
         run_sunny_day_test_with_multiple_expressions(sql, &[expected_expression]);
     }
 
-    pub fn numeric_literal_expression(value: &str) -> Expression {
+    pub fn numeric_expr(value: &str) -> Expression {
         Expression::LiteralValue(LiteralValue::Number(value.to_string()))
     }
 
-    pub fn string_literal_expression(value: &str) -> Expression {
+    pub fn string_expr(value: &str) -> Expression {
         Expression::LiteralValue(LiteralValue::String(value.to_string()))
     }
 
-    pub fn blob_literal_expression(value: &str) -> Expression {
+    pub fn blob_expr(value: &str) -> Expression {
         Expression::LiteralValue(LiteralValue::Blob(value.to_string()))
     }
 
-    pub fn boolean_literal_expression(value: bool) -> Expression {
+    pub fn boolean_expr(value: bool) -> Expression {
         Expression::LiteralValue(LiteralValue::Boolean(value))
     }
 
-    pub fn null_literal_expression() -> Expression {
+    pub fn null_expr() -> Expression {
         Expression::LiteralValue(LiteralValue::Null)
     }
 
-    pub fn bind_parameter_expression(value: &str) -> Expression {
+    pub fn bind_expr(value: &str) -> Expression {
         Expression::BindParameter(value.to_string())
     }
 
-    pub fn identifier_expression(values: &[&str]) -> Expression {
+    pub fn identifier_expr(values: &[&str]) -> Expression {
         if values.len() == 1 {
             Expression::Identifier(Identifier::Single(values[0].to_string()))
         } else {
@@ -215,15 +215,15 @@ pub(crate) mod test_utils {
         }
     }
 
-    pub fn unary_op_expression(op: UnaryOp, value: Expression) -> Expression {
+    pub fn unary_op(op: UnaryOp, value: Expression) -> Expression {
         Expression::UnaryOp(op, Box::new(value))
     }
 
-    pub fn binary_op_expression(op: BinaryOp, left: Expression, right: Expression) -> Expression {
+    pub fn binary_op(op: BinaryOp, left: Expression, right: Expression) -> Expression {
         Expression::BinaryOp(Box::new(left), op, Box::new(right))
     }
 
-    pub fn function_expression(
+    pub fn function(
         name: &str,
         arg: FunctionArg,
         filter: Option<Box<Expression>>,
@@ -239,7 +239,7 @@ pub(crate) mod test_utils {
         Expression::Function(function)
     }
 
-    pub fn exist_expression(is_not: bool, statement: SelectStatement) -> Expression {
+    pub fn exist_expr(is_not: bool, statement: SelectStatement) -> Expression {
         Expression::ExistsStatement(if is_not {
             ExistsStatement::NotExists(statement)
         } else {
@@ -247,22 +247,22 @@ pub(crate) mod test_utils {
         })
     }
 
-    pub fn raise_expression(function: RaiseFunction) -> Expression {
+    pub fn raise_expr(function: RaiseFunction) -> Expression {
         Expression::RaiseFunction(function)
     }
 
-    pub fn cast_expression(expression: Expression, data_type: DataType) -> Expression {
+    pub fn cast_expr(expression: Expression, data_type: DataType) -> Expression {
         Expression::Cast(Box::new(expression), data_type)
     }
 
-    pub fn collate_expression(expression: Expression, name: String) -> Expression {
+    pub fn collate_expr(expression: Expression, name: String) -> Expression {
         Expression::CollateExpression(CollateExpressionStatement {
             expression: Box::new(expression),
             collation_name: name,
         })
     }
 
-    pub fn expression_list(expressions: Vec<Expression>) -> Expression {
+    pub fn expr_list(expressions: Vec<Expression>) -> Expression {
         Expression::ExpressionList(expressions)
     }
 }

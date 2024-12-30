@@ -186,6 +186,23 @@ pub mod test_utils {
         SelectStatement, Statement, UnionStatement, UnionStatementType, WithCteStatement,
     };
 
+    impl Into<Statement> for SelectStatement {
+        fn into(self) -> Statement {
+            Statement::Select(self)
+        }
+    }
+
+    impl Into<Statement> for Select {
+        fn into(self) -> Statement {
+            Statement::Select(SelectStatement {
+                with_cte: None,
+                select: SelectBody::Select(self),
+                order_by: None,
+                limit: None,
+            })
+        }
+    }
+
     pub fn select_statement_with_columns(
         distinct_type: DistinctType,
         columns: Vec<SelectItem>,

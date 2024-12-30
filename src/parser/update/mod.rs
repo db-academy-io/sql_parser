@@ -96,8 +96,8 @@ impl<'a> UpdateStatementParser for Parser<'a> {
 #[cfg(test)]
 pub mod test_utils {
     use crate::{
-        expression::test_utils::numeric_literal_expression, ConflictClause, Identifier,
-        QualifiedTableName, SetClause, UpdateStatement,
+        expression::test_utils::numeric_expr, ConflictClause, Identifier, QualifiedTableName,
+        SetClause, UpdateStatement,
     };
 
     pub fn update_statement() -> UpdateStatement {
@@ -107,7 +107,7 @@ pub mod test_utils {
             table_name: QualifiedTableName::from(Identifier::from("table_name1")),
             set_clause: vec![SetClause::ColumnAssignment(
                 Identifier::from("col1"),
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
             )],
             from_clause: None,
             where_clause: None,
@@ -124,8 +124,7 @@ mod update_statement_tests {
     use super::test_utils::*;
     use crate::{
         expression::test_utils::{
-            binary_op_expression, collate_expression, identifier_expression,
-            numeric_literal_expression, string_literal_expression,
+            binary_op, collate_expr, identifier_expr, numeric_expr, string_expr,
         },
         parser::test_utils::run_sunny_day_test,
         BinaryOp, ConflictClause, Identifier, IndexedType, LimitClause, NullsOrdering, Ordering,
@@ -215,18 +214,12 @@ mod update_statement_tests {
     fn update_statement_with_multiple_set_clauses() {
         let mut expected = update_statement();
         expected.set_clause = vec![
-            SetClause::ColumnAssignment(
-                Identifier::from("column1"),
-                numeric_literal_expression("1"),
-            ),
+            SetClause::ColumnAssignment(Identifier::from("column1"), numeric_expr("1")),
             SetClause::MultipleColumnAssignment(
                 vec![Identifier::from("column2"), Identifier::from("column3")],
-                numeric_literal_expression("23"),
+                numeric_expr("23"),
             ),
-            SetClause::ColumnAssignment(
-                Identifier::from("column4"),
-                numeric_literal_expression("444"),
-            ),
+            SetClause::ColumnAssignment(Identifier::from("column4"), numeric_expr("444")),
         ];
 
         run_sunny_day_test(
@@ -238,7 +231,7 @@ mod update_statement_tests {
     #[test]
     fn update_statement_with_where_clause() {
         let mut expected_statement = update_statement();
-        expected_statement.where_clause = Some(Box::new(numeric_literal_expression("1")));
+        expected_statement.where_clause = Some(Box::new(numeric_expr("1")));
 
         run_sunny_day_test(
             "UPDATE table_name1 SET col1 = 1 WHERE 1",
@@ -249,10 +242,10 @@ mod update_statement_tests {
     #[test]
     fn update_statement_with_where_clause_expression() {
         let mut expected_statement = update_statement();
-        expected_statement.where_clause = Some(Box::new(binary_op_expression(
+        expected_statement.where_clause = Some(Box::new(binary_op(
             BinaryOp::Equals,
-            identifier_expression(&["column1"]),
-            string_literal_expression("'abc'"),
+            identifier_expr(&["column1"]),
+            string_expr("'abc'"),
         )));
         run_sunny_day_test(
             "UPDATE table_name1 SET col1 = 1 WHERE column1 = 'abc'",
@@ -276,11 +269,8 @@ mod update_statement_tests {
         let mut expected_statement = update_statement();
         expected_statement.returning_clause = vec![
             ReturningClause::Wildcard,
-            ReturningClause::Expr(numeric_literal_expression("1")),
-            ReturningClause::ExprWithAlias(
-                identifier_expression(&["column1"]),
-                "alias1".to_string(),
-            ),
+            ReturningClause::Expr(numeric_expr("1")),
+            ReturningClause::ExprWithAlias(identifier_expr(&["column1"]), "alias1".to_string()),
         ];
 
         run_sunny_day_test(
@@ -294,13 +284,13 @@ mod update_statement_tests {
         let mut expected_statement = update_statement();
         expected_statement.order_by = Some(vec![
             OrderingTerm {
-                expression: Box::new(identifier_expression(&["column_1"])),
+                expression: Box::new(identifier_expr(&["column_1"])),
                 ordering: Some(Ordering::Asc),
                 nulls_ordering: None,
             },
             OrderingTerm {
-                expression: Box::new(collate_expression(
-                    identifier_expression(&["column_2"]),
+                expression: Box::new(collate_expr(
+                    identifier_expr(&["column_2"]),
                     "binary".to_string(),
                 )),
                 ordering: None,
@@ -317,7 +307,7 @@ mod update_statement_tests {
     fn update_statement_with_limit_clause() {
         let mut expected_statement = update_statement();
         expected_statement.limit = Some(LimitClause {
-            limit: Box::new(numeric_literal_expression("10")),
+            limit: Box::new(numeric_expr("10")),
             offset: None,
             additional_limit: None,
         });
@@ -328,8 +318,8 @@ mod update_statement_tests {
 
         let mut expected_statement = update_statement();
         expected_statement.limit = Some(LimitClause {
-            limit: Box::new(numeric_literal_expression("10")),
-            offset: Some(Box::new(numeric_literal_expression("4"))),
+            limit: Box::new(numeric_expr("10")),
+            offset: Some(Box::new(numeric_expr("4"))),
             additional_limit: None,
         });
         run_sunny_day_test(
@@ -339,9 +329,9 @@ mod update_statement_tests {
 
         let mut expected_statement = update_statement();
         expected_statement.limit = Some(LimitClause {
-            limit: Box::new(numeric_literal_expression("10")),
+            limit: Box::new(numeric_expr("10")),
             offset: None,
-            additional_limit: Some(Box::new(numeric_literal_expression("40"))),
+            additional_limit: Some(Box::new(numeric_expr("40"))),
         });
         run_sunny_day_test(
             "UPDATE table_name1 SET col1 = 1 LIMIT 10, 40",
@@ -479,9 +469,7 @@ mod update_from_subquery_tests {
 #[cfg(test)]
 mod update_from_table_function_tests {
     use super::test_utils::update_statement;
-    use crate::expression::test_utils::{
-        binary_op_expression, identifier_expression, numeric_literal_expression,
-    };
+    use crate::expression::test_utils::{binary_op, identifier_expr, numeric_expr};
     use crate::parser::test_utils::*;
     use crate::{BinaryOp, FromClause, Identifier, SelectFromFunction, Statement};
 
@@ -490,7 +478,7 @@ mod update_from_table_function_tests {
         let mut expected_statement = update_statement();
         expected_statement.from_clause = Some(FromClause::Function(SelectFromFunction {
             function_name: Identifier::Single("function_1".to_string()),
-            arguments: vec![numeric_literal_expression("1")],
+            arguments: vec![numeric_expr("1")],
             alias: None,
         }));
 
@@ -508,10 +496,10 @@ mod update_from_table_function_tests {
                 "schema_1".to_string(),
                 "function_1".to_string(),
             ]),
-            arguments: vec![binary_op_expression(
+            arguments: vec![binary_op(
                 BinaryOp::Plus,
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
+                numeric_expr("1"),
+                numeric_expr("2"),
             )],
             alias: None,
         }));
@@ -531,9 +519,9 @@ mod update_from_table_function_tests {
                 "function_1".to_string(),
             ]),
             arguments: vec![
-                numeric_literal_expression("1"),
-                identifier_expression(&["col1"]),
-                numeric_literal_expression("3"),
+                numeric_expr("1"),
+                identifier_expr(&["col1"]),
+                numeric_expr("3"),
             ],
             alias: None,
         }));
@@ -552,11 +540,7 @@ mod update_from_table_function_tests {
                 "schema_1".to_string(),
                 "function_1".to_string(),
             ]),
-            arguments: vec![
-                numeric_literal_expression("1"),
-                numeric_literal_expression("2"),
-                numeric_literal_expression("3"),
-            ],
+            arguments: vec![numeric_expr("1"), numeric_expr("2"), numeric_expr("3")],
             alias: Some("alias".to_string()),
         }));
 
@@ -657,7 +641,7 @@ mod update_from_comma_separated_subqueries_tests {
 #[cfg(test)]
 mod update_from_with_join_clause_tests {
     use super::test_utils::update_statement;
-    use crate::expression::test_utils::{binary_op_expression, identifier_expression};
+    use crate::expression::test_utils::{binary_op, identifier_expr};
     use crate::parser::select::test_utils::select_from;
     use crate::parser::test_utils::*;
     use crate::{
@@ -758,10 +742,10 @@ mod update_from_with_join_clause_tests {
             join_tables: vec![JoinTable {
                 join_type: JoinType::Inner(false),
                 table: to_table("table_2"),
-                constraints: Some(JoinConstraint::On(binary_op_expression(
+                constraints: Some(JoinConstraint::On(binary_op(
                     BinaryOp::Equals,
-                    identifier_expression(&["table_1", "col1"]),
-                    identifier_expression(&["table_2", "col1"]),
+                    identifier_expr(&["table_1", "col1"]),
+                    identifier_expr(&["table_2", "col1"]),
                 ))),
             }],
         }));
@@ -801,10 +785,10 @@ mod update_from_with_join_clause_tests {
                 JoinTable {
                     join_type: JoinType::Inner(false),
                     table: to_table("table_2"),
-                    constraints: Some(JoinConstraint::On(binary_op_expression(
+                    constraints: Some(JoinConstraint::On(binary_op(
                         BinaryOp::Equals,
-                        identifier_expression(&["table_1", "col1"]),
-                        identifier_expression(&["table_2", "col2"]),
+                        identifier_expr(&["table_1", "col1"]),
+                        identifier_expr(&["table_2", "col2"]),
                     ))),
                 },
                 JoinTable {
@@ -843,19 +827,19 @@ mod update_from_with_join_clause_tests {
                             alias: Some("t3".to_string()),
                             indexed_type: Some(IndexedType::Indexed("index_3".to_string())),
                         })),
-                        constraints: Some(JoinConstraint::On(binary_op_expression(
+                        constraints: Some(JoinConstraint::On(binary_op(
                             BinaryOp::Equals,
-                            identifier_expression(&["t2", "col2"]),
-                            identifier_expression(&["t3", "col3"]),
+                            identifier_expr(&["t2", "col2"]),
+                            identifier_expr(&["t3", "col3"]),
                         ))),
                     }],
                 }))),
                 alias: Some("t_complex".to_string()),
             })),
-            constraints: Some(JoinConstraint::On(binary_op_expression(
+            constraints: Some(JoinConstraint::On(binary_op(
                 BinaryOp::Equals,
-                identifier_expression(&["t1", "col1"]),
-                identifier_expression(&["t_complex", "col1"]),
+                identifier_expr(&["t1", "col1"]),
+                identifier_expr(&["t_complex", "col1"]),
             ))),
         };
 

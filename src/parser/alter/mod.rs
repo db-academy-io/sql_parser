@@ -380,10 +380,10 @@ mod add_column_with_constraints_tests {
     fn add_column_with_check_constraint() {
         let expected_statement = column_constraint_statement(ColumnConstraint {
             name: Some(Identifier::Single("chk_constraint".to_string())),
-            constraint_type: ColumnConstraintType::Check(binary_op_expression(
+            constraint_type: ColumnConstraintType::Check(binary_op(
                 BinaryOp::GreaterThan,
-                identifier_expression(&["column_name"]),
-                numeric_literal_expression("0"),
+                identifier_expr(&["column_name"]),
+                numeric_expr("0"),
             )),
         });
 
@@ -397,9 +397,7 @@ mod add_column_with_constraints_tests {
     fn add_column_with_default_constraint() {
         let expected_statement = column_constraint_statement(ColumnConstraint {
             name: Some(Identifier::Single("default_constraint".to_string())),
-            constraint_type: ColumnConstraintType::Default(string_literal_expression(
-                "'default_value'",
-            )),
+            constraint_type: ColumnConstraintType::Default(string_expr("'default_value'")),
         });
 
         run_sunny_day_test(
@@ -412,10 +410,10 @@ mod add_column_with_constraints_tests {
     fn add_column_with_default_expression_constraint() {
         let expected_statement = column_constraint_statement(ColumnConstraint {
             name: Some(Identifier::Single("default_constraint".to_string())),
-            constraint_type: ColumnConstraintType::Default(binary_op_expression(
+            constraint_type: ColumnConstraintType::Default(binary_op(
                 BinaryOp::Plus,
-                identifier_expression(&["column_name"]),
-                numeric_literal_expression("1"),
+                identifier_expr(&["column_name"]),
+                numeric_expr("1"),
             )),
         });
 

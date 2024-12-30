@@ -54,11 +54,9 @@ mod exists_expression_tests {
     fn test_expression_exists() {
         run_sunny_day_expression_test(
             "SELECT EXISTS (SELECT 1);",
-            &exist_expression(
+            &exist_expr(
                 false,
-                select_statement(vec![SelectItem::Expression(numeric_literal_expression(
-                    "1",
-                ))]),
+                select_statement(vec![SelectItem::Expression(numeric_expr("1"))]),
             ),
         );
     }
@@ -67,11 +65,9 @@ mod exists_expression_tests {
     fn test_expression_not_exists() {
         run_sunny_day_expression_test(
             "SELECT NOT EXISTS (SELECT 1);",
-            &exist_expression(
+            &exist_expr(
                 true,
-                select_statement(vec![SelectItem::Expression(numeric_literal_expression(
-                    "1",
-                ))]),
+                select_statement(vec![SelectItem::Expression(numeric_expr("1"))]),
             ),
         );
     }

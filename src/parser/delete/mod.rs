@@ -103,8 +103,7 @@ mod delete_statement_tests {
     use super::test_utils::delete_statement;
     use crate::{
         expression::test_utils::{
-            binary_op_expression, collate_expression, identifier_expression,
-            numeric_literal_expression, string_literal_expression,
+            binary_op, collate_expr, identifier_expr, numeric_expr, string_expr,
         },
         parser::test_utils::run_sunny_day_test,
         BinaryOp, Identifier, IndexedType, LimitClause, NullsOrdering, Ordering, OrderingTerm,
@@ -178,7 +177,7 @@ mod delete_statement_tests {
     #[test]
     fn delete_statement_with_where_clause() {
         let mut expected_statement = delete_statement();
-        expected_statement.where_clause = Some(Box::new(numeric_literal_expression("1")));
+        expected_statement.where_clause = Some(Box::new(numeric_expr("1")));
 
         run_sunny_day_test(
             "DELETE FROM table_name1 WHERE 1",
@@ -189,10 +188,10 @@ mod delete_statement_tests {
     #[test]
     fn delete_statement_with_where_clause_and_column_expression() {
         let mut expected_statement = delete_statement();
-        expected_statement.where_clause = Some(Box::new(binary_op_expression(
+        expected_statement.where_clause = Some(Box::new(binary_op(
             BinaryOp::Equals,
-            identifier_expression(&["column_1"]),
-            string_literal_expression("'abc'"),
+            identifier_expr(&["column_1"]),
+            string_expr("'abc'"),
         )));
 
         run_sunny_day_test(
@@ -217,11 +216,8 @@ mod delete_statement_tests {
         let mut expected_statement = delete_statement();
         expected_statement.returning_clause = vec![
             ReturningClause::Wildcard,
-            ReturningClause::Expr(numeric_literal_expression("1")),
-            ReturningClause::ExprWithAlias(
-                identifier_expression(&["column_1"]),
-                "alias_1".to_string(),
-            ),
+            ReturningClause::Expr(numeric_expr("1")),
+            ReturningClause::ExprWithAlias(identifier_expr(&["column_1"]), "alias_1".to_string()),
         ];
 
         run_sunny_day_test(
@@ -235,13 +231,13 @@ mod delete_statement_tests {
         let mut expected_statement = delete_statement();
         expected_statement.order_by = Some(vec![
             OrderingTerm {
-                expression: Box::new(identifier_expression(&["column_1"])),
+                expression: Box::new(identifier_expr(&["column_1"])),
                 ordering: Some(Ordering::Asc),
                 nulls_ordering: None,
             },
             OrderingTerm {
-                expression: Box::new(collate_expression(
-                    identifier_expression(&["column_2"]),
+                expression: Box::new(collate_expr(
+                    identifier_expr(&["column_2"]),
                     "binary".to_string(),
                 )),
                 ordering: None,
@@ -258,7 +254,7 @@ mod delete_statement_tests {
     fn delete_statement_with_limit_clause() {
         let mut expected_statement = delete_statement();
         expected_statement.limit = Some(LimitClause {
-            limit: Box::new(numeric_literal_expression("10")),
+            limit: Box::new(numeric_expr("10")),
             offset: None,
             additional_limit: None,
         });
@@ -269,8 +265,8 @@ mod delete_statement_tests {
 
         let mut expected_statement = delete_statement();
         expected_statement.limit = Some(LimitClause {
-            limit: Box::new(numeric_literal_expression("10")),
-            offset: Some(Box::new(numeric_literal_expression("4"))),
+            limit: Box::new(numeric_expr("10")),
+            offset: Some(Box::new(numeric_expr("4"))),
             additional_limit: None,
         });
         run_sunny_day_test(
@@ -280,9 +276,9 @@ mod delete_statement_tests {
 
         let mut expected_statement = delete_statement();
         expected_statement.limit = Some(LimitClause {
-            limit: Box::new(numeric_literal_expression("10")),
+            limit: Box::new(numeric_expr("10")),
             offset: None,
-            additional_limit: Some(Box::new(numeric_literal_expression("40"))),
+            additional_limit: Some(Box::new(numeric_expr("40"))),
         });
         run_sunny_day_test(
             "DELETE FROM table_name1 LIMIT 10, 40",
@@ -298,18 +294,15 @@ mod delete_statement_tests {
             alias: Some("alias_1".to_string()),
             indexed_type: Some(IndexedType::Indexed("index_1".to_string())),
         };
-        expected_statement.where_clause = Some(Box::new(binary_op_expression(
+        expected_statement.where_clause = Some(Box::new(binary_op(
             BinaryOp::Equals,
-            identifier_expression(&["column_1"]),
-            string_literal_expression("'abc'"),
+            identifier_expr(&["column_1"]),
+            string_expr("'abc'"),
         )));
         expected_statement.returning_clause = vec![
             ReturningClause::Wildcard,
-            ReturningClause::Expr(numeric_literal_expression("1")),
-            ReturningClause::ExprWithAlias(
-                identifier_expression(&["column_1"]),
-                "alias_1".to_string(),
-            ),
+            ReturningClause::Expr(numeric_expr("1")),
+            ReturningClause::ExprWithAlias(identifier_expr(&["column_1"]), "alias_1".to_string()),
         ];
         expected_statement.order_by = None;
         expected_statement.limit = None;

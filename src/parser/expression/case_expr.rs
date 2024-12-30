@@ -73,10 +73,10 @@ mod case_expression_tests {
     fn test_expression_case_basic() {
         let expression = None;
         let when_expressions = vec![WhenExpression {
-            condition: Box::new(numeric_literal_expression("1")),
-            then_expression: Box::new(numeric_literal_expression("2")),
+            condition: Box::new(numeric_expr("1")),
+            then_expression: Box::new(numeric_expr("2")),
         }];
-        let else_expression = Some(Box::new(numeric_literal_expression("3")));
+        let else_expression = Some(Box::new(numeric_expr("3")));
 
         run_sunny_day_expression_test(
             "SELECT CASE WHEN 1 THEN 2 ELSE 3 END;",
@@ -89,15 +89,15 @@ mod case_expression_tests {
         let expression = None;
         let when_expressions = vec![
             WhenExpression {
-                condition: Box::new(numeric_literal_expression("1")),
-                then_expression: Box::new(numeric_literal_expression("2")),
+                condition: Box::new(numeric_expr("1")),
+                then_expression: Box::new(numeric_expr("2")),
             },
             WhenExpression {
-                condition: Box::new(numeric_literal_expression("3")),
-                then_expression: Box::new(numeric_literal_expression("4")),
+                condition: Box::new(numeric_expr("3")),
+                then_expression: Box::new(numeric_expr("4")),
             },
         ];
-        let else_expression = Some(Box::new(numeric_literal_expression("5")));
+        let else_expression = Some(Box::new(numeric_expr("5")));
 
         run_sunny_day_expression_test(
             "SELECT CASE WHEN 1 THEN 2 WHEN 3 THEN 4 ELSE 5 END;",
@@ -107,16 +107,16 @@ mod case_expression_tests {
 
     #[test]
     fn test_expression_case_with_main_expression() {
-        let expression = Some(Box::new(binary_op_expression(
+        let expression = Some(Box::new(binary_op(
             BinaryOp::EqualsEquals,
-            numeric_literal_expression("1"),
-            numeric_literal_expression("1"),
+            numeric_expr("1"),
+            numeric_expr("1"),
         )));
         let when_expressions = vec![WhenExpression {
-            condition: Box::new(boolean_literal_expression(true)),
-            then_expression: Box::new(numeric_literal_expression("1")),
+            condition: Box::new(boolean_expr(true)),
+            then_expression: Box::new(numeric_expr("1")),
         }];
-        let else_expression = Some(Box::new(numeric_literal_expression("2")));
+        let else_expression = Some(Box::new(numeric_expr("2")));
 
         run_sunny_day_expression_test(
             "SELECT CASE 1 == 1 WHEN TRUE THEN 1 ELSE 2 END;",

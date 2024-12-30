@@ -116,32 +116,24 @@ mod expression_with_in_statement_tests {
     fn test_expression_with_empty_select_statement() {
         run_sunny_day_expression_test(
             "SELECT 1 IN ();",
-            &expression_with_in_statement(
-                numeric_literal_expression("1"),
-                InExpression::Empty,
-                false,
-            ),
+            &expression_with_in_statement(numeric_expr("1"), InExpression::Empty, false),
         );
 
         run_sunny_day_expression_test(
             "SELECT 1 NOT IN ();",
-            &expression_with_in_statement(
-                numeric_literal_expression("1"),
-                InExpression::Empty,
-                true,
-            ),
+            &expression_with_in_statement(numeric_expr("1"), InExpression::Empty, true),
         );
     }
 
     #[test]
     fn test_expression_with_select_statement() {
         let mut select_statement = Select::default();
-        select_statement.columns = vec![SelectItem::Expression(numeric_literal_expression("2"))];
+        select_statement.columns = vec![SelectItem::Expression(numeric_expr("2"))];
 
         run_sunny_day_expression_test(
             "SELECT 1 IN (SELECT 2);",
             &expression_with_in_statement(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 InExpression::Select(SelectStatement {
                     with_cte: None,
                     select: SelectBody::Select(select_statement),
@@ -158,15 +150,11 @@ mod expression_with_in_statement_tests {
         run_sunny_day_expression_test(
             "SELECT 1 IN (2, 3, 4 + 5);",
             &expression_with_in_statement(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 InExpression::Expression(vec![
-                    numeric_literal_expression("2"),
-                    numeric_literal_expression("3"),
-                    binary_op_expression(
-                        BinaryOp::Plus,
-                        numeric_literal_expression("4"),
-                        numeric_literal_expression("5"),
-                    ),
+                    numeric_expr("2"),
+                    numeric_expr("3"),
+                    binary_op(BinaryOp::Plus, numeric_expr("4"), numeric_expr("5")),
                 ]),
                 false,
             ),
@@ -176,12 +164,12 @@ mod expression_with_in_statement_tests {
     #[test]
     fn test_expression_with_not_in_expression() {
         let mut select_statement = Select::default();
-        select_statement.columns = vec![SelectItem::Expression(numeric_literal_expression("2"))];
+        select_statement.columns = vec![SelectItem::Expression(numeric_expr("2"))];
 
         run_sunny_day_expression_test(
             "SELECT 1 NOT IN (SELECT 2);",
             &expression_with_in_statement(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 InExpression::Select(SelectStatement {
                     with_cte: None,
                     select: SelectBody::Select(select_statement),
@@ -198,7 +186,7 @@ mod expression_with_in_statement_tests {
         run_sunny_day_expression_test(
             "SELECT 1 NOT IN table_name;",
             &expression_with_in_statement(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 InExpression::Identity(Identifier::Single("table_name".to_string())),
                 true,
             ),
@@ -210,7 +198,7 @@ mod expression_with_in_statement_tests {
         run_sunny_day_expression_test(
             "SELECT 1 NOT IN schema_name.table_name;",
             &expression_with_in_statement(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 InExpression::Identity(Identifier::Compound(vec![
                     "schema_name".to_string(),
                     "table_name".to_string(),
@@ -225,7 +213,7 @@ mod expression_with_in_statement_tests {
         run_sunny_day_expression_test(
             "SELECT 1 NOT IN schema_name.table_function();",
             &expression_with_in_statement(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 InExpression::TableFunction(
                     Identifier::Compound(vec![
                         "schema_name".to_string(),
@@ -243,17 +231,13 @@ mod expression_with_in_statement_tests {
         run_sunny_day_expression_test(
             "SELECT 1 NOT IN schema_name.table_function(1, 2, 3);",
             &expression_with_in_statement(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 InExpression::TableFunction(
                     Identifier::Compound(vec![
                         "schema_name".to_string(),
                         "table_function".to_string(),
                     ]),
-                    vec![
-                        numeric_literal_expression("1"),
-                        numeric_literal_expression("2"),
-                        numeric_literal_expression("3"),
-                    ],
+                    vec![numeric_expr("1"), numeric_expr("2"), numeric_expr("3")],
                 ),
                 true,
             ),
@@ -265,20 +249,12 @@ mod expression_with_in_statement_tests {
         run_sunny_day_expression_test(
             "SELECT 1 NOT IN table_function(1+2, 3*4);",
             &expression_with_in_statement(
-                numeric_literal_expression("1"),
+                numeric_expr("1"),
                 InExpression::TableFunction(
                     Identifier::Single("table_function".to_string()),
                     vec![
-                        binary_op_expression(
-                            BinaryOp::Plus,
-                            numeric_literal_expression("1"),
-                            numeric_literal_expression("2"),
-                        ),
-                        binary_op_expression(
-                            BinaryOp::Mul,
-                            numeric_literal_expression("3"),
-                            numeric_literal_expression("4"),
-                        ),
+                        binary_op(BinaryOp::Plus, numeric_expr("1"), numeric_expr("2")),
+                        binary_op(BinaryOp::Mul, numeric_expr("3"), numeric_expr("4")),
                     ],
                 ),
                 true,

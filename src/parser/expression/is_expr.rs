@@ -72,12 +72,7 @@ mod is_expression_tests {
     fn test_expression_is_another_expression() {
         run_sunny_day_expression_test(
             "SELECT 1 IS 1;",
-            &expression_from_expression(
-                numeric_literal_expression("1"),
-                numeric_literal_expression("1"),
-                false,
-                false,
-            ),
+            &expression_from_expression(numeric_expr("1"), numeric_expr("1"), false, false),
         );
     }
 
@@ -85,12 +80,7 @@ mod is_expression_tests {
     fn test_expression_is_not_another_expression() {
         run_sunny_day_expression_test(
             "SELECT 1 IS NOT 1;",
-            &expression_from_expression(
-                numeric_literal_expression("1"),
-                numeric_literal_expression("1"),
-                false,
-                true,
-            ),
+            &expression_from_expression(numeric_expr("1"), numeric_expr("1"), false, true),
         );
     }
 
@@ -98,12 +88,7 @@ mod is_expression_tests {
     fn test_expression_is_distinct_another_expression() {
         run_sunny_day_expression_test(
             "SELECT 1 IS DISTINCT FROM 1;",
-            &expression_from_expression(
-                numeric_literal_expression("1"),
-                numeric_literal_expression("1"),
-                true,
-                false,
-            ),
+            &expression_from_expression(numeric_expr("1"), numeric_expr("1"), true, false),
         );
     }
 }
