@@ -415,53 +415,69 @@ mod function_expression_tests {
     }
 }
 
-// #[cfg(test)]
-// mod math_functions {
-//     use crate::{expression::test_utils::*, FunctionArg, FunctionArgType};
-//     // acos(X)
-//     // acosh(X)
-//     // asin(X)
-//     // asinh(X)
-//     // atan(X)
-//     // atan2(Y,X)
-//     // atanh(X)
-//     // ceil(X)
-//     // ceiling(X)
-//     // cos(X)
-//     // cosh(X)
-//     // degrees(X)
-//     // exp(X)
-//     // floor(X)
-//     // ln(X)
-//     // log(B,X)
-//     // log(X)
-//     // log10(X)
-//     // log2(X)
-//     // mod(X,Y)
-//     // pi()
-//     // pow(X,Y)
-//     // power(X,Y)
-//     // radians(X)
-//     // sin(X)
-//     // sinh(X)
-//     // sqrt(X)
-//     // tan(X)
-//     // tanh(X)
-//     // trunc(X)
+#[cfg(test)]
+mod math_functions {
+    use crate::{
+        expression::test_utils::*, parser::test_utils::run_sunny_day_test,
+        select::test_utils::select_expr, BinaryOp, FunctionArg, FunctionArgType,
+    };
 
-//     #[test]
-//     fn test_expression_function_abs() {
-//         run_sunny_day_test(
-//             "SELECT abs(-1);",
-//             &function_expression(
-//                 "abs",
-//                 FunctionArg {
-//                     distinct: false,
-//                     arguments: vec![FunctionArgType::Expression(numeric_literal_expression("-1"))],
-//                 },
-//                 None,
-//                 None,
-//             ),
-//         );
-//     }
-// }
+    const CORE_FUNCTIONS: [&str; 26] = [
+        "acos", "acosh", "asin", "asinh", "atan", "atan2", "atanh", "ceil", "ceiling", "cos",
+        "cosh", "degrees", "exp", "floor", "ln", "log", "log10", "log2", "pi", "radians", "sin",
+        "sinh", "sqrt", "tan", "tanh", "trunc",
+    ];
+
+    #[test]
+    fn functions_test() {
+        for function_name in CORE_FUNCTIONS {
+            run_sunny_day_test(
+                &format!("SELECT {}(1+2);", function_name),
+                select_expr(function(
+                    function_name,
+                    FunctionArg {
+                        distinct: false,
+                        arguments: vec![FunctionArgType::Expression(binary_op(
+                            BinaryOp::Plus,
+                            numeric_expr("1"),
+                            numeric_expr("2"),
+                        ))],
+                    },
+                    None,
+                    None,
+                ))
+                .into(),
+            );
+        }
+    }
+
+    #[test]
+    fn functions_test2() {
+        for function_name in ["log", "mod", "pow", "power"] {
+            run_sunny_day_test(
+                &format!("SELECT {}(1+2, 3*4);", function_name),
+                select_expr(function(
+                    function_name,
+                    FunctionArg {
+                        distinct: false,
+                        arguments: vec![
+                            FunctionArgType::Expression(binary_op(
+                                BinaryOp::Plus,
+                                numeric_expr("1"),
+                                numeric_expr("2"),
+                            )),
+                            FunctionArgType::Expression(binary_op(
+                                BinaryOp::Mul,
+                                numeric_expr("3"),
+                                numeric_expr("4"),
+                            )),
+                        ],
+                    },
+                    None,
+                    None,
+                ))
+                .into(),
+            );
+        }
+    }
+}
