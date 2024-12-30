@@ -188,7 +188,7 @@ mod create_trigger_tests {
         parser::{
             create::create_trigger::test_utils::create_trigger_statement,
             delete::test_utils::delete_statement, insert::test_utils::insert_statement,
-            select::test_utils::select_statement, test_utils::run_sunny_day_test,
+            select::test_utils::select_stmt, test_utils::run_sunny_day_test,
             update::test_utils::update_statement,
         },
         BinaryOp, Identifier, Keyword, Statement, TriggerEvent, TriggerEventType,
@@ -355,7 +355,7 @@ mod create_trigger_tests {
             TriggerStatement::Update(update_statement()),
             TriggerStatement::Insert(insert_statement()),
             TriggerStatement::Delete(delete_statement()),
-            TriggerStatement::Select(select_statement()),
+            TriggerStatement::Select(select_stmt()),
         ];
 
         run_sunny_day_test(

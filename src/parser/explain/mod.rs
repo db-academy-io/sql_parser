@@ -28,11 +28,11 @@ impl<'a> ExplainStatementParser for Parser<'a> {
 
 #[cfg(test)]
 pub mod test_utils {
-    use crate::{parser::select::test_utils::select_statement, ExplainStatement, Statement};
+    use crate::{parser::select::test_utils::select_stmt, ExplainStatement, Statement};
 
     pub fn explain_statement() -> ExplainStatement {
         ExplainStatement {
-            statement: Box::new(Statement::Select(select_statement())),
+            statement: Box::new(Statement::Select(select_stmt())),
             query_plan: false,
         }
     }
@@ -53,7 +53,7 @@ mod explain_statement_tests {
     use crate::parser::drop::drop_trigger::test_utils::drop_trigger_statement;
     use crate::parser::drop::drop_view::test_utils::drop_view_statement;
     use crate::parser::insert::test_utils::insert_statement;
-    use crate::parser::select::test_utils::select_statement;
+    use crate::parser::select::test_utils::select_stmt;
     use crate::parser::sqlite::analyze::test_utils::analyze_statement;
     use crate::parser::sqlite::attach::test_utils::{attach_statement, detach_statement};
     use crate::parser::sqlite::pragma::test_utils::pragma_statement;
@@ -365,7 +365,7 @@ mod explain_statement_tests {
     #[test]
     fn explain_select() {
         let explain_statement = ExplainStatement {
-            statement: Box::new(Statement::Select(select_statement())),
+            statement: Box::new(Statement::Select(select_stmt())),
             query_plan: false,
         };
 

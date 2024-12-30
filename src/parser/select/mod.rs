@@ -212,7 +212,7 @@ pub mod test_utils {
         }
     }
 
-    pub fn select_statement() -> SelectStatement {
+    pub fn select_stmt() -> SelectStatement {
         SelectStatement {
             with_cte: None,
             select: SelectBody::Select(Select {
@@ -282,88 +282,80 @@ pub mod test_utils {
     }
 }
 
-// #[cfg(test)]
-// mod test_select_where_clause {
-//     use super::test_utils::{select_from, select_statement_with_where_clause};
-//     use crate::expression::test_utils::{
-//         binary_op_expression, identifier_expression, numeric_literal_expression,
-//     };
-//     use crate::parser::test_utils::*;
-//     use crate::{
-//         BinaryMatchingExpression, BinaryOp, Expression, FromClause, Identifier, InExpression,
-//         QualifiedTableName, Statement,
-//     };
+#[cfg(test)]
+mod select_where_clause_tests {
+    use super::test_utils::{select, select_star_from};
+    use crate::expression::test_utils::{binary_op, identifier_expr, numeric_expr};
+    use crate::parser::test_utils::*;
+    use crate::{BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression};
 
-//     #[test]
-//     fn test_select_where_clause() {
-//         let expected_statement = select_statement_with_where_clause(binary_op_expression(
-//             BinaryOp::Equals,
-//             numeric_literal_expression("1"),
-//             numeric_literal_expression("1"),
-//         ));
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 WHERE 1 = 1",
-//             Statement::Select(expected_statement),
-//         );
-//     }
+    #[test]
+    fn select_where_clause() {
+        let mut expected_statement = select();
+        expected_statement.where_clause = Some(Box::new(binary_op(
+            BinaryOp::Equals,
+            numeric_expr("1"),
+            numeric_expr("1"),
+        )));
+        run_sunny_day_test("SELECT * WHERE 1 = 1", expected_statement.into());
+    }
 
-//     #[test]
-//     fn test_select_where_clause_with_binary_ops() {
-//         use BinaryOp::*;
-//         let binary_ops = vec![
-//             Plus,
-//             Minus,
-//             Mul,
-//             Div,
-//             Remainder,
-//             GreaterThan,
-//             GreaterThanOrEquals,
-//             LessThan,
-//             LessThanOrEquals,
-//             Equals,
-//             EqualsEquals,
-//             NotEquals,
-//             Concat,
-//             BitAnd,
-//             BitOr,
-//             LeftShift,
-//             RightShift,
-//         ];
+    #[test]
+    fn select_where_clause_with_binary_ops() {
+        use BinaryOp::*;
 
-//         for binary_op in binary_ops {
-//             let expected_statement = select_statement_with_where_clause(binary_op_expression(
-//                 binary_op.clone(),
-//                 identifier_expression(&["col1"]),
-//                 identifier_expression(&["col2"]),
-//             ));
-//             run_sunny_day_test(
-//                 &format!("SELECT * FROM table_1 WHERE col1 {} col2", binary_op),
-//                 Statement::Select(expected_statement),
-//             );
-//         }
-//     }
+        let binary_ops = vec![
+            Plus,
+            Minus,
+            Mul,
+            Div,
+            Remainder,
+            GreaterThan,
+            GreaterThanOrEquals,
+            LessThan,
+            LessThanOrEquals,
+            Equals,
+            EqualsEquals,
+            NotEquals,
+            Concat,
+            BitAnd,
+            BitOr,
+            LeftShift,
+            RightShift,
+        ];
 
-//     #[test]
-//     fn test_select_where_clause_with_subquery() {
-//         let subquery = select_from(FromClause::Table(QualifiedTableName::from(
-//             Identifier::Single("table_2".to_string()),
-//         )));
+        for op in binary_ops {
+            let mut expected_statement = select();
+            expected_statement.where_clause = Some(Box::new(binary_op(
+                op.clone(),
+                identifier_expr(&["col1"]),
+                identifier_expr(&["col2"]),
+            )));
+            run_sunny_day_test(
+                &format!("SELECT * WHERE col1 {} col2", op),
+                expected_statement.into(),
+            );
+        }
+    }
 
-//         let expression = Expression::BinaryMatchingExpression(
-//             Box::new(identifier_expression(&["col1"])),
-//             BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::In(
-//                 InExpression::Select(subquery),
-//             ))),
-//         );
+    #[test]
+    fn select_where_clause_with_subquery() {
+        let subquery = select_star_from(Identifier::Single("table_2".to_string()));
 
-//         let expected_statement = select_statement_with_where_clause(expression);
-
-//         run_sunny_day_test(
-//             "SELECT * FROM table_1 WHERE col1 NOT IN (SELECT * FROM table_2)",
-//             Statement::Select(expected_statement),
-//         );
-//     }
-// }
+        let expression = Expression::BinaryMatchingExpression(
+            Box::new(identifier_expr(&["col1"])),
+            BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::In(
+                InExpression::Select(subquery),
+            ))),
+        );
+        let mut expected_statement = select();
+        expected_statement.where_clause = Some(Box::new(expression));
+        run_sunny_day_test(
+            "SELECT * WHERE col1 NOT IN (SELECT * FROM table_2)",
+            expected_statement.into(),
+        );
+    }
+}
 
 // #[cfg(test)]
 // mod test_select_group_by_clause {

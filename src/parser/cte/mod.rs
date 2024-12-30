@@ -139,13 +139,13 @@ pub mod cte_statement_tests {
     use super::super::select::test_utils::select_star_from;
     use super::test_utils::cte_expression;
     use crate::{
-        parser::test_utils::run_sunny_day_test, select::test_utils::select_statement, Identifier,
+        parser::test_utils::run_sunny_day_test, select::test_utils::select_stmt, Identifier,
         MaterializationType, Statement, WithCteStatement,
     };
 
     #[test]
     fn cte_statement_test() {
-        let mut expected_stmt = select_statement();
+        let mut expected_stmt = select_stmt();
         expected_stmt.with_cte = Some(WithCteStatement {
             recursive: false,
             cte_expressions: vec![cte_expression(
@@ -164,7 +164,7 @@ pub mod cte_statement_tests {
 
     #[test]
     fn recursive_cte_statement() {
-        let mut expected_stmt = select_statement();
+        let mut expected_stmt = select_stmt();
         expected_stmt.with_cte = Some(WithCteStatement {
             recursive: true,
             cte_expressions: vec![cte_expression(
@@ -201,7 +201,7 @@ pub mod cte_statement_tests {
             ],
         };
 
-        let mut expected_stmt = select_statement();
+        let mut expected_stmt = select_stmt();
         expected_stmt.with_cte = Some(ctes);
 
         run_sunny_day_test(
@@ -218,7 +218,7 @@ pub mod cte_statement_tests {
         ];
 
         for materialization_type in materialization_types {
-            let mut expected_stmt = select_statement();
+            let mut expected_stmt = select_stmt();
             expected_stmt.with_cte = Some(WithCteStatement {
                 recursive: false,
                 cte_expressions: vec![cte_expression(
@@ -241,7 +241,7 @@ pub mod cte_statement_tests {
 
     #[test]
     fn cte_statement_with_column_names() {
-        let mut expected_stmt = select_statement();
+        let mut expected_stmt = select_stmt();
         expected_stmt.with_cte = Some(WithCteStatement {
             recursive: false,
             cte_expressions: vec![cte_expression(
