@@ -67,28 +67,6 @@ impl<'a> PrattParser for Parser<'a> {
     /// A prefix expression is an expression that does not have a left operand.
     fn parse_prefix(&mut self) -> Result<Expression, ParsingError> {
         if let Ok(keyword) = self.peek_as_keyword() {
-            // Check if it's one of the special expressions
-            if keyword == Keyword::Null
-                || keyword == Keyword::CurrentTime
-                || keyword == Keyword::CurrentDate
-                || keyword == Keyword::CurrentTimestamp
-            {
-                self.consume_as_keyword(keyword)?;
-
-                match keyword {
-                    Keyword::Null => return Ok(Expression::LiteralValue(LiteralValue::Null)),
-                    Keyword::CurrentTime => {
-                        return Ok(Expression::LiteralValue(LiteralValue::CurrentTime))
-                    }
-                    Keyword::CurrentDate => {
-                        return Ok(Expression::LiteralValue(LiteralValue::CurrentDate))
-                    }
-                    Keyword::CurrentTimestamp => {
-                        return Ok(Expression::LiteralValue(LiteralValue::CurrentTimestamp))
-                    }
-                    _ => {}
-                }
-            }
             match keyword {
                 Keyword::Case => return CaseExpressionParser::parse_case_expression(self),
                 Keyword::Cast => return CastExpressionParser::parse_cast_expression(self),
@@ -97,20 +75,27 @@ impl<'a> PrattParser for Parser<'a> {
                     return ExistsExpressionParser::parse_exists_expression(self, false)
                 }
                 Keyword::Raise => return RaiseExpressionParser::parse_raise_expression(self),
-                Keyword::Null
-                | Keyword::CurrentTime
-                | Keyword::CurrentDate
-                | Keyword::CurrentTimestamp => {
-                    // These are literals, so we don't need to do anything here
-                    // as the pratt parser will handle them
+                Keyword::Null => {
+                    self.consume_as_keyword(Keyword::Null)?;
+                    return Ok(Expression::LiteralValue(LiteralValue::Null));
+                }
+                Keyword::CurrentTime => {
+                    self.consume_as_keyword(Keyword::CurrentTime)?;
+                    return Ok(Expression::LiteralValue(LiteralValue::CurrentTime));
+                }
+                Keyword::CurrentDate => {
+                    self.consume_as_keyword(Keyword::CurrentDate)?;
+                    return Ok(Expression::LiteralValue(LiteralValue::CurrentDate));
+                }
+                Keyword::CurrentTimestamp => {
+                    self.consume_as_keyword(Keyword::CurrentTimestamp)?;
+                    return Ok(Expression::LiteralValue(LiteralValue::CurrentTimestamp));
                 }
                 _ => return Err(ParsingError::UnexpectedKeyword(keyword)),
             }
         } else if self.peek_as(TokenType::LeftParen).is_ok() {
-            // Consume the left parenthesis
             self.consume_as(TokenType::LeftParen)?;
 
-            // TODO: Handle EXISTS (SELECT ...)
             let expression = if let Ok(Keyword::Select) = self.peek_as_keyword() {
                 ExistsExpressionParser::parse_exists_expression(self, false)?
             } else {
