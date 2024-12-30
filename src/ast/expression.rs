@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{errors::ParsingError, TokenType};
+use crate::{errors::ParsingError, Keyword, TokenType};
 
 use super::{OrderingTerm, SelectStatement};
 
@@ -122,6 +122,10 @@ pub enum BinaryOp {
     Div,
     /// Modulo (%)
     Remainder,
+    /// And (AND)
+    And,
+    /// Or (OR)
+    Or,
     /// Greater than (>)
     GreaterThan,
     /// Greater than or equal (>=)
@@ -155,6 +159,8 @@ impl Display for BinaryOp {
             BinaryOp::Minus => write!(f, "-"),
             BinaryOp::Mul => write!(f, "*"),
             BinaryOp::Div => write!(f, "/"),
+            BinaryOp::And => write!(f, "AND"),
+            BinaryOp::Or => write!(f, "OR"),
             BinaryOp::Remainder => write!(f, "%"),
             BinaryOp::GreaterThan => write!(f, ">"),
             BinaryOp::GreaterThanOrEquals => write!(f, ">="),
@@ -182,6 +188,8 @@ impl<'a> TryFrom<&'a TokenType<'a>> for BinaryOp {
             TokenType::Star => Ok(BinaryOp::Mul),
             TokenType::Slash => Ok(BinaryOp::Div),
             TokenType::Remainder => Ok(BinaryOp::Remainder),
+            TokenType::Keyword(Keyword::And) => Ok(BinaryOp::And),
+            TokenType::Keyword(Keyword::Or) => Ok(BinaryOp::Or),
             TokenType::GreaterThan => Ok(BinaryOp::GreaterThan),
             TokenType::GreaterEquals => Ok(BinaryOp::GreaterThanOrEquals),
             TokenType::LessThan => Ok(BinaryOp::LessThan),

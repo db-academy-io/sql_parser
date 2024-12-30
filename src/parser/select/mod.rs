@@ -276,7 +276,7 @@ pub mod test_utils {
 #[cfg(test)]
 mod where_clause_tests {
     use super::test_utils::{select, select_star_from};
-    use crate::expression::test_utils::{binary_op, identifier_expr, numeric_expr};
+    use crate::expression::test_utils::{binary_op, expr_list, identifier_expr, numeric_expr};
     use crate::parser::test_utils::*;
     use crate::{BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression};
 
@@ -345,6 +345,22 @@ mod where_clause_tests {
             "SELECT * WHERE col1 NOT IN (SELECT * FROM table_2)",
             expected_statement.into(),
         );
+    }
+
+    #[test]
+    fn select_where_clause_with_parentheses() {
+        let mut expected_statement = select();
+        expected_statement.where_clause = Some(Box::new(binary_op(
+            BinaryOp::And,
+            expr_list(vec![binary_op(
+                BinaryOp::Or,
+                identifier_expr(&["a"]),
+                identifier_expr(&["b"]),
+            )]),
+            identifier_expr(&["c"]),
+        )));
+
+        run_sunny_day_test("SELECT * WHERE (a OR b) AND c", expected_statement.into());
     }
 }
 

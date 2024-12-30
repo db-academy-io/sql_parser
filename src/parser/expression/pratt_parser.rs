@@ -339,6 +339,8 @@ mod binary_op_tests {
             Minus,
             Mul,
             Div,
+            And,
+            Or,
             Remainder,
             GreaterThan,
             GreaterThanOrEquals,

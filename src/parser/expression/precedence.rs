@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
-use crate::TokenType;
+use crate::{Keyword, TokenType};
 
 /// The precedence of the operators.
 ///
@@ -18,6 +18,8 @@ static PRECEDENCE: Lazy<HashMap<TokenType, u8>> = Lazy::new(|| {
         (TokenType::Remainder, 50),
         (TokenType::Plus, 40),
         (TokenType::Minus, 40),
+        (TokenType::Keyword(Keyword::And), 30),
+        (TokenType::Keyword(Keyword::Or), 30),
         (TokenType::BitAnd, 30),
         (TokenType::BitOr, 30),
         (TokenType::LeftShift, 30),
