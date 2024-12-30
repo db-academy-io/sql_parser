@@ -9,9 +9,9 @@ mod identifier;
 mod in_expr;
 mod is_expr;
 mod like_expr;
+mod precedence;
 mod raise_expr;
 mod regexp_match_expr;
-
 use crate::parser::errors::ParsingError;
 use crate::{
     BinaryOp, Expression, Keyword, LiteralValue, Parser, TokenType, UnaryMatchingExpression,
@@ -28,42 +28,9 @@ pub use identifier::IdentifierParser;
 use in_expr::InExpressionParser;
 use is_expr::IsExpressionParser;
 use like_expr::LikeExpressionParser;
+use precedence::get_precedence;
 use raise_expr::RaiseExpressionParser;
 use regexp_match_expr::RegexpMatchExpressionParser;
-
-use once_cell::sync::Lazy;
-use std::collections::HashMap;
-
-/// The precedence of the operators.
-///
-/// The precedence of an operator is the maximum precedence of the expressions
-/// that can be formed with the operator.
-///
-/// The source of the precedence values is the SQLite grammar, see:
-/// [SQL Language Expressions](https://www.sqlite.org/lang_expr.html)
-static PRECEDENCE: Lazy<HashMap<TokenType, u8>> = Lazy::new(|| {
-    let pairs = [
-        (TokenType::Concat, 60),
-        (TokenType::Star, 50),
-        (TokenType::Slash, 50),
-        (TokenType::Remainder, 50),
-        (TokenType::Plus, 40),
-        (TokenType::Minus, 40),
-        (TokenType::BitAnd, 30),
-        (TokenType::BitOr, 30),
-        (TokenType::LeftShift, 30),
-        (TokenType::RightShift, 30),
-        (TokenType::GreaterThan, 20),
-        (TokenType::LessThan, 20),
-        (TokenType::GreaterEquals, 20),
-        (TokenType::LessEquals, 20),
-        (TokenType::Equals, 10),
-        (TokenType::EqualsEquals, 10),
-        (TokenType::NotEquals, 10),
-    ];
-
-    pairs.iter().cloned().collect()
-});
 
 /// Trait for parsing expressions
 /// The expression documentation can be found here:
@@ -88,8 +55,8 @@ pub trait ExpressionParser {
     fn parse_infix(&mut self, left: Expression, precedence: u8)
         -> Result<Expression, ParsingError>;
 
-    /// Get the precedence of the given operator
-    fn get_precedence(&mut self, operator: &TokenType) -> u8;
+    // /// Get the precedence of the given operator
+    // fn get_precedence(&mut self, operator: &TokenType) -> u8;
 }
 
 impl<'a> ExpressionParser for Parser<'a> {
@@ -244,7 +211,7 @@ impl<'a> ExpressionParser for Parser<'a> {
 
         loop {
             let current_token = self.peek_token()?;
-            let next_precedence = self.get_precedence(&current_token.token_type);
+            let next_precedence = get_precedence(&current_token.token_type);
 
             if precedence >= next_precedence {
                 break;
@@ -350,13 +317,13 @@ impl<'a> ExpressionParser for Parser<'a> {
             }
             TokenType::Minus => {
                 self.consume_as(TokenType::Minus)?;
-                let pr = self.get_precedence(&TokenType::Minus);
+                let pr = get_precedence(&TokenType::Minus);
                 let expression = self.parse_expression_pratt(pr)?;
                 Ok(Expression::UnaryOp(UnaryOp::Minus, Box::new(expression)))
             }
             TokenType::Plus => {
                 self.consume_as(TokenType::Plus)?;
-                let pr = self.get_precedence(&TokenType::Plus);
+                let pr = get_precedence(&TokenType::Plus);
                 let expression = self.parse_expression_pratt(pr)?;
                 Ok(Expression::UnaryOp(UnaryOp::Plus, Box::new(expression)))
             }
@@ -386,10 +353,10 @@ impl<'a> ExpressionParser for Parser<'a> {
         }
     }
 
-    /// Get the precedence of the given operator
-    fn get_precedence(&mut self, operator: &TokenType) -> u8 {
-        *PRECEDENCE.get(operator).unwrap_or(&0)
-    }
+    // /// Get the precedence of the given operator
+    // fn get_precedence(&mut self, operator: &TokenType) -> u8 {
+    //     *PRECEDENCE.get(operator).unwrap_or(&0)
+    // }
 }
 
 #[cfg(test)]
