@@ -197,7 +197,7 @@ mod create_table_tests {
         expression::test_utils::identifier_expr, parser::test_utils::run_sunny_day_test,
         ColumnConstraint, ColumnConstraintType, ColumnDefinition, ConflictClause,
         CreateTableColumnDef, CreateTableOption, DataType, Identifier, IndexedColumn, Ordering,
-        Statement, TableConstraint, TableConstraintType, TableOption,
+        PrimaryKeyConstraint, Statement, TableConstraint, TableConstraintType, TableOption,
     };
 
     use super::test_utils::create_table_statement;
@@ -304,6 +304,53 @@ mod create_table_tests {
 
         run_sunny_day_test(
             "CREATE TABLE table_name (column_name1 INTEGER, CONSTRAINT pk_column_name1 PRIMARY KEY (column_name1 ASC))",
+            Statement::CreateTable(expected_stmt.clone()),
+        );
+    }
+
+    #[test]
+    fn create_table_with_primary_column() {
+        let mut expected_stmt = create_table_statement();
+
+        expected_stmt.create_table_option =
+            CreateTableOption::ColumnDefinitions(CreateTableColumnDef {
+                columns: vec![
+                    ColumnDefinition {
+                        column_name: Identifier::from("id"),
+                        column_type: Some(DataType::PlainDataType("int".into())),
+                        column_constraints: vec![ColumnConstraint {
+                            constraint_type: ColumnConstraintType::PrimaryKey(
+                                PrimaryKeyConstraint {
+                                    ordering: None,
+                                    conflict_clause: ConflictClause::None,
+                                    auto_increment: false,
+                                },
+                            ),
+                            name: None,
+                        }],
+                    },
+                    ColumnDefinition {
+                        column_name: Identifier::from("name"),
+                        column_type: Some(DataType::SizedDataType("varchar".into(), "50".into())),
+                        column_constraints: vec![],
+                    },
+                    ColumnDefinition {
+                        column_name: Identifier::from("category"),
+                        column_type: Some(DataType::SizedDataType("varchar".into(), "15".into())),
+                        column_constraints: vec![],
+                    },
+                    ColumnDefinition {
+                        column_name: Identifier::from("cost"),
+                        column_type: Some(DataType::PlainDataType("int".into())),
+                        column_constraints: vec![],
+                    },
+                ],
+                table_constraints: vec![],
+                table_options: vec![],
+            });
+
+        run_sunny_day_test(
+            "CREATE TABLE table_name (id int PRIMARY KEY, name varchar(50), category varchar(15), cost int)",
             Statement::CreateTable(expected_stmt.clone()),
         );
     }

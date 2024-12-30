@@ -30,7 +30,9 @@ pub enum AlterTableStatementType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct ColumnDefinition {
     pub column_name: Identifier,
+
     pub column_type: Option<DataType>,
+
     pub column_constraints: Vec<ColumnConstraint>,
 }
 

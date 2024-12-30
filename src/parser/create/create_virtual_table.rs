@@ -1,8 +1,8 @@
+use super::create_table::CreateTableStatementParser;
 use super::CreateStatementParser;
-use crate::expression::ExpressionParser;
 use crate::parser::errors::ParsingError;
 use crate::{
-    CreateVirtualTableStatement, Expression, IdentifierParser, Keyword, Parser, TokenType,
+    ColumnDefinition, CreateVirtualTableStatement, IdentifierParser, Keyword, Parser, TokenType,
 };
 
 pub trait CreateVirtualTableStatementParser {
@@ -10,7 +10,7 @@ pub trait CreateVirtualTableStatementParser {
         &mut self,
     ) -> Result<CreateVirtualTableStatement, ParsingError>;
 
-    fn parse_module_arguments(&mut self) -> Result<Vec<Expression>, ParsingError>;
+    fn parse_module_arguments(&mut self) -> Result<Vec<ColumnDefinition>, ParsingError>;
 }
 
 impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
@@ -26,6 +26,7 @@ impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
         self.consume_as_keyword(Keyword::Using)?;
 
         let module_name = self.parse_identifier()?;
+
         let module_arguments = self.parse_module_arguments()?;
 
         Ok(CreateVirtualTableStatement {
@@ -36,22 +37,16 @@ impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
         })
     }
 
-    fn parse_module_arguments(&mut self) -> Result<Vec<Expression>, ParsingError> {
-        let mut arguments = vec![];
-
+    fn parse_module_arguments(&mut self) -> Result<Vec<ColumnDefinition>, ParsingError> {
         if self.consume_as(TokenType::LeftParen).is_ok() {
-            loop {
-                arguments.push(self.parse_expression()?);
-
-                if self.consume_as(TokenType::Comma).is_err() {
-                    break;
-                }
-            }
+            let args = self.parse_column_definitions()?;
 
             self.consume_as(TokenType::RightParen)?;
-        }
 
-        Ok(arguments)
+            Ok(args)
+        } else {
+            Ok(vec![])
+        }
     }
 }
 
@@ -74,8 +69,8 @@ mod create_virtual_table_tests {
     use test_utils::create_virtual_table_statement;
 
     use crate::{
-        expression::test_utils::string_expr, parser::test_utils::run_sunny_day_test, Identifier,
-        Statement,
+        parser::test_utils::run_sunny_day_test, ColumnConstraint, ColumnConstraintType,
+        ConflictClause, DataType, Identifier, PrimaryKeyConstraint, Statement,
     };
 
     use super::*;
@@ -114,10 +109,44 @@ mod create_virtual_table_tests {
     #[test]
     fn create_virtual_table_with_module_arguments() {
         let mut stmt = create_virtual_table_statement();
-        stmt.module_arguments = vec![string_expr("'arg1'"), string_expr("'arg2'")];
+        stmt.module_arguments = vec![
+            ColumnDefinition {
+                column_name: Identifier::from("id"),
+                column_type: Some(DataType::PlainDataType("int".into())),
+                column_constraints: vec![ColumnConstraint {
+                    name: None,
+                    constraint_type: ColumnConstraintType::PrimaryKey(PrimaryKeyConstraint {
+                        auto_increment: false,
+                        conflict_clause: ConflictClause::None,
+                        ordering: None,
+                    }),
+                }],
+            },
+            ColumnDefinition {
+                column_name: Identifier::from("name"),
+                column_type: Some(DataType::SizedDataType("varchar".into(), "50".into())),
+                column_constraints: vec![],
+            },
+            ColumnDefinition {
+                column_name: Identifier::from("category"),
+                column_type: Some(DataType::SizedDataType("varchar".into(), "15".into())),
+                column_constraints: vec![],
+            },
+            ColumnDefinition {
+                column_name: Identifier::from("cost"),
+                column_type: Some(DataType::PlainDataType("int".into())),
+                column_constraints: vec![],
+            },
+        ];
 
         run_sunny_day_test(
-            "CREATE VIRTUAL TABLE test_table USING test_module('arg1', 'arg2')",
+            "CREATE VIRTUAL TABLE test_table 
+            USING test_module(
+                id int PRIMARY KEY,
+                name varchar(50),
+                category varchar(15),
+                cost int
+            )",
             Statement::CreateVirtualTable(stmt),
         );
     }

@@ -16,7 +16,7 @@ pub struct CreateVirtualTableStatement {
 
     pub module_name: Identifier,
 
-    pub module_arguments: Vec<Expression>,
+    pub module_arguments: Vec<ColumnDefinition>,
 }
 
 /// An AST for [CREATE INDEX](https://www.sqlite.org/lang_createindex.html) SQL statement.
