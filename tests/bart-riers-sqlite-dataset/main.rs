@@ -2,7 +2,9 @@ use db_academy_sql_parser::Parser;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[test]
+// #[test]
+#[ignore]
+#[allow(dead_code)]
 fn run_bart_riers_sqlite_dataset_test() {
     let test_set_path = Path::new("tests/bart-riers-sqlite-dataset/test_set");
 

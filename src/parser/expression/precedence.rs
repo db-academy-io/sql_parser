@@ -18,8 +18,7 @@ static PRECEDENCE: Lazy<HashMap<TokenType, u8>> = Lazy::new(|| {
         (TokenType::Remainder, 50),
         (TokenType::Plus, 40),
         (TokenType::Minus, 40),
-        (TokenType::Keyword(Keyword::And), 30),
-        (TokenType::Keyword(Keyword::Or), 30),
+        (TokenType::BitNot, 40),
         (TokenType::BitAnd, 30),
         (TokenType::BitOr, 30),
         (TokenType::LeftShift, 30),
@@ -31,6 +30,18 @@ static PRECEDENCE: Lazy<HashMap<TokenType, u8>> = Lazy::new(|| {
         (TokenType::Equals, 10),
         (TokenType::EqualsEquals, 10),
         (TokenType::NotEquals, 10),
+        (TokenType::Keyword(Keyword::Not), 5),
+        (TokenType::Keyword(Keyword::Isnull), 5),
+        (TokenType::Keyword(Keyword::Notnull), 5),
+        (TokenType::Keyword(Keyword::Between), 5),
+        (TokenType::Keyword(Keyword::Like), 5),
+        (TokenType::Keyword(Keyword::Glob), 5),
+        (TokenType::Keyword(Keyword::Regexp), 5),
+        (TokenType::Keyword(Keyword::Match), 5),
+        (TokenType::Keyword(Keyword::In), 5),
+        (TokenType::Keyword(Keyword::Is), 5),
+        (TokenType::Keyword(Keyword::And), 1),
+        (TokenType::Keyword(Keyword::Or), 1),
     ];
 
     pairs.iter().cloned().collect()

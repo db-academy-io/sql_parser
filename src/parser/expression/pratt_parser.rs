@@ -4,8 +4,14 @@ use super::{
     raise_expr::RaiseExpressionParser, ExpressionParser, FunctionParser,
 };
 use crate::{
-    parser::ParsingError, BinaryOp, Expression, IdentifierParser, Keyword, LiteralValue, Parser,
-    TokenType, UnaryOp,
+    expression::{
+        between_expr::BetweenExpressionParser, in_expr::InExpressionParser,
+        is_expr::IsExpressionParser, like_expr::LikeExpressionParser,
+        regexp_match_expr::RegexpMatchExpressionParser,
+    },
+    parser::ParsingError,
+    BinaryOp, Expression, IdentifierParser, Keyword, LiteralValue, Parser, TokenType,
+    UnaryMatchingExpression, UnaryOp,
 };
 
 pub trait PrattParser {
@@ -29,11 +35,21 @@ pub trait PrattParser {
 impl<'a> PrattParser for Parser<'a> {
     /// Parse an expression using Pratt's parsing algorithm
     fn parse_expression_pratt(&mut self, precedence: u8) -> Result<Expression, ParsingError> {
+        dbg!("parse_expression_pratt");
         let mut expression = self.parse_prefix()?;
 
+        dbg!("prefix expression: {:?}", &expression);
         loop {
+            println!("precedence: {:?}", precedence);
             let current_token = self.peek_token()?;
             let next_precedence = get_precedence(&current_token.token_type);
+
+            dbg!("current_token: {:?}", &current_token);
+            dbg!(
+                "precedence: {:?}, next_precedence: {:?}",
+                &precedence,
+                &next_precedence
+            );
 
             if precedence >= next_precedence {
                 break;
@@ -50,17 +66,78 @@ impl<'a> PrattParser for Parser<'a> {
         left: Expression,
         precedence: u8,
     ) -> Result<Expression, ParsingError> {
-        let token = self.peek_token()?;
-        let operator = BinaryOp::try_from(&token.token_type)?;
-        // Consume the operator token
-        self.consume_as(token.token_type)?;
+        dbg!("parse_infix");
 
-        let right = self.parse_expression_pratt(precedence)?;
-        Ok(Expression::BinaryOp(
-            Box::new(left),
-            operator,
-            Box::new(right),
-        ))
+        let token = self.peek_token()?;
+
+        let binary_operator_result = BinaryOp::try_from(&token.token_type);
+
+        if let Ok(binary_operator) = binary_operator_result {
+            // Consume the operator token
+            self.consume_as(token.token_type)?;
+
+            let right = self.parse_expression_pratt(precedence)?;
+            Ok(Expression::BinaryOp(
+                Box::new(left),
+                binary_operator,
+                Box::new(right),
+            ))
+        } else if let Ok(Keyword::Between) = self.peek_as_keyword() {
+            return BetweenExpressionParser::parse_between_expression(self, left, false);
+        } else if let Ok(Keyword::Like) = self.peek_as_keyword() {
+            return LikeExpressionParser::parse_like_expression(self, left, false);
+        } else if let Ok(Keyword::Is) = self.peek_as_keyword() {
+            return IsExpressionParser::parse_is_expression(self, left);
+        } else if let Ok(Keyword::In) = self.peek_as_keyword() {
+            return InExpressionParser::parse_in_expression(self, left, false);
+        } else if let Ok(Keyword::Glob) = self.peek_as_keyword() {
+            return RegexpMatchExpressionParser::parse_regexp_match_expression(self, left, false);
+        } else if let Ok(Keyword::Regexp) = self.peek_as_keyword() {
+            return RegexpMatchExpressionParser::parse_regexp_match_expression(self, left, false);
+        } else if let Ok(Keyword::Match) = self.peek_as_keyword() {
+            return RegexpMatchExpressionParser::parse_regexp_match_expression(self, left, false);
+        } else if let Ok(Keyword::Isnull) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Isnull)?;
+            Ok(Expression::UnaryMatchingExpression(
+                Box::new(left),
+                UnaryMatchingExpression::IsNull,
+            ))
+        } else if let Ok(Keyword::Notnull) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Notnull)?;
+            Ok(Expression::UnaryMatchingExpression(
+                Box::new(left),
+                UnaryMatchingExpression::IsNotNull,
+            ))
+        } else if let Ok(Keyword::Not) = self.peek_as_keyword() {
+            self.consume_as_keyword(Keyword::Not)?;
+
+            if let Ok(nested_keyword) = self.peek_as_keyword() {
+                match nested_keyword {
+                    Keyword::Null => {
+                        self.consume_as_keyword(Keyword::Null)?;
+                        Ok(Expression::UnaryMatchingExpression(
+                            Box::new(left),
+                            UnaryMatchingExpression::IsNotNull,
+                        ))
+                    }
+                    Keyword::Between => {
+                        BetweenExpressionParser::parse_between_expression(self, left, true)
+                    }
+                    Keyword::Like => LikeExpressionParser::parse_like_expression(self, left, true),
+                    Keyword::Glob | Keyword::Regexp | Keyword::Match => {
+                        RegexpMatchExpressionParser::parse_regexp_match_expression(self, left, true)
+                    }
+                    Keyword::In => InExpressionParser::parse_in_expression(self, left, true),
+                    _ => {
+                        return Err(ParsingError::UnexpectedKeyword(nested_keyword));
+                    }
+                }
+            } else {
+                Err(ParsingError::UnexpectedKeyword(Keyword::Not))
+            }
+        } else {
+            Ok(left)
+        }
     }
 
     /// Parse a prefix expression
@@ -157,6 +234,12 @@ impl<'a> PrattParser for Parser<'a> {
                 let expression = self.parse_expression_pratt(pr)?;
                 Ok(Expression::UnaryOp(UnaryOp::Plus, Box::new(expression)))
             }
+            TokenType::BitNot => {
+                self.consume_as(TokenType::BitNot)?;
+                let pr = get_precedence(&TokenType::BitNot);
+                let expression = self.parse_expression_pratt(pr)?;
+                Ok(Expression::UnaryOp(UnaryOp::BitNot, Box::new(expression)))
+            }
             TokenType::Blob(value) => {
                 self.consume_token()?;
                 Ok(Expression::LiteralValue(LiteralValue::Blob(
@@ -178,6 +261,7 @@ impl<'a> PrattParser for Parser<'a> {
         }
     }
 
+    /// Parse an expression which starts with the NOT keyword
     fn parse_not_expression(&mut self) -> Result<Expression, ParsingError> {
         self.consume_as_keyword(Keyword::Not)?;
 
@@ -503,7 +587,7 @@ mod unary_matching_expression_tests {
     #[test]
     fn notnull() {
         run_sunny_day_test(
-            "SELECT 1 NOT NULL;",
+            "SELECT 1 NOTNULL;",
             select_expr(unary_matching_expression(
                 numeric_expr("1"),
                 UnaryMatchingExpression::IsNotNull,
@@ -512,7 +596,7 @@ mod unary_matching_expression_tests {
         );
 
         run_sunny_day_test(
-            "SELECT 1 NOTNULL;",
+            "SELECT 1 NOT NULL;",
             select_expr(unary_matching_expression(
                 numeric_expr("1"),
                 UnaryMatchingExpression::IsNotNull,

@@ -12,15 +12,10 @@ mod precedence;
 mod raise_expr;
 mod regexp_match_expr;
 use crate::parser::errors::ParsingError;
-use crate::{Expression, Keyword, Parser, TokenType, UnaryMatchingExpression};
-use between_expr::BetweenExpressionParser;
+use crate::{Expression, Keyword, Parser, TokenType};
 use collate_expr::CollateExpressionParser;
 use function_expr::FunctionParser;
-use in_expr::InExpressionParser;
-use is_expr::IsExpressionParser;
-use like_expr::LikeExpressionParser;
 use pratt_parser::PrattParser;
-use regexp_match_expr::RegexpMatchExpressionParser;
 
 /// Trait for parsing expressions
 /// The expression documentation can be found here:
@@ -40,69 +35,6 @@ impl<'a> ExpressionParser for Parser<'a> {
 
         if let Ok(Keyword::Collate) = self.peek_as_keyword() {
             CollateExpressionParser::parse_collate_expression(self, expression)
-        } else if let Ok(Keyword::Isnull) = self.peek_as_keyword() {
-            self.consume_as_keyword(Keyword::Isnull)?;
-            Ok(Expression::UnaryMatchingExpression(
-                Box::new(expression),
-                UnaryMatchingExpression::IsNull,
-            ))
-        } else if let Ok(Keyword::Notnull) = self.peek_as_keyword() {
-            self.consume_as_keyword(Keyword::Notnull)?;
-            Ok(Expression::UnaryMatchingExpression(
-                Box::new(expression),
-                UnaryMatchingExpression::IsNotNull,
-            ))
-        } else if let Ok(Keyword::Not) = self.peek_as_keyword() {
-            self.consume_as_keyword(Keyword::Not)?;
-
-            if let Ok(nested_keyword) = self.peek_as_keyword() {
-                match nested_keyword {
-                    Keyword::Null => {
-                        self.consume_as_keyword(Keyword::Null)?;
-                        Ok(Expression::UnaryMatchingExpression(
-                            Box::new(expression),
-                            UnaryMatchingExpression::IsNotNull,
-                        ))
-                    }
-                    Keyword::Between => {
-                        BetweenExpressionParser::parse_between_expression(self, expression, true)
-                    }
-                    Keyword::Like => {
-                        LikeExpressionParser::parse_like_expression(self, expression, true)
-                    }
-                    Keyword::Glob | Keyword::Regexp | Keyword::Match => {
-                        RegexpMatchExpressionParser::parse_regexp_match_expression(
-                            self, expression, true,
-                        )
-                    }
-                    Keyword::In => InExpressionParser::parse_in_expression(self, expression, true),
-                    _ => {
-                        return Err(ParsingError::UnexpectedKeyword(nested_keyword));
-                    }
-                }
-            } else {
-                Err(ParsingError::UnexpectedKeyword(Keyword::Not))
-            }
-        } else if let Ok(Keyword::Between) = self.peek_as_keyword() {
-            return BetweenExpressionParser::parse_between_expression(self, expression, false);
-        } else if let Ok(Keyword::Like) = self.peek_as_keyword() {
-            return LikeExpressionParser::parse_like_expression(self, expression, false);
-        } else if let Ok(Keyword::Is) = self.peek_as_keyword() {
-            return IsExpressionParser::parse_is_expression(self, expression);
-        } else if let Ok(Keyword::In) = self.peek_as_keyword() {
-            return InExpressionParser::parse_in_expression(self, expression, false);
-        } else if let Ok(Keyword::Glob) = self.peek_as_keyword() {
-            return RegexpMatchExpressionParser::parse_regexp_match_expression(
-                self, expression, false,
-            );
-        } else if let Ok(Keyword::Regexp) = self.peek_as_keyword() {
-            return RegexpMatchExpressionParser::parse_regexp_match_expression(
-                self, expression, false,
-            );
-        } else if let Ok(Keyword::Match) = self.peek_as_keyword() {
-            return RegexpMatchExpressionParser::parse_regexp_match_expression(
-                self, expression, false,
-            );
         } else {
             Ok(expression)
         }
