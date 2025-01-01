@@ -36,14 +36,22 @@ impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
 
     fn parse_module_arguments(&mut self) -> Result<Vec<String>, ParsingError> {
         if self.consume_as(TokenType::LeftParen).is_ok() {
+            let mut left_paren_count = 1;
             let mut module_arguments = vec![];
 
             let mut arg = String::new();
 
             loop {
                 let token = self.peek_token()?;
+                if token.token_type == TokenType::LeftParen {
+                    left_paren_count += 1;
+                }
 
                 if token.token_type == TokenType::RightParen {
+                    left_paren_count -= 1;
+                }
+
+                if left_paren_count == 0 {
                     break;
                 }
 
@@ -55,12 +63,17 @@ impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
                     arg = String::new();
                     self.consume_as(TokenType::Comma)?;
                 } else {
-                    arg = format!("{} {}", arg, token.token_type);
+                    if arg.is_empty() {
+                        arg = token.token_type.to_string();
+                    } else {
+                        arg = format!("{} {}", arg, token.token_type);
+                    }
                     self.consume_token()?;
                 }
             }
 
             self.consume_as(TokenType::RightParen)?;
+            module_arguments.push(arg);
 
             Ok(module_arguments)
         } else {
@@ -126,9 +139,9 @@ mod create_virtual_table_tests {
     fn create_virtual_table_with_module_arguments() {
         let mut stmt = create_virtual_table_statement();
         stmt.module_arguments = vec![
-            "id int PRIMARY KEY".to_string(),
-            "name varchar(50)".to_string(),
-            "category varchar(15)".to_string(),
+            "id int Primary Key".to_string(),
+            "name varchar ( 50 )".to_string(),
+            "category varchar ( 15 )".to_string(),
             "cost int".to_string(),
         ];
 
