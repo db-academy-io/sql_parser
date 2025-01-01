@@ -1,8 +1,8 @@
 use crate::parser::errors::ParsingError;
 use crate::{BetweenExpression, BinaryMatchingExpression, Expression, Keyword, Parser, TokenType};
 
-use super::pratt_parser::PrattParser;
 use super::precedence::get_precedence;
+use super::ExpressionParser;
 
 pub trait BetweenExpressionParser {
     fn parse_between_expression(
@@ -22,11 +22,11 @@ impl BetweenExpressionParser for Parser<'_> {
         self.consume_as_keyword(Keyword::Between)?;
 
         let precedence = get_precedence(&TokenType::Keyword(Keyword::Between));
-        let lower_bound = self.parse_expression_pratt(precedence)?;
+        let lower_bound = self.parse_sub_expression(precedence)?;
 
         self.consume_as_keyword(Keyword::And)?;
 
-        let upper_bound = self.parse_expression_pratt(precedence)?;
+        let upper_bound = self.parse_sub_expression(precedence)?;
 
         let matching_expression = if is_not {
             BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::Between(
