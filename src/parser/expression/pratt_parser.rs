@@ -35,21 +35,11 @@ pub trait PrattParser {
 impl PrattParser for Parser<'_> {
     /// Parse an expression using Pratt's parsing algorithm
     fn parse_expression_pratt(&mut self, precedence: u8) -> Result<Expression, ParsingError> {
-        dbg!("parse_expression_pratt");
         let mut expression = self.parse_prefix()?;
 
-        dbg!("prefix expression: {:?}", &expression);
         loop {
-            println!("precedence: {:?}", precedence);
             let current_token = self.peek_token()?;
             let next_precedence = get_precedence(&current_token.token_type);
-
-            dbg!("current_token: {:?}", &current_token);
-            dbg!(
-                "precedence: {:?}, next_precedence: {:?}",
-                &precedence,
-                &next_precedence
-            );
 
             if precedence >= next_precedence {
                 break;
@@ -66,8 +56,6 @@ impl PrattParser for Parser<'_> {
         left: Expression,
         precedence: u8,
     ) -> Result<Expression, ParsingError> {
-        dbg!("parse_infix");
-
         let token = self.peek_token()?;
 
         let binary_operator_result = BinaryOp::try_from(&token.token_type);
