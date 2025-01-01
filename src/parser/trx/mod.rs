@@ -32,7 +32,7 @@ pub trait TransactionStatementParser {
     fn parse_savepoint_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> TransactionStatementParser for Parser<'a> {
+impl TransactionStatementParser for Parser<'_> {
     fn parse_begin_statement(&mut self) -> Result<Statement, ParsingError> {
         BeginStatementParser::parse_begin_statement(self)
     }

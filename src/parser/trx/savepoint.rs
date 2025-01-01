@@ -7,7 +7,7 @@ pub trait SavepointStatementParser {
     fn parse_savepoint_name(&mut self) -> Result<String, ParsingError>;
 }
 
-impl<'a> SavepointStatementParser for Parser<'a> {
+impl SavepointStatementParser for Parser<'_> {
     fn parse_savepoint_statement(&mut self) -> Result<Statement, ParsingError> {
         // Consume the SAVEPOINT keyword
         self.consume_as_keyword(Keyword::Savepoint)?;

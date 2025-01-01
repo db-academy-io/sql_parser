@@ -10,7 +10,7 @@ pub trait CollateExpressionParser {
     ) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> CollateExpressionParser for Parser<'a> {
+impl CollateExpressionParser for Parser<'_> {
     fn parse_collate_expression(
         &mut self,
         expression: Expression,

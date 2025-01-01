@@ -10,7 +10,7 @@ pub trait CreateVirtualTableStatementParser {
     fn parse_module_arguments(&mut self) -> Result<Vec<String>, ParsingError>;
 }
 
-impl<'a> CreateVirtualTableStatementParser for Parser<'a> {
+impl CreateVirtualTableStatementParser for Parser<'_> {
     fn parse_create_virtual_table_statement(
         &mut self,
     ) -> Result<CreateVirtualTableStatement, ParsingError> {

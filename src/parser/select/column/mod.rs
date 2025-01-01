@@ -9,7 +9,7 @@ pub trait SelectColumnsParser {
     fn parse_select_column(&mut self) -> Result<SelectItem, ParsingError>;
 }
 
-impl<'a> SelectColumnsParser for Parser<'a> {
+impl SelectColumnsParser for Parser<'_> {
     fn parse_select_columns(&mut self) -> Result<Vec<SelectItem>, ParsingError> {
         let mut select_items = Vec::new();
 

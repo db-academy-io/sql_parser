@@ -32,7 +32,7 @@ pub trait PrattParser {
     fn parse_not_expression(&mut self) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> PrattParser for Parser<'a> {
+impl PrattParser for Parser<'_> {
     /// Parse an expression using Pratt's parsing algorithm
     fn parse_expression_pratt(&mut self, precedence: u8) -> Result<Expression, ParsingError> {
         dbg!("parse_expression_pratt");

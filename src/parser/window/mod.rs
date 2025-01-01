@@ -17,7 +17,7 @@ pub trait WindowDefinitionParser {
     fn parse_over_clause_frame_spec_between(&mut self) -> Result<FrameSpecType, ParsingError>;
 }
 
-impl<'a> WindowDefinitionParser for Parser<'a> {
+impl WindowDefinitionParser for Parser<'_> {
     /// Parse a function over clause
     fn parse_window_definition(&mut self) -> Result<WindowDefinition, ParsingError> {
         self.consume_as(TokenType::LeftParen)?;

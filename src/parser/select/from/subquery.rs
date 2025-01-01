@@ -10,7 +10,7 @@ pub trait SelectFromSubqueryParser {
     fn parse_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError>;
 }
 
-impl<'a> SelectFromSubqueryParser for Parser<'a> {
+impl SelectFromSubqueryParser for Parser<'_> {
     fn parse_from_clause_subquery(&mut self) -> Result<FromClause, ParsingError> {
         if self.peek_as(TokenType::LeftParen).is_ok() {
             self.consume_as(TokenType::LeftParen)?;

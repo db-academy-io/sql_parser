@@ -8,7 +8,7 @@ pub trait IsExpressionParser {
     fn parse_is_expression(&mut self, expression: Expression) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> IsExpressionParser for Parser<'a> {
+impl IsExpressionParser for Parser<'_> {
     fn parse_is_expression(&mut self, expression: Expression) -> Result<Expression, ParsingError> {
         self.consume_as_keyword(Keyword::Is)?;
 

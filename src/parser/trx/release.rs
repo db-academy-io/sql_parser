@@ -7,7 +7,7 @@ pub trait ReleaseStatementParser {
     fn parse_release_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> ReleaseStatementParser for Parser<'a> {
+impl ReleaseStatementParser for Parser<'_> {
     fn parse_release_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Release)?;
 

@@ -29,7 +29,7 @@ pub trait CreateTableStatementParser {
     fn parse_table_options(&mut self) -> Result<Vec<TableOption>, ParsingError>;
 }
 
-impl<'a> CreateTableStatementParser for Parser<'a> {
+impl CreateTableStatementParser for Parser<'_> {
     fn parse_create_table_statement(
         &mut self,
         is_temporary: bool,
@@ -373,10 +373,7 @@ mod create_table_tests {
                 });
 
             run_sunny_day_test(
-                &format!(
-                    "CREATE TABLE table_name (column_name1 INTEGER) {}",
-                    option.to_string()
-                ),
+                &format!("CREATE TABLE table_name (column_name1 INTEGER) {}", option),
                 Statement::CreateTable(expected_stmt.clone()),
             );
         }

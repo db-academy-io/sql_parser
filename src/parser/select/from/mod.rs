@@ -12,7 +12,7 @@ pub trait SelectFromParser {
     fn parse_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError>;
 }
 
-impl<'a> SelectFromParser for Parser<'a> {
+impl SelectFromParser for Parser<'_> {
     fn parse_from_clause(&mut self) -> Result<Option<FromClause>, ParsingError> {
         if let Ok(Keyword::From) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::From)?;

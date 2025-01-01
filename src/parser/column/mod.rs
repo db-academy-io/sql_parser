@@ -34,7 +34,7 @@ pub trait ColumnDefinitionParser {
     fn parse_fk_deferrable_type(&mut self) -> Result<Option<FKDeferrableType>, ParsingError>;
 }
 
-impl<'a> ColumnDefinitionParser for Parser<'a> {
+impl ColumnDefinitionParser for Parser<'_> {
     fn parse_column_definition(&mut self) -> Result<ColumnDefinition, ParsingError> {
         let column_name = self.parse_identifier()?;
 

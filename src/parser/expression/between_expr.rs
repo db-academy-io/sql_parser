@@ -12,7 +12,7 @@ pub trait BetweenExpressionParser {
     ) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> BetweenExpressionParser for Parser<'a> {
+impl BetweenExpressionParser for Parser<'_> {
     fn parse_between_expression(
         &mut self,
         expression: Expression,

@@ -41,7 +41,7 @@ pub trait SelectStatementParser {
     fn parse_union_clause(&mut self) -> Result<Option<UnionStatementType>, ParsingError>;
 }
 
-impl<'a> SelectStatementParser for Parser<'a> {
+impl SelectStatementParser for Parser<'_> {
     fn parse_select_statement(&mut self) -> Result<SelectStatement, ParsingError> {
         if let Ok(Keyword::Values) = self.peek_as_keyword() {
             return Ok(SelectStatement {
@@ -188,17 +188,17 @@ pub mod test_utils {
         SelectItem, SelectStatement, Statement,
     };
 
-    impl Into<Statement> for SelectStatement {
-        fn into(self) -> Statement {
-            Statement::Select(self)
+    impl From<SelectStatement> for Statement {
+        fn from(val: SelectStatement) -> Self {
+            Statement::Select(val)
         }
     }
 
-    impl Into<Statement> for Select {
-        fn into(self) -> Statement {
+    impl From<Select> for Statement {
+        fn from(val: Select) -> Self {
             Statement::Select(SelectStatement {
                 with_cte: None,
-                select: SelectBody::Select(self),
+                select: SelectBody::Select(val),
                 order_by: None,
                 limit: None,
             })
@@ -537,8 +537,8 @@ mod union_clause_tests {
         ];
 
         for union_type in union_types {
-            let left_statement = select_stmt().into();
-            let right_statement = select_stmt().into();
+            let left_statement = select_stmt();
+            let right_statement = select_stmt();
 
             let expected_statement = SelectStatement {
                 with_cte: None,

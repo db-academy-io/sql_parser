@@ -8,7 +8,7 @@ pub trait AnalyzeStatementParser {
     fn parse_analyze_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> AnalyzeStatementParser for Parser<'a> {
+impl AnalyzeStatementParser for Parser<'_> {
     fn parse_analyze_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Analyze)?;
 

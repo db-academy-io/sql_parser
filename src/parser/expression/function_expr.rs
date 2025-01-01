@@ -17,7 +17,7 @@ pub trait FunctionParser {
     fn parse_function_filter_clause(&mut self) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> FunctionParser for Parser<'a> {
+impl FunctionParser for Parser<'_> {
     /// Parse a function
     fn parse_function(&mut self, name: Identifier) -> Result<Expression, ParsingError> {
         let mut function = Function {

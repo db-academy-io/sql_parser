@@ -8,7 +8,7 @@ pub trait DataTypeParser {
     fn parse_data_type(&mut self) -> Result<DataType, ParsingError>;
 }
 
-impl<'a> DataTypeParser for Parser<'a> {
+impl DataTypeParser for Parser<'_> {
     fn parse_data_type(&mut self) -> Result<DataType, ParsingError> {
         let mut names = Vec::new();
 

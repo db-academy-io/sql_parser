@@ -5,7 +5,7 @@ pub trait CommitStatementParser {
     fn parse_commit_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> CommitStatementParser for Parser<'a> {
+impl CommitStatementParser for Parser<'_> {
     fn parse_commit_statement(&mut self) -> Result<Statement, ParsingError> {
         // Consume the COMMIT OR END keyword
         let _ = self.consume_as_keyword(Keyword::Commit);

@@ -6,7 +6,7 @@ pub trait ExplainStatementParser {
     fn parse_explain_statement(&mut self) -> Result<ExplainStatement, ParsingError>;
 }
 
-impl<'a> ExplainStatementParser for Parser<'a> {
+impl ExplainStatementParser for Parser<'_> {
     fn parse_explain_statement(&mut self) -> Result<ExplainStatement, ParsingError> {
         self.consume_as_keyword(Keyword::Explain)?;
 

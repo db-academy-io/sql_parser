@@ -15,7 +15,7 @@ pub trait UpdateStatementParser {
     fn parse_set_clause(&mut self) -> Result<SetClause, ParsingError>;
 }
 
-impl<'a> UpdateStatementParser for Parser<'a> {
+impl UpdateStatementParser for Parser<'_> {
     fn parse_update_statement(&mut self) -> Result<UpdateStatement, ParsingError> {
         self.consume_as_keyword(Keyword::Update)?;
 

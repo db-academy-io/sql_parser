@@ -13,7 +13,7 @@ pub trait RegexpMatchExpressionParser {
     ) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> RegexpMatchExpressionParser for Parser<'a> {
+impl RegexpMatchExpressionParser for Parser<'_> {
     fn parse_regexp_match_expression(
         &mut self,
         expression: Expression,

@@ -6,7 +6,7 @@ pub trait DropIndexStatementParser {
     fn parse_drop_index_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> DropIndexStatementParser for Parser<'a> {
+impl DropIndexStatementParser for Parser<'_> {
     fn parse_drop_index_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Index)?;
 

@@ -327,10 +327,10 @@ impl<'input> Tokenizer<'input> {
         let text = &self.raw_content[start_pos..self.current_pos];
         // Check if it's a keyword
         if let Ok(keyword) = Keyword::try_from(text) {
-            return Some(Ok(Token {
+            Some(Ok(Token {
                 token_type: TokenType::Keyword(keyword),
                 position: start_pos,
-            }));
+            }))
         } else if text.to_lowercase() == "true" {
             return Some(Ok(Token {
                 token_type: TokenType::True,
@@ -672,10 +672,10 @@ impl<'input> Tokenizer<'input> {
                     }
                 }
                 let text = &self.raw_content[start_pos..self.current_pos];
-                return Some(Ok(Token {
+                Some(Ok(Token {
                     token_type: TokenType::Variable(text),
                     position: start_pos,
-                }));
+                }))
             }
         } else {
             // Unexpected end of input after '#'
@@ -913,7 +913,7 @@ impl<'input> Tokenizer<'input> {
             Some(ch) => {
                 // Match based on the character
                 if ch == '`' {
-                    return self.parse_identifier_between_grave_accent(start_pos);
+                    self.parse_identifier_between_grave_accent(start_pos)
                 } else if ch == '[' {
                     return self.parse_identifier_between_square_brackets(start_pos);
                 } else if Self::is_id_start_char(&ch) {

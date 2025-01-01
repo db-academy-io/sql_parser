@@ -48,8 +48,8 @@ fn run_codeschool_sqlite_parser_test() {
 fn run_test(sql_content: &str) -> Result<Statement, ParsingError> {
     use db_academy_sql_parser::Parser;
     let mut parser = Parser::from(sql_content);
-    let statement = parser.parse_statement();
-    statement
+
+    parser.parse_statement()
 }
 
 #[test]

@@ -15,7 +15,7 @@ pub trait SelectFromJoinParser {
     ) -> Result<Option<JoinConstraint>, ParsingError>;
 }
 
-impl<'a> SelectFromJoinParser for Parser<'a> {
+impl SelectFromJoinParser for Parser<'_> {
     fn parse_from_join_clause(&mut self, lhs: FromClause) -> Result<FromClause, ParsingError> {
         let mut join_tables = Vec::new();
 

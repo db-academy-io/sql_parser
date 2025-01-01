@@ -12,7 +12,7 @@ pub trait AttachStatementParser {
     fn parse_attach_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> AttachStatementParser for Parser<'a> {
+impl AttachStatementParser for Parser<'_> {
     fn parse_attach_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Attach)?;
 

@@ -24,7 +24,7 @@ pub trait CreateTriggerStatementParser {
     fn parse_when_clause(&mut self) -> Result<Option<Expression>, ParsingError>;
 }
 
-impl<'a> CreateTriggerStatementParser for Parser<'a> {
+impl CreateTriggerStatementParser for Parser<'_> {
     fn parse_create_trigger_statement(
         &mut self,
         is_temporary: bool,
@@ -212,7 +212,7 @@ mod create_trigger_tests {
 
         for temp_keyword in temp_keywords {
             run_sunny_day_test(
-                &format!("CREATE {} TRIGGER trigger_name DELETE ON table_name BEGIN SELECT * FROM table_name; END;", temp_keyword.to_string()),
+                &format!("CREATE {} TRIGGER trigger_name DELETE ON table_name BEGIN SELECT * FROM table_name; END;", temp_keyword),
                 Statement::CreateTrigger(expected.clone()),
             );
         }
@@ -256,7 +256,7 @@ mod create_trigger_tests {
             run_sunny_day_test(
                 &format!(
                     "CREATE TRIGGER trigger_name {} DELETE ON table_name BEGIN SELECT * FROM table_name; END;",
-                    trigger_pre_condition.to_string()
+                    trigger_pre_condition
                 ),
                 Statement::CreateTrigger(expected),
             );
@@ -316,7 +316,7 @@ mod create_trigger_tests {
 
             let query = format!(
                 "CREATE TRIGGER trigger_name {} ON table_name BEGIN SELECT * FROM table_name; END;",
-                trigger_event_type.to_string()
+                trigger_event_type
             );
             run_sunny_day_test(&query, Statement::CreateTrigger(expected));
         }

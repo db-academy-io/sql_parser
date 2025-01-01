@@ -12,7 +12,7 @@ pub trait CreateViewStatementParser {
     ) -> Result<CreateViewStatement, ParsingError>;
 }
 
-impl<'a> CreateViewStatementParser for Parser<'a> {
+impl CreateViewStatementParser for Parser<'_> {
     fn parse_create_view_statement(
         &mut self,
         is_temporary: bool,

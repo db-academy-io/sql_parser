@@ -8,7 +8,7 @@ pub trait ReindexStatementParser {
     fn parse_reindex_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> ReindexStatementParser for Parser<'a> {
+impl ReindexStatementParser for Parser<'_> {
     fn parse_reindex_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Reindex)?;
 

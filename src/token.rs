@@ -16,13 +16,13 @@ pub struct Token<'a> {
     pub position: usize,
 }
 
-impl<'a> Display for Token<'a> {
+impl Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} at position {}", self.token_type, self.position)
     }
 }
 
-impl<'a> TryInto<Keyword> for Token<'a> {
+impl TryInto<Keyword> for Token<'_> {
     type Error = ParsingError;
 
     fn try_into(self) -> Result<Keyword, Self::Error> {
@@ -124,7 +124,7 @@ pub enum TokenType<'a> {
     False,
 }
 
-impl<'a> Display for TokenType<'a> {
+impl Display for TokenType<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TokenType::Keyword(keyword) => keyword.fmt(f),

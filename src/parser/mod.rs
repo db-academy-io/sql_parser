@@ -129,7 +129,7 @@ impl<'a> Parser<'a> {
                         TokenType::SingleLineComment(_) | TokenType::MultiLineComment(_) => {
                             // Consume comment token
                             self.consume_token()?;
-                            return self.peek_token();
+                            self.peek_token()
                         }
                         _ => Ok(token.clone()),
                     }

@@ -22,7 +22,7 @@ pub trait AlterTableStatementParser {
     ) -> Result<AlterTableStatement, ParsingError>;
 }
 
-impl<'a> AlterTableStatementParser for Parser<'a> {
+impl AlterTableStatementParser for Parser<'_> {
     fn parse_alter_table_statement(&mut self) -> Result<AlterTableStatement, ParsingError> {
         self.consume_as_keyword(Keyword::Alter)?;
         self.consume_as_keyword(Keyword::Table)?;
@@ -488,7 +488,7 @@ mod add_column_with_constraints_tests {
             }
         }
 
-        let fk_actions = vec![
+        let fk_actions = [
             FKAction::SetDefault,
             FKAction::SetNull,
             FKAction::Cascade,
@@ -574,7 +574,7 @@ mod add_column_with_constraints_tests {
 
     #[test]
     fn add_column_with_deferrable_clause() {
-        let deferrable_types = vec![
+        let deferrable_types = [
             FKDeferrableType::Deferrable,
             FKDeferrableType::InitiallyDeferred,
             FKDeferrableType::InitiallyImmediate,

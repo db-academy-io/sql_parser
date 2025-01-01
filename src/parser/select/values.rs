@@ -9,7 +9,7 @@ pub trait ValuesStatementParser {
     fn parse_values_statement_group(&mut self) -> Result<Vec<Expression>, ParsingError>;
 }
 
-impl<'a> ValuesStatementParser for Parser<'a> {
+impl ValuesStatementParser for Parser<'_> {
     fn parse_values_statement(&mut self) -> Result<ValuesStatement, ParsingError> {
         self.consume_as_keyword(Keyword::Values)?;
         let mut values = Vec::new();

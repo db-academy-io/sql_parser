@@ -7,7 +7,7 @@ pub trait CastExpressionParser {
     fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> CastExpressionParser for Parser<'a> {
+impl CastExpressionParser for Parser<'_> {
     fn parse_cast_expression(&mut self) -> Result<Expression, ParsingError> {
         self.consume_as_keyword(Keyword::Cast)?;
 

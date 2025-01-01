@@ -28,7 +28,7 @@ pub trait ExpressionParser {
     fn parse_comma_separated_expressions(&mut self) -> Result<Vec<Expression>, ParsingError>;
 }
 
-impl<'a> ExpressionParser for Parser<'a> {
+impl ExpressionParser for Parser<'_> {
     /// Parse an SQLite3 [expr](https://www.sqlite.org/lang_expr.html)
     fn parse_expression(&mut self) -> Result<Expression, ParsingError> {
         let expression = self.parse_expression_pratt(0)?;

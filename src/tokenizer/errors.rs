@@ -36,7 +36,7 @@ pub enum TokenizerError<'input> {
     EmptyId,
 }
 
-impl<'a> Display for TokenizerError<'a> {
+impl Display for TokenizerError<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TokenizerError::UnrecognizedToken => write!(f, "UnrecognizedToken"),

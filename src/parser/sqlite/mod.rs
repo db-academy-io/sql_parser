@@ -35,7 +35,7 @@ pub trait SQLite3StatementParser {
     fn parse_pragma_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> SQLite3StatementParser for Parser<'a> {
+impl SQLite3StatementParser for Parser<'_> {
     fn parse_vacuum_statement(&mut self) -> Result<Statement, ParsingError> {
         VacuumStatementParser::parse_vacuum_statement(self)
     }

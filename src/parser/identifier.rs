@@ -6,7 +6,7 @@ pub trait IdentifierParser {
     fn parse_identifier(&mut self) -> Result<Identifier, ParsingError>;
 }
 
-impl<'a> IdentifierParser for Parser<'a> {
+impl IdentifierParser for Parser<'_> {
     /// Parse an identifier
     fn parse_identifier(&mut self) -> Result<Identifier, ParsingError> {
         let mut components = Vec::new();

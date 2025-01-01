@@ -6,7 +6,7 @@ pub trait VacuumStatementParser {
     fn parse_vacuum_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> VacuumStatementParser for Parser<'a> {
+impl VacuumStatementParser for Parser<'_> {
     fn parse_vacuum_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Vacuum)?;
 

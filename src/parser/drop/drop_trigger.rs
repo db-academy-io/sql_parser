@@ -6,7 +6,7 @@ pub trait DropTriggerStatementParser {
     fn parse_drop_trigger_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> DropTriggerStatementParser for Parser<'a> {
+impl DropTriggerStatementParser for Parser<'_> {
     fn parse_drop_trigger_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Trigger)?;
 

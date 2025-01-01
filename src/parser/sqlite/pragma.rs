@@ -9,7 +9,7 @@ pub trait PragmaStatementParser {
     fn parse_pragma_value(&mut self) -> Result<String, ParsingError>;
 }
 
-impl<'a> PragmaStatementParser for Parser<'a> {
+impl PragmaStatementParser for Parser<'_> {
     fn parse_pragma_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Pragma)?;
 

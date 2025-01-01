@@ -7,7 +7,7 @@ pub trait CaseExpressionParser {
     fn parse_case_expression(&mut self) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> CaseExpressionParser for Parser<'a> {
+impl CaseExpressionParser for Parser<'_> {
     fn parse_case_expression(&mut self) -> Result<Expression, ParsingError> {
         self.consume_as_keyword(Keyword::Case)?;
 

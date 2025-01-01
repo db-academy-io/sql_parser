@@ -12,7 +12,7 @@ pub trait DeleteStatementParser {
     fn parse_returning_clause(&mut self) -> Result<Vec<ReturningClause>, ParsingError>;
 }
 
-impl<'a> DeleteStatementParser for Parser<'a> {
+impl DeleteStatementParser for Parser<'_> {
     fn parse_delete_statement(&mut self) -> Result<DeleteStatement, ParsingError> {
         self.consume_as_keyword(Keyword::Delete)?;
         self.consume_as_keyword(Keyword::From)?;

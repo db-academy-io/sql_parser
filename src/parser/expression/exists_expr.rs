@@ -6,7 +6,7 @@ pub trait ExistsExpressionParser {
     fn parse_exists_expression(&mut self, is_not: bool) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> ExistsExpressionParser for Parser<'a> {
+impl ExistsExpressionParser for Parser<'_> {
     fn parse_exists_expression(&mut self, is_not: bool) -> Result<Expression, ParsingError> {
         // Consume the EXISTS keyword, if it's present. The result is ignored, because
         // the EXISTS keyword is an optional keyword

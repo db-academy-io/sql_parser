@@ -33,7 +33,7 @@ pub trait InsertStatementParser {
     fn parse_indexed_column(&mut self) -> Result<IndexedColumn, ParsingError>;
 }
 
-impl<'a> InsertStatementParser for Parser<'a> {
+impl InsertStatementParser for Parser<'_> {
     fn parse_insert_statement(&mut self) -> Result<InsertStatement, ParsingError> {
         if self.consume_as_keyword(Keyword::Replace).is_ok() {
             return Ok(InsertStatement {
@@ -430,7 +430,7 @@ mod insert_statement_tests {
             },
         ]);
 
-        run_sunny_day_test(&sql, Statement::Insert(expected_statement));
+        run_sunny_day_test(sql, Statement::Insert(expected_statement));
     }
 
     #[test]

@@ -5,7 +5,7 @@ pub trait RaiseExpressionParser {
     fn parse_raise_expression(&mut self) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> RaiseExpressionParser for Parser<'a> {
+impl RaiseExpressionParser for Parser<'_> {
     fn parse_raise_expression(&mut self) -> Result<Expression, ParsingError> {
         // Consume the RAISE keyword
         self.consume_as_keyword(Keyword::Raise)?;

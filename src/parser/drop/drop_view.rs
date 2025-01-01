@@ -6,7 +6,7 @@ pub trait DropViewStatementParser {
     fn parse_drop_view_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> DropViewStatementParser for Parser<'a> {
+impl DropViewStatementParser for Parser<'_> {
     fn parse_drop_view_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::View)?;
 

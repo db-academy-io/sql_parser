@@ -5,7 +5,7 @@ pub trait BeginStatementParser {
     fn parse_begin_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> BeginStatementParser for Parser<'a> {
+impl BeginStatementParser for Parser<'_> {
     fn parse_begin_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Begin)?;
 

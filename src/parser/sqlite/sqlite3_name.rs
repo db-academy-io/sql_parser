@@ -6,7 +6,7 @@ pub trait SQLite3NameParser {
     fn parse_sqlite3_name(&mut self) -> Result<String, ParsingError>;
 }
 
-impl<'a> SQLite3NameParser for Parser<'a> {
+impl SQLite3NameParser for Parser<'_> {
     fn parse_sqlite3_name(&mut self) -> Result<String, ParsingError> {
         if let Ok(value) = self.peek_as_number() {
             self.consume_as_number()?;

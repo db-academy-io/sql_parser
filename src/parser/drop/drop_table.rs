@@ -6,7 +6,7 @@ pub trait DropTableStatementParser {
     fn parse_drop_table_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> DropTableStatementParser for Parser<'a> {
+impl DropTableStatementParser for Parser<'_> {
     fn parse_drop_table_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Table)?;
 

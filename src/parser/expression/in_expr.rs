@@ -15,7 +15,7 @@ pub trait InExpressionParser {
     ) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> InExpressionParser for Parser<'a> {
+impl InExpressionParser for Parser<'_> {
     fn parse_in_expression(
         &mut self,
         expression: Expression,

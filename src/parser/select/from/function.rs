@@ -10,7 +10,7 @@ pub trait SelectFromFunctionParser {
     ) -> Result<FromClause, ParsingError>;
 }
 
-impl<'a> SelectFromFunctionParser for Parser<'a> {
+impl SelectFromFunctionParser for Parser<'_> {
     fn parse_from_function(
         &mut self,
         function_name: Identifier,

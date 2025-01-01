@@ -15,7 +15,7 @@ pub trait CteStatementParser {
     fn parse_cte_materialized(&mut self) -> Result<Option<MaterializationType>, ParsingError>;
 }
 
-impl<'a> CteStatementParser for Parser<'a> {
+impl CteStatementParser for Parser<'_> {
     fn parse_cte_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::With)?;
 

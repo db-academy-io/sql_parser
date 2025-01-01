@@ -13,7 +13,7 @@ pub trait CreateIndexStatementParser {
     ) -> Result<CreateIndexStatement, ParsingError>;
 }
 
-impl<'a> CreateIndexStatementParser for Parser<'a> {
+impl CreateIndexStatementParser for Parser<'_> {
     fn parse_create_index_statement(
         &mut self,
         unique: bool,

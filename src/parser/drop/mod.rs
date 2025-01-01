@@ -17,7 +17,7 @@ pub trait DropStatementParser {
     // fn parse_drop_statement_generic(&mut self) -> Result<(bool, Identifier), ParsingError>;
 }
 
-impl<'a> DropStatementParser for Parser<'a> {
+impl DropStatementParser for Parser<'_> {
     /// Parse DROP statement
     /// The DROP statement consists of the
     ///   - DROP TABLE statements

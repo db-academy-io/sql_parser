@@ -20,7 +20,7 @@ pub trait CreateStatementParser {
     fn parse_if_not_exists(&mut self) -> Result<bool, ParsingError>;
 }
 
-impl<'a> CreateStatementParser for Parser<'a> {
+impl CreateStatementParser for Parser<'_> {
     fn parse_create_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Create)?;
 

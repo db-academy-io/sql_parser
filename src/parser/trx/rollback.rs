@@ -6,7 +6,7 @@ pub trait RollbackStatementParser {
     fn parse_rollback_statement(&mut self) -> Result<Statement, ParsingError>;
 }
 
-impl<'a> RollbackStatementParser for Parser<'a> {
+impl RollbackStatementParser for Parser<'_> {
     fn parse_rollback_statement(&mut self) -> Result<Statement, ParsingError> {
         self.consume_as_keyword(Keyword::Rollback)?;
 

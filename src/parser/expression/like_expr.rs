@@ -13,7 +13,7 @@ pub trait LikeExpressionParser {
     ) -> Result<Expression, ParsingError>;
 }
 
-impl<'a> LikeExpressionParser for Parser<'a> {
+impl LikeExpressionParser for Parser<'_> {
     fn parse_like_expression(
         &mut self,
         expression: Expression,
