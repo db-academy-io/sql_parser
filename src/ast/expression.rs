@@ -221,6 +221,9 @@ pub enum UnaryOp {
 
     /// Not (!) or NOT
     Not,
+
+    /// Bitwise NOT (~)
+    BitNot,
 }
 
 /// An SQL function
