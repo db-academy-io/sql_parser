@@ -278,7 +278,7 @@ mod where_clause_tests {
     use super::test_utils::{select, select_star_from};
     use crate::expression::test_utils::{binary_op, expr_list, identifier_expr, numeric_expr};
     use crate::parser::test_utils::*;
-    use crate::{BinaryMatchingExpression, BinaryOp, Expression, Identifier, InExpression};
+    use crate::{BinaryOp, Expression, Identifier, InExpression, InExpressionType};
 
     #[test]
     fn select_where_clause() {
@@ -333,12 +333,11 @@ mod where_clause_tests {
     fn select_where_clause_with_subquery() {
         let subquery = select_star_from(Identifier::Single("table_2".to_string()));
 
-        let expression = Expression::BinaryMatchingExpression(
-            Box::new(identifier_expr(&["col1"])),
-            BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::In(
-                InExpression::Select(subquery),
-            ))),
-        );
+        let expression = Expression::InExpression(InExpression {
+            expression: Box::new(identifier_expr(&["col1"])),
+            in_expression: InExpressionType::Select(subquery),
+            is_not: true,
+        });
         let mut expected_statement = select();
         expected_statement.where_clause = Some(Box::new(expression));
         run_sunny_day_test(

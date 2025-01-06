@@ -150,9 +150,6 @@ pub enum BinaryMatchingExpression {
     /// For NOT $BinaryMatchingExpression use cases
     Not(Box<BinaryMatchingExpression>),
 
-    /// In
-    In(InExpression),
-
     /// Between
     Between(BetweenExpression),
 }
@@ -249,9 +246,18 @@ pub struct BetweenExpression {
     pub upper_bound: Box<Expression>,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct InExpression {
+    pub expression: Box<Expression>,
+
+    pub in_expression: InExpressionType,
+
+    pub is_not: bool,
+}
+
 /// An in expression
 #[derive(Debug, PartialEq, Clone)]
-pub enum InExpression {
+pub enum InExpressionType {
     /// Empty
     Empty,
 
