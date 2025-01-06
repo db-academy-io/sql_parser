@@ -1,7 +1,7 @@
 use crate::parser::errors::ParsingError;
 use crate::{
-    parser::window::WindowDefinitionParser, Expression, Function, FunctionArg, FunctionArgType,
-    Identifier, Keyword, OverClause, Parser, TokenType,
+    parser::window::WindowDefinitionParser, Expression, FunctionArg, FunctionArgType,
+    FunctionExpression, Identifier, Keyword, OverClause, Parser, TokenType,
 };
 
 use super::ExpressionParser;
@@ -20,7 +20,7 @@ pub trait FunctionParser {
 impl FunctionParser for Parser<'_> {
     /// Parse a function
     fn parse_function(&mut self, name: Identifier) -> Result<Expression, ParsingError> {
-        let mut function = Function {
+        let mut function = FunctionExpression {
             name,
             arg: FunctionArg::default(),
             filter_clause: None,
@@ -339,7 +339,7 @@ mod function_expression_tests {
         };
 
         let over_clause = WindowDefinition {
-            base_window_name: None,
+            window_name: None,
             partition_by: Some(vec![numeric_expr("1")]),
             order_by: None,
             frame_spec: None,
@@ -365,7 +365,7 @@ mod function_expression_tests {
         };
 
         let over_clause = WindowDefinition {
-            base_window_name: None,
+            window_name: None,
             partition_by: None,
             order_by: Some(vec![OrderingTerm {
                 expression: Box::new(numeric_expr("1")),
@@ -395,7 +395,7 @@ mod function_expression_tests {
         };
 
         let over_clause = WindowDefinition {
-            base_window_name: Some("a".to_string()),
+            window_name: Some("a".to_string()),
             partition_by: None,
             order_by: None,
             frame_spec: Some(FrameSpec {

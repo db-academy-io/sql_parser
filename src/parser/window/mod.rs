@@ -24,7 +24,7 @@ impl WindowDefinitionParser for Parser<'_> {
 
         let mut over_clause = WindowDefinition::default();
         if let Ok(base_window_name) = self.consume_as_id() {
-            over_clause.base_window_name = Some(base_window_name.to_string());
+            over_clause.window_name = Some(base_window_name.to_string());
         }
 
         over_clause.partition_by = self.parser_partition_by_clause()?;

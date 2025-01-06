@@ -296,8 +296,6 @@ mod add_column_tests {
 
 #[cfg(test)]
 mod add_column_with_constraints_tests {
-    use std::fmt::Display;
-
     use super::test_utils::column_constraint_statement;
     use crate::expression::test_utils::*;
     use crate::parser::test_utils::run_sunny_day_test;
@@ -476,18 +474,6 @@ mod add_column_with_constraints_tests {
 
     #[test]
     fn add_column_with_fk_constraint_with_on_clause() {
-        impl Display for FKAction {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    FKAction::SetDefault => write!(f, "SET DEFAULT"),
-                    FKAction::SetNull => write!(f, "SET NULL"),
-                    FKAction::Cascade => write!(f, "CASCADE"),
-                    FKAction::Restrict => write!(f, "RESTRICT"),
-                    FKAction::NoAction => write!(f, "NO ACTION"),
-                }
-            }
-        }
-
         let fk_actions = [
             FKAction::SetDefault,
             FKAction::SetNull,
@@ -582,21 +568,6 @@ mod add_column_with_constraints_tests {
             FKDeferrableType::Not(Box::new(FKDeferrableType::InitiallyDeferred)),
             FKDeferrableType::Not(Box::new(FKDeferrableType::InitiallyImmediate)),
         ];
-
-        impl Display for FKDeferrableType {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    FKDeferrableType::Deferrable => write!(f, "DEFERRABLE"),
-                    FKDeferrableType::Not(deferrable_type) => write!(f, "NOT {}", deferrable_type),
-                    FKDeferrableType::InitiallyDeferred => {
-                        write!(f, "DEFERRABLE INITIALLY DEFERRED")
-                    }
-                    FKDeferrableType::InitiallyImmediate => {
-                        write!(f, "DEFERRABLE INITIALLY IMMEDIATE")
-                    }
-                }
-            }
-        }
 
         for deferrable_type in deferrable_types.iter() {
             let expected_statement = column_constraint_statement(ColumnConstraint {

@@ -455,7 +455,7 @@ mod window_clause_tests {
         expected_statement.window = Some(vec![NamedWindowDefinition {
             window_name: "window_1".to_string(),
             window_definition: WindowDefinition {
-                base_window_name: Some("base_window_name".to_string()),
+                window_name: Some("base_window_name".to_string()),
                 partition_by: Some(vec![identifier_expr(&["col1"]), identifier_expr(&["col2"])]),
                 order_by: Some(vec![
                     OrderingTerm {

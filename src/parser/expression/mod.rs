@@ -323,7 +323,7 @@ impl ExpressionParser for Parser<'_> {
 pub(crate) mod test_utils {
     use crate::ast::Expression;
     use crate::{
-        BinaryOp, CollateExpressionStatement, DataType, ExistsStatement, Function, FunctionArg,
+        BinaryOp, CollateExpression, DataType, ExistsStatement, FunctionArg, FunctionExpression,
         Identifier, LiteralValue, OverClause, RaiseFunction, SelectStatement, UnaryOp,
     };
 
@@ -375,7 +375,7 @@ pub(crate) mod test_utils {
         filter: Option<Box<Expression>>,
         over: Option<OverClause>,
     ) -> Expression {
-        let function = Function {
+        let function = FunctionExpression {
             name: Identifier::Single(name.to_string()),
             arg,
             filter_clause: filter,
@@ -402,7 +402,7 @@ pub(crate) mod test_utils {
     }
 
     pub fn collate_expr(expression: Expression, name: String) -> Expression {
-        Expression::CollateExpression(CollateExpressionStatement {
+        Expression::CollateExpression(CollateExpression {
             expression: Box::new(expression),
             collation_name: name,
         })

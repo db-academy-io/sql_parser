@@ -164,6 +164,27 @@ pub enum TriggerEventType {
     Update(Option<Vec<Identifier>>),
 }
 
+impl Display for TriggerEventType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TriggerEventType::Delete => write!(f, "DELETE"),
+            TriggerEventType::Insert => write!(f, "INSERT"),
+            TriggerEventType::Update(columns) => match columns {
+                Some(columns) => write!(
+                    f,
+                    "UPDATE OF {}",
+                    columns
+                        .iter()
+                        .map(|c| c.to_string())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                ),
+                None => write!(f, "UPDATE"),
+            },
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum TriggerStatement {
     Update(UpdateStatement),

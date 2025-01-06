@@ -184,6 +184,18 @@ pub enum FKAction {
     NoAction,
 }
 
+impl Display for FKAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FKAction::SetDefault => write!(f, "SET DEFAULT"),
+            FKAction::SetNull => write!(f, "SET NULL"),
+            FKAction::Cascade => write!(f, "CASCADE"),
+            FKAction::Restrict => write!(f, "RESTRICT"),
+            FKAction::NoAction => write!(f, "NO ACTION"),
+        }
+    }
+}
+
 /// A [Deferrable](https://www.sqlite.org/syntax/foreign-key-clause.html)
 /// clause in a ForeignKeyConstraint
 #[derive(Debug, PartialEq, Clone)]
@@ -192,6 +204,21 @@ pub enum FKDeferrableType {
     InitiallyImmediate,
     InitiallyDeferred,
     Not(Box<FKDeferrableType>),
+}
+
+impl Display for FKDeferrableType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FKDeferrableType::Deferrable => write!(f, "DEFERRABLE"),
+            FKDeferrableType::Not(deferrable_type) => write!(f, "NOT {}", deferrable_type),
+            FKDeferrableType::InitiallyDeferred => {
+                write!(f, "DEFERRABLE INITIALLY DEFERRED")
+            }
+            FKDeferrableType::InitiallyImmediate => {
+                write!(f, "DEFERRABLE INITIALLY IMMEDIATE")
+            }
+        }
+    }
 }
 
 /// A GeneratedColumnConstraint, used in ALTER TABLE ADD COLUMN statement

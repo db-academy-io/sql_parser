@@ -181,8 +181,6 @@ pub mod test_utils {
 
 #[cfg(test)]
 mod create_trigger_tests {
-    use std::fmt::Display;
-
     use crate::{
         expression::test_utils::{binary_op, identifier_expr, numeric_expr},
         parser::{
@@ -274,38 +272,6 @@ mod create_trigger_tests {
                 Identifier::from("column_name2"),
             ])),
         ];
-
-        impl Display for Identifier {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    Identifier::Single(s) => write!(f, "{}", s),
-                    Identifier::Compound(s) => write!(f, "{}", s.join(".")),
-                    Identifier::Wildcard => write!(f, "*"),
-                    Identifier::NameWithWildcard(s) => write!(f, "{}*", s),
-                }
-            }
-        }
-
-        impl Display for TriggerEventType {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
-                    TriggerEventType::Delete => write!(f, "DELETE"),
-                    TriggerEventType::Insert => write!(f, "INSERT"),
-                    TriggerEventType::Update(columns) => match columns {
-                        Some(columns) => write!(
-                            f,
-                            "UPDATE OF {}",
-                            columns
-                                .iter()
-                                .map(|c| c.to_string())
-                                .collect::<Vec<String>>()
-                                .join(", ")
-                        ),
-                        None => write!(f, "UPDATE"),
-                    },
-                }
-            }
-        }
 
         for trigger_event_type in trigger_event_types {
             let mut expected = create_trigger_statement();
