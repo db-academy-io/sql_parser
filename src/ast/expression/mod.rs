@@ -60,17 +60,17 @@ pub enum Expression {
     /// Is, e.g. $expression IS $expression
     IsExpression(AnIsExpression),
 
+    /// Is Null, e.g. $expression IS NULL
+    IsNull(Box<Expression>),
+
+    /// Is Not Null, e.g. $expression IS NOT NULL
+    IsNotNull(Box<Expression>),
+
     /// In, e.g. $expression IN $expression
     InExpression(InExpression),
 
     /// Between
     BetweenExpression(BetweenExpression),
-
-    /// A binary matching expressions (e.g. $expr1 NOT MATCH $expr2)
-    BinaryMatchingExpression(Box<Expression>, BinaryMatchingExpression),
-
-    /// A unary matching expression (e.g. expression IS NOT NULL)
-    UnaryMatchingExpression(Box<Expression>, UnaryMatchingExpression),
 
     /// An exists statement
     ExistsStatement(ExistsStatement),
@@ -131,22 +131,6 @@ pub enum DataType {
 
     /// A bounded data type name, e.g. VARCHAR(1, 10)
     BoundedDataType(DataTypeName, String, String),
-}
-
-/// An unary matching expression type
-#[derive(Debug, PartialEq, Clone)]
-pub enum UnaryMatchingExpression {
-    /// Is Null
-    IsNull,
-    /// Is Not Null
-    IsNotNull,
-}
-
-/// A binary matching expression
-#[derive(Debug, PartialEq, Clone)]
-pub enum BinaryMatchingExpression {
-    /// For NOT $BinaryMatchingExpression use cases
-    Not(Box<BinaryMatchingExpression>),
 }
 
 /// A like expression type

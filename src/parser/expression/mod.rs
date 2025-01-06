@@ -11,10 +11,7 @@ mod precedence;
 mod raise_expr;
 mod regexp_match_expr;
 use crate::parser::errors::ParsingError;
-use crate::{
-    BinaryOp, Expression, Keyword, LiteralValue, Parser, TokenType, UnaryMatchingExpression,
-    UnaryOp,
-};
+use crate::{BinaryOp, Expression, Keyword, LiteralValue, Parser, TokenType, UnaryOp};
 use between_expr::BetweenExpressionParser;
 use case_expr::CaseExpressionParser;
 use cast_expr::CastExpressionParser;
@@ -141,16 +138,10 @@ impl ExpressionParser for Parser<'_> {
             return RegexpMatchExpressionParser::parse_regexp_match_expression(self, left, false);
         } else if let Ok(Keyword::Isnull) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::Isnull)?;
-            Ok(Expression::UnaryMatchingExpression(
-                Box::new(left),
-                UnaryMatchingExpression::IsNull,
-            ))
+            Ok(Expression::IsNull(Box::new(left)))
         } else if let Ok(Keyword::Notnull) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::Notnull)?;
-            Ok(Expression::UnaryMatchingExpression(
-                Box::new(left),
-                UnaryMatchingExpression::IsNotNull,
-            ))
+            Ok(Expression::IsNotNull(Box::new(left)))
         } else if let Ok(Keyword::Not) = self.peek_as_keyword() {
             self.consume_as_keyword(Keyword::Not)?;
 
@@ -158,10 +149,7 @@ impl ExpressionParser for Parser<'_> {
                 match nested_keyword {
                     Keyword::Null => {
                         self.consume_as_keyword(Keyword::Null)?;
-                        Ok(Expression::UnaryMatchingExpression(
-                            Box::new(left),
-                            UnaryMatchingExpression::IsNotNull,
-                        ))
+                        Ok(Expression::IsNotNull(Box::new(left)))
                     }
                     Keyword::Between => {
                         BetweenExpressionParser::parse_between_expression(self, left, true)
@@ -695,29 +683,18 @@ mod binary_op_tests {
 }
 
 #[cfg(test)]
-mod unary_matching_expression_tests {
+mod null_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
     use crate::select::test_utils::select_expr;
-    use crate::{Expression, UnaryMatchingExpression};
+    use crate::Expression;
 
     use crate::parser::expression::test_utils::*;
-
-    fn unary_matching_expression(
-        expression: Expression,
-        unary_matching_expression: UnaryMatchingExpression,
-    ) -> Expression {
-        Expression::UnaryMatchingExpression(Box::new(expression), unary_matching_expression)
-    }
 
     #[test]
     fn isnull() {
         run_sunny_day_test(
             "SELECT 1 ISNULL;",
-            select_expr(unary_matching_expression(
-                numeric_expr("1"),
-                UnaryMatchingExpression::IsNull,
-            ))
-            .into(),
+            select_expr(Expression::IsNull(Box::new(numeric_expr("1")))).into(),
         );
     }
 
@@ -725,20 +702,12 @@ mod unary_matching_expression_tests {
     fn notnull() {
         run_sunny_day_test(
             "SELECT 1 NOTNULL;",
-            select_expr(unary_matching_expression(
-                numeric_expr("1"),
-                UnaryMatchingExpression::IsNotNull,
-            ))
-            .into(),
+            select_expr(Expression::IsNotNull(Box::new(numeric_expr("1")))).into(),
         );
 
         run_sunny_day_test(
             "SELECT 1 NOT NULL;",
-            select_expr(unary_matching_expression(
-                numeric_expr("1"),
-                UnaryMatchingExpression::IsNotNull,
-            ))
-            .into(),
+            select_expr(Expression::IsNotNull(Box::new(numeric_expr("1")))).into(),
         );
     }
 }
