@@ -1,206 +1,96 @@
+mod between;
+mod case;
 mod frame_spec;
 mod function;
 mod identifier;
+mod in_expression;
 mod literal_value;
+mod matching;
 mod operations;
-mod over_clause;
+mod window_definition;
 
-use super::SelectStatement;
+use super::{DataType, SelectStatement};
+pub use between::BetweenExpression;
+pub use case::{CaseExpression, WhenExpression};
 pub use frame_spec::{
     BetweenFrameSpec, BetweenFrameSpecType, FrameSpec, FrameSpecExclude, FrameSpecType, FrameType,
 };
 pub use function::{FunctionArg, FunctionArgType, FunctionExpression};
 pub use identifier::Identifier;
+pub use in_expression::{InExpression, InExpressionType};
 pub use literal_value::LiteralValue;
+pub use matching::{GlobExpression, LikeExpression, MatchExpression, RegexpExpression};
 pub use operations::{BinaryOp, UnaryOp};
-pub use over_clause::{OverClause, WindowDefinition};
+pub use window_definition::WindowDefinition;
 
 /// An SQLite3 [expr](https://www.sqlite.org/lang_expr.html) expression
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
-    /// A literal value
+    /// A literal value, i.e. 123
     LiteralValue(LiteralValue),
 
-    /// A bind parameter
+    /// A bind parameter, i.e. :?
     BindParameter(String),
 
-    /// A single identifier
+    /// A single identifier, i.e. table_name.column_name
     Identifier(Identifier),
 
-    /// A unary operation
+    /// A unary operation, i.e. -$expr
     UnaryOp(UnaryOp, Box<Expression>),
 
-    /// A binary operation
+    /// A binary operation, i.e. $expr1 + $expr2
     BinaryOp(Box<Expression>, BinaryOp, Box<Expression>),
 
-    /// A function call
+    /// A function call, i.e. $func_name($expr1, $expr2, $expr3)
     Function(FunctionExpression),
 
-    /// An expression list (e.g. (1, 2, 3))
+    /// An expression list, i.e. ($expr1, $expr2, $expr3)
     ExpressionList(Vec<Expression>),
 
-    /// A cast expression (e.g. CAST(expression AS type))
+    /// A cast expression, i.e. CAST($expr AS $type)
     Cast(Box<Expression>, DataType),
 
-    /// A collate expression (e.g. $expression COLLATE collation_name)
+    /// A collate expression, i.e. $expr COLLATE $collation_name
     CollateExpression(CollateExpression),
 
-    /// Like, e.g. $expression LIKE $expression [ESCAPE $expression]
+    /// Like, i.e. $expr [NOT] LIKE $expr [ESCAPE $expr]
     LikeExpression(LikeExpression),
 
-    /// Glob, e.g. $expression GLOB $expression
+    /// Glob, i.e. $expr [NOT] GLOB $expr
     GlobExpression(GlobExpression),
 
-    /// Regexp, e.g. $expression REGEXP $expression
+    /// Regexp, i.e. $expr [NOT] REGEXP $expr
     RegexpExpression(RegexpExpression),
 
-    /// Match, e.g. $expression MATCH $expression
+    /// Match, i.e. $expr [NOT] MATCH $expr
     MatchExpression(MatchExpression),
 
-    /// Is, e.g. $expression IS $expression
+    /// Is, i.e. $expr IS [NOT] [DISTINCT FROM] $expr
     IsExpression(IsExpression),
 
-    /// In, e.g. $expression IN $expression
+    /// In, i.e. $expr [NOT] IN $expr
     InExpression(InExpression),
 
-    /// Is Null, e.g. $expression IS NULL
+    /// Is Null, i.e. $expr IS NULL
     IsNull(Box<Expression>),
 
-    /// Is Not Null, e.g. $expression IS NOT NULL
+    /// Is Not Null, i.e. $expr IS NOT NULL
     IsNotNull(Box<Expression>),
 
-    /// Between
+    /// Between, i.e. $expr [NOT] BETWEEN $lower_bound AND $upper_bound
     BetweenExpression(BetweenExpression),
 
-    /// An exists statement
+    /// An exists statement, i.e. [NOT] EXISTS (select statement)
     ExistsStatement(ExistsStatement),
 
-    /// A case expression (e.g. CASE expression WHEN value1 THEN result1 WHEN value2 THEN result2 ELSE result3 END)
+    /// A case expression (e.g. CASE $expr WHEN $value1 THEN $result1 ELSE $result3 END)
     CaseExpression(CaseExpression),
 
-    /// A raise function
+    /// A raise function, i.e. RAISE(error_name, error_message)
     RaiseFunction(RaiseFunction),
 }
 
-/// A window definition
-#[derive(Debug, PartialEq, Clone, Default)]
-pub struct NamedWindowDefinition {
-    /// The window name
-    pub window_name: String,
-
-    /// The window definition
-    pub window_definition: WindowDefinition,
-}
-
-/// Nulls ordering
-#[derive(Debug, PartialEq, Clone)]
-pub enum NullsOrdering {
-    /// Nulls first
-    First,
-    /// Nulls last
-    Last,
-}
-
-/// A data type name
-#[derive(Debug, PartialEq, Clone)]
-pub enum DataTypeName {
-    /// A single data type name, e.g. INTEGER
-    Single(String),
-    /// A compound data type name, e.g. DOUBLE PRECISION
-    Compound(Vec<String>),
-}
-
-impl From<&str> for DataTypeName {
-    fn from(s: &str) -> Self {
-        if s.contains(" ") {
-            DataTypeName::Compound(s.split(" ").map(|s| s.to_string()).collect())
-        } else {
-            DataTypeName::Single(s.to_string())
-        }
-    }
-}
-
-/// A data type enum, representing the [sqlite-data-types](https://www.sqlite.org/datatype3.html)
-#[derive(Debug, PartialEq, Clone)]
-pub enum DataType {
-    /// A data type name, e.g. INTEGER
-    PlainDataType(DataTypeName),
-
-    /// A sized data type, e.g. VARCHAR(10)
-    SizedDataType(DataTypeName, String),
-
-    /// A bounded data type name, e.g. VARCHAR(1, 10)
-    BoundedDataType(DataTypeName, String, String),
-}
-
-/// A like expression type
-#[derive(Debug, PartialEq, Clone)]
-pub struct LikeExpression {
-    /// An expression
-    pub expression: Box<Expression>,
-
-    /// Whether the expression is not
-    pub not: bool,
-
-    /// The like expression
-    pub like_expression: Box<Expression>,
-
-    /// The escape expression
-    pub escape_expression: Option<Box<Expression>>,
-}
-
-impl From<LikeExpression> for Expression {
-    fn from(like_expr: LikeExpression) -> Self {
-        Expression::LikeExpression(like_expr)
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct GlobExpression {
-    pub expression: Box<Expression>,
-
-    pub not: bool,
-
-    pub pattern: Box<Expression>,
-}
-
-impl From<GlobExpression> for Expression {
-    fn from(glob_expr: GlobExpression) -> Self {
-        Expression::GlobExpression(glob_expr)
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct RegexpExpression {
-    pub expression: Box<Expression>,
-
-    pub not: bool,
-
-    pub pattern: Box<Expression>,
-}
-
-impl From<RegexpExpression> for Expression {
-    fn from(regexp_expr: RegexpExpression) -> Self {
-        Expression::RegexpExpression(regexp_expr)
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct MatchExpression {
-    pub expression: Box<Expression>,
-
-    pub not: bool,
-
-    pub pattern: Box<Expression>,
-}
-
-impl From<MatchExpression> for Expression {
-    fn from(match_expr: MatchExpression) -> Self {
-        Expression::MatchExpression(match_expr)
-    }
-}
-
-/// An IS expression
+/// An IS expression, i.e. $expr IS [NOT] [DISTINCT FROM] $expr
 #[derive(Debug, PartialEq, Clone)]
 pub struct IsExpression {
     /// The expression
@@ -222,81 +112,12 @@ impl From<IsExpression> for Expression {
     }
 }
 
-/// A between expression
-#[derive(Debug, PartialEq, Clone)]
-pub struct BetweenExpression {
-    /// The expression
-    pub expression: Box<Expression>,
-
-    /// Whether the expression is not
-    pub not: bool,
-
-    /// The lower bound
-    pub lower_bound: Box<Expression>,
-
-    /// The upper bound
-    pub upper_bound: Box<Expression>,
-}
-
-impl From<BetweenExpression> for Expression {
-    fn from(between_expr: BetweenExpression) -> Self {
-        Expression::BetweenExpression(between_expr)
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct InExpression {
-    pub expression: Box<Expression>,
-
-    pub in_expression: InExpressionType,
-
-    pub is_not: bool,
-}
-
-impl From<InExpression> for Expression {
-    fn from(in_expr: InExpression) -> Self {
-        Expression::InExpression(in_expr)
-    }
-}
-
-/// An in expression
-#[derive(Debug, PartialEq, Clone)]
-pub enum InExpressionType {
-    /// Empty
-    Empty,
-
-    /// Select
-    Select(SelectStatement),
-
-    /// Expressions
-    Expression(Vec<Expression>),
-
-    /// Identity, i.e. schema_name.table_name
-    Identity(Identifier),
-
-    /// Table function
-    TableFunction(Identifier, Vec<Expression>),
-}
-
 /// An exists statement, i.e. $expr EXISTS (select statement)
 #[derive(Debug, PartialEq, Clone)]
 pub struct ExistsStatement {
     pub select_statement: SelectStatement,
 
     pub not: bool,
-}
-
-/// A case expression
-#[derive(Debug, PartialEq, Clone)]
-pub struct CaseExpression {
-    /// The expression
-    pub expression: Option<Box<Expression>>,
-
-    /// The when expressions
-    pub when_expressions: Vec<WhenExpression>,
-
-    /// The else expression
-    pub else_expression: Option<Box<Expression>>,
 }
 
 /// A collate expression
@@ -307,15 +128,6 @@ pub struct CollateExpression {
 
     /// The collation name
     pub collation_name: String,
-}
-
-/// A when expression
-#[derive(Debug, PartialEq, Clone)]
-pub struct WhenExpression {
-    /// The condition (next after WHEN keyword)
-    pub condition: Box<Expression>,
-    /// The result (next after THEN keyword)
-    pub then_expression: Box<Expression>,
 }
 
 /// A raise function

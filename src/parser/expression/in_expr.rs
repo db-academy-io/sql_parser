@@ -1,8 +1,9 @@
 use crate::parser::errors::ParsingError;
+use crate::IdentifierParser;
 use crate::{
-    parser::select::SelectStatementParser, Expression, InExpression, Keyword, Parser, TokenType,
+    parser::select::SelectStatementParser, Expression, InExpression, InExpressionType, Keyword,
+    Parser, TokenType,
 };
-use crate::{IdentifierParser, InExpressionType};
 
 use super::ExpressionParser;
 

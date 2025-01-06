@@ -1,11 +1,13 @@
 mod alter;
 mod create;
 mod cte;
+mod data_type;
 mod delete;
 mod drop;
 mod explain;
 mod expression;
 mod insert;
+mod ordering;
 mod select;
 mod sqlite;
 mod trx;
@@ -14,11 +16,13 @@ mod update;
 pub use alter::*;
 pub use create::*;
 pub use cte::*;
+pub use data_type::*;
 pub use delete::*;
 pub use drop::*;
 pub use explain::*;
 pub use expression::*;
 pub use insert::*;
+pub use ordering::*;
 pub use select::*;
 pub use sqlite::*;
 pub use trx::*;
@@ -98,13 +102,4 @@ pub struct OrderingTerm {
     pub ordering: Option<Ordering>,
     /// The nulls ordering
     pub nulls_ordering: Option<NullsOrdering>,
-}
-
-/// An ordering
-#[derive(Debug, PartialEq, Clone)]
-pub enum Ordering {
-    /// Ascending
-    Asc,
-    /// Descending
-    Desc,
 }

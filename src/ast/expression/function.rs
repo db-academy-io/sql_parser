@@ -1,6 +1,6 @@
 use crate::OrderingTerm;
 
-use super::{Expression, Identifier, OverClause};
+use super::{Expression, Identifier, WindowDefinition};
 
 /// An SQL function
 #[derive(Debug, PartialEq, Clone)]
@@ -12,7 +12,7 @@ pub struct FunctionExpression {
     /// The filter clause of the function
     pub filter_clause: Option<Box<Expression>>,
     /// The over clause of the function
-    pub over_clause: Option<OverClause>,
+    pub over_clause: Option<WindowDefinition>,
 }
 
 /// A function argument

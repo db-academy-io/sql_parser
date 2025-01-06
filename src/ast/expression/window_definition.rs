@@ -2,16 +2,6 @@ use crate::OrderingTerm;
 
 use super::{frame_spec::FrameSpec, Expression};
 
-/// An over clause
-#[derive(Debug, PartialEq, Clone)]
-pub enum OverClause {
-    /// A window definition
-    WindowDefinition(WindowDefinition),
-
-    /// A window name
-    WindowName(String),
-}
-
 /// A window definition
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct WindowDefinition {

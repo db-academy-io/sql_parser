@@ -1,4 +1,4 @@
-use super::{Expression, Identifier, NamedWindowDefinition, OrderingTerm, WithCteStatement};
+use super::{Expression, Identifier, OrderingTerm, WindowDefinition, WithCteStatement};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -243,4 +243,14 @@ pub struct UnionStatement {
     pub union_type: UnionStatementType,
     pub left: Box<SelectStatement>,
     pub right: Box<SelectStatement>,
+}
+
+/// A window definition
+#[derive(Debug, PartialEq, Clone, Default)]
+pub struct NamedWindowDefinition {
+    /// The window name
+    pub window_name: String,
+
+    /// The window definition
+    pub window_definition: WindowDefinition,
 }

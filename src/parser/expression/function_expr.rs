@@ -1,7 +1,7 @@
 use crate::parser::errors::ParsingError;
 use crate::{
     parser::window::WindowDefinitionParser, Expression, FunctionArg, FunctionArgType,
-    FunctionExpression, Identifier, Keyword, OverClause, Parser, TokenType,
+    FunctionExpression, Identifier, Keyword, Parser, TokenType, WindowDefinition,
 };
 
 use super::ExpressionParser;
@@ -44,11 +44,14 @@ impl FunctionParser for Parser<'_> {
             self.consume_as_keyword(Keyword::Over)?;
 
             function.over_clause = if let Ok(identifier) = self.consume_as_id() {
-                Some(OverClause::WindowName(identifier.to_string()))
+                Some(WindowDefinition {
+                    window_name: Some(identifier.to_string()),
+                    partition_by: None,
+                    order_by: None,
+                    frame_spec: None,
+                })
             } else {
-                Some(OverClause::WindowDefinition(
-                    self.parse_window_definition()?,
-                ))
+                Some(self.parse_window_definition()?)
             };
         }
 
@@ -151,7 +154,7 @@ mod function_expression_tests {
         expression::test_utils::*, parser::test_utils::run_sunny_day_test,
         select::test_utils::select_expr, BetweenFrameSpec, BetweenFrameSpecType, BinaryOp,
         FrameSpec, FrameSpecExclude, FrameSpecType, FrameType, FunctionArg, FunctionArgType,
-        NullsOrdering, Ordering, OrderingTerm, OverClause, WindowDefinition,
+        NullsOrdering, Ordering, OrderingTerm, WindowDefinition,
     };
 
     #[test]
@@ -325,7 +328,12 @@ mod function_expression_tests {
                 "abc",
                 expected_arg,
                 None,
-                Some(OverClause::WindowName("a".to_string())),
+                Some(WindowDefinition {
+                    window_name: Some("a".to_string()),
+                    partition_by: None,
+                    order_by: None,
+                    frame_spec: None,
+                }),
             ))
             .into(),
         );
@@ -347,13 +355,7 @@ mod function_expression_tests {
 
         run_sunny_day_test(
             "SELECT abc(1) over (partition by 1);",
-            select_expr(function(
-                "abc",
-                expected_arg,
-                None,
-                Some(OverClause::WindowDefinition(over_clause)),
-            ))
-            .into(),
+            select_expr(function("abc", expected_arg, None, Some(over_clause))).into(),
         );
     }
 
@@ -377,13 +379,7 @@ mod function_expression_tests {
 
         run_sunny_day_test(
             "SELECT abc(1) over (order by 1 asc nulls last);",
-            select_expr(function(
-                "abc",
-                expected_arg,
-                None,
-                Some(OverClause::WindowDefinition(over_clause)),
-            ))
-            .into(),
+            select_expr(function("abc", expected_arg, None, Some(over_clause))).into(),
         );
     }
 
@@ -410,7 +406,7 @@ mod function_expression_tests {
 
         run_sunny_day_test(
             "SELECT abc(1) over (a groups between 1 preceding and current row exclude current row);",
-            select_expr(function("abc", expected_arg, None, Some(OverClause::WindowDefinition(over_clause)))).into(),
+            select_expr(function("abc", expected_arg, None, Some(over_clause))).into(),
         );
     }
 }

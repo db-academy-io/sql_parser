@@ -312,7 +312,7 @@ pub(crate) mod test_utils {
     use crate::ast::Expression;
     use crate::{
         BinaryOp, CollateExpression, DataType, ExistsStatement, FunctionArg, FunctionExpression,
-        Identifier, LiteralValue, OverClause, RaiseFunction, SelectStatement, UnaryOp,
+        Identifier, LiteralValue, RaiseFunction, SelectStatement, UnaryOp, WindowDefinition,
     };
 
     pub fn numeric_expr(value: &str) -> Expression {
@@ -361,7 +361,7 @@ pub(crate) mod test_utils {
         name: &str,
         arg: FunctionArg,
         filter: Option<Box<Expression>>,
-        over: Option<OverClause>,
+        over: Option<WindowDefinition>,
     ) -> Expression {
         let function = FunctionExpression {
             name: Identifier::Single(name.to_string()),
