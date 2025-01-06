@@ -45,24 +45,22 @@ pub enum Expression {
     /// A collate expression (e.g. $expression COLLATE collation_name)
     CollateExpression(CollateExpression),
 
-    // /// For NOT $BinaryMatchingExpression use cases
-    // Not(Box<BinaryMatchingExpression>),
-    /// Like
+    /// Like, e.g. $expression LIKE $expression [ESCAPE $expression]
     LikeExpression(LikeExpressionType),
 
-    /// Glob
+    /// Glob, e.g. $expression GLOB $expression
     GlobExpression(GlobExpression),
 
-    /// Regexp
+    /// Regexp, e.g. $expression REGEXP $expression
     RegexpExpression(RegexpMatchingExpression),
 
-    /// Match
+    /// Match, e.g. $expression MATCH $expression
     MatchExpression(MatchExpression),
 
-    /// Is
+    /// Is, e.g. $expression IS $expression
     IsExpression(AnIsExpression),
 
-    /// In
+    /// In, e.g. $expression IN $expression
     InExpression(InExpression),
 
     /// Between
@@ -149,9 +147,6 @@ pub enum UnaryMatchingExpression {
 pub enum BinaryMatchingExpression {
     /// For NOT $BinaryMatchingExpression use cases
     Not(Box<BinaryMatchingExpression>),
-
-    /// Between
-    Between(BetweenExpression),
 }
 
 /// A like expression type
@@ -237,13 +232,32 @@ pub struct AnIsExpression {
     pub matching_expression: Box<Expression>,
 }
 
+impl From<AnIsExpression> for Expression {
+    fn from(is_expr: AnIsExpression) -> Self {
+        Expression::IsExpression(is_expr)
+    }
+}
+
 /// A between expression
 #[derive(Debug, PartialEq, Clone)]
 pub struct BetweenExpression {
+    /// The expression
+    pub expression: Box<Expression>,
+
+    /// Whether the expression is not
+    pub not: bool,
+
     /// The lower bound
     pub lower_bound: Box<Expression>,
+
     /// The upper bound
     pub upper_bound: Box<Expression>,
+}
+
+impl From<BetweenExpression> for Expression {
+    fn from(between_expr: BetweenExpression) -> Self {
+        Expression::BetweenExpression(between_expr)
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -253,6 +267,12 @@ pub struct InExpression {
     pub in_expression: InExpressionType,
 
     pub is_not: bool,
+}
+
+impl From<InExpression> for Expression {
+    fn from(in_expr: InExpression) -> Self {
+        Expression::InExpression(in_expr)
+    }
 }
 
 /// An in expression
