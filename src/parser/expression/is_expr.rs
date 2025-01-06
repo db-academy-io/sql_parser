@@ -1,5 +1,5 @@
 use crate::parser::errors::ParsingError;
-use crate::{AnIsExpression, Expression, Keyword, Parser};
+use crate::{Expression, IsExpression, Keyword, Parser};
 
 use super::ExpressionParser;
 
@@ -22,7 +22,7 @@ impl IsExpressionParser for Parser<'_> {
             self.consume_as_keyword(Keyword::From)?;
         }
 
-        let is_expression = AnIsExpression {
+        let is_expression = IsExpression {
             expression: Box::new(expression),
             not: is_not,
             distinct,
@@ -37,7 +37,7 @@ impl IsExpressionParser for Parser<'_> {
 mod is_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
     use crate::select::test_utils::select_expr;
-    use crate::{AnIsExpression, Expression};
+    use crate::{Expression, IsExpression};
 
     use crate::parser::expression::test_utils::*;
 
@@ -47,7 +47,7 @@ mod is_expression_tests {
         distinct: bool,
         is_not: bool,
     ) -> Expression {
-        Expression::IsExpression(AnIsExpression {
+        Expression::IsExpression(IsExpression {
             expression: Box::new(expression),
             distinct,
             not: is_not,

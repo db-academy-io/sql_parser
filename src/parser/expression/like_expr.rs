@@ -1,5 +1,5 @@
 use crate::parser::errors::ParsingError;
-use crate::{Expression, Keyword, LikeExpressionType, Parser};
+use crate::{Expression, Keyword, LikeExpression, Parser};
 
 use super::ExpressionParser;
 
@@ -26,7 +26,7 @@ impl LikeExpressionParser for Parser<'_> {
             escape_expression = Some(Box::new(self.parse_expression()?));
         }
 
-        let like_expression = LikeExpressionType {
+        let like_expression = LikeExpression {
             expression: Box::new(expression),
             not: is_not,
             like_expression: Box::new(pattern),
@@ -41,12 +41,12 @@ impl LikeExpressionParser for Parser<'_> {
 mod like_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
     use crate::select::test_utils::select_expr;
-    use crate::{Expression, LikeExpressionType};
+    use crate::{Expression, LikeExpression};
 
     use crate::parser::expression::test_utils::*;
 
-    fn like_expr(expr: Expression, like_expr: Expression) -> LikeExpressionType {
-        LikeExpressionType {
+    fn like_expr(expr: Expression, like_expr: Expression) -> LikeExpression {
+        LikeExpression {
             expression: Box::new(expr),
             not: false,
             like_expression: Box::new(like_expr),

@@ -1,7 +1,5 @@
 use crate::parser::errors::ParsingError;
-use crate::{
-    Expression, GlobExpression, Keyword, MatchExpression, Parser, RegexpMatchingExpression,
-};
+use crate::{Expression, GlobExpression, Keyword, MatchExpression, Parser, RegexpExpression};
 
 use super::ExpressionParser;
 
@@ -37,7 +35,7 @@ impl RegexpMatchExpressionParser for Parser<'_> {
                 not: is_not,
                 pattern: Box::new(pattern),
             }),
-            Keyword::Regexp => Expression::RegexpExpression(RegexpMatchingExpression {
+            Keyword::Regexp => Expression::RegexpExpression(RegexpExpression {
                 expression: Box::new(expression),
                 not: is_not,
                 pattern: Box::new(pattern),
@@ -58,7 +56,7 @@ impl RegexpMatchExpressionParser for Parser<'_> {
 mod regexp_match_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
     use crate::select::test_utils::select_expr;
-    use crate::{Expression, GlobExpression, MatchExpression, RegexpMatchingExpression};
+    use crate::{Expression, GlobExpression, MatchExpression, RegexpExpression};
 
     use crate::parser::expression::test_utils::*;
 
@@ -70,8 +68,8 @@ mod regexp_match_expression_tests {
         }
     }
 
-    fn regexp_expr(expression: Expression, pattern: Expression) -> RegexpMatchingExpression {
-        RegexpMatchingExpression {
+    fn regexp_expr(expression: Expression, pattern: Expression) -> RegexpExpression {
+        RegexpExpression {
             expression: Box::new(expression),
             not: false,
             pattern: Box::new(pattern),

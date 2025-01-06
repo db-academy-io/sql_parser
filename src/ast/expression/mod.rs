@@ -46,28 +46,28 @@ pub enum Expression {
     CollateExpression(CollateExpression),
 
     /// Like, e.g. $expression LIKE $expression [ESCAPE $expression]
-    LikeExpression(LikeExpressionType),
+    LikeExpression(LikeExpression),
 
     /// Glob, e.g. $expression GLOB $expression
     GlobExpression(GlobExpression),
 
     /// Regexp, e.g. $expression REGEXP $expression
-    RegexpExpression(RegexpMatchingExpression),
+    RegexpExpression(RegexpExpression),
 
     /// Match, e.g. $expression MATCH $expression
     MatchExpression(MatchExpression),
 
     /// Is, e.g. $expression IS $expression
-    IsExpression(AnIsExpression),
+    IsExpression(IsExpression),
+
+    /// In, e.g. $expression IN $expression
+    InExpression(InExpression),
 
     /// Is Null, e.g. $expression IS NULL
     IsNull(Box<Expression>),
 
     /// Is Not Null, e.g. $expression IS NOT NULL
     IsNotNull(Box<Expression>),
-
-    /// In, e.g. $expression IN $expression
-    InExpression(InExpression),
 
     /// Between
     BetweenExpression(BetweenExpression),
@@ -135,7 +135,7 @@ pub enum DataType {
 
 /// A like expression type
 #[derive(Debug, PartialEq, Clone)]
-pub struct LikeExpressionType {
+pub struct LikeExpression {
     /// An expression
     pub expression: Box<Expression>,
 
@@ -149,8 +149,8 @@ pub struct LikeExpressionType {
     pub escape_expression: Option<Box<Expression>>,
 }
 
-impl From<LikeExpressionType> for Expression {
-    fn from(like_expr: LikeExpressionType) -> Self {
+impl From<LikeExpression> for Expression {
+    fn from(like_expr: LikeExpression) -> Self {
         Expression::LikeExpression(like_expr)
     }
 }
@@ -171,7 +171,7 @@ impl From<GlobExpression> for Expression {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct RegexpMatchingExpression {
+pub struct RegexpExpression {
     pub expression: Box<Expression>,
 
     pub not: bool,
@@ -179,8 +179,8 @@ pub struct RegexpMatchingExpression {
     pub pattern: Box<Expression>,
 }
 
-impl From<RegexpMatchingExpression> for Expression {
-    fn from(regexp_expr: RegexpMatchingExpression) -> Self {
+impl From<RegexpExpression> for Expression {
+    fn from(regexp_expr: RegexpExpression) -> Self {
         Expression::RegexpExpression(regexp_expr)
     }
 }
@@ -202,7 +202,7 @@ impl From<MatchExpression> for Expression {
 
 /// An IS expression
 #[derive(Debug, PartialEq, Clone)]
-pub struct AnIsExpression {
+pub struct IsExpression {
     /// The expression
     pub expression: Box<Expression>,
 
@@ -216,8 +216,8 @@ pub struct AnIsExpression {
     pub matching_expression: Box<Expression>,
 }
 
-impl From<AnIsExpression> for Expression {
-    fn from(is_expr: AnIsExpression) -> Self {
+impl From<IsExpression> for Expression {
+    fn from(is_expr: IsExpression) -> Self {
         Expression::IsExpression(is_expr)
     }
 }
