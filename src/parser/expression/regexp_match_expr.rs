@@ -1,5 +1,7 @@
 use crate::parser::errors::ParsingError;
-use crate::{BinaryMatchingExpression, Expression, Keyword, Parser};
+use crate::{
+    Expression, GlobExpression, Keyword, MatchExpression, Parser, RegexpMatchingExpression,
+};
 
 use super::ExpressionParser;
 
@@ -30,23 +32,25 @@ impl RegexpMatchExpressionParser for Parser<'_> {
         let pattern = self.parse_expression()?;
 
         let matching_expression = match match_type {
-            Keyword::Glob => BinaryMatchingExpression::Glob(Box::new(pattern)),
-            Keyword::Regexp => BinaryMatchingExpression::Regexp(Box::new(pattern)),
-            Keyword::Match => BinaryMatchingExpression::Match(Box::new(pattern)),
+            Keyword::Glob => Expression::GlobExpression(GlobExpression {
+                expression: Box::new(expression),
+                not: is_not,
+                pattern: Box::new(pattern),
+            }),
+            Keyword::Regexp => Expression::RegexpExpression(RegexpMatchingExpression {
+                expression: Box::new(expression),
+                not: is_not,
+                pattern: Box::new(pattern),
+            }),
+            Keyword::Match => Expression::MatchExpression(MatchExpression {
+                expression: Box::new(expression),
+                not: is_not,
+                pattern: Box::new(pattern),
+            }),
             _ => unreachable!(),
         };
 
-        if is_not {
-            Ok(Expression::BinaryMatchingExpression(
-                Box::new(expression),
-                BinaryMatchingExpression::Not(Box::new(matching_expression)),
-            ))
-        } else {
-            Ok(Expression::BinaryMatchingExpression(
-                Box::new(expression),
-                matching_expression,
-            ))
-        }
+        Ok(matching_expression)
     }
 }
 
@@ -54,67 +58,70 @@ impl RegexpMatchExpressionParser for Parser<'_> {
 mod regexp_match_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
     use crate::select::test_utils::select_expr;
-    use crate::{BinaryMatchingExpression, Expression, Keyword};
+    use crate::{Expression, GlobExpression, MatchExpression, RegexpMatchingExpression};
 
     use crate::parser::expression::test_utils::*;
 
-    fn binary_matching_expr(pattern: Expression, keyword: Keyword) -> BinaryMatchingExpression {
-        match keyword {
-            Keyword::Glob => BinaryMatchingExpression::Glob(Box::new(pattern)),
-            Keyword::Regexp => BinaryMatchingExpression::Regexp(Box::new(pattern)),
-            Keyword::Match => BinaryMatchingExpression::Match(Box::new(pattern)),
-            _ => panic!("Invalid keyword: {}", keyword),
+    fn glob_expr(expression: Expression, pattern: Expression) -> GlobExpression {
+        GlobExpression {
+            expression: Box::new(expression),
+            not: false,
+            pattern: Box::new(pattern),
         }
     }
 
-    fn regexp_match_expr(
-        expression: Expression,
-        pattern: Expression,
-        keyword: Keyword,
-        is_not: bool,
-    ) -> Expression {
-        let binary_matching_expression = if is_not {
-            BinaryMatchingExpression::Not(Box::new(binary_matching_expr(pattern, keyword)))
-        } else {
-            binary_matching_expr(pattern, keyword)
-        };
-
-        Expression::BinaryMatchingExpression(Box::new(expression), binary_matching_expression)
+    fn regexp_expr(expression: Expression, pattern: Expression) -> RegexpMatchingExpression {
+        RegexpMatchingExpression {
+            expression: Box::new(expression),
+            not: false,
+            pattern: Box::new(pattern),
+        }
     }
 
-    #[test]
-    fn regexp_match() {
-        let keywords = vec![Keyword::Glob, Keyword::Regexp, Keyword::Match];
-
-        for keyword in keywords {
-            run_sunny_day_test(
-                &format!("SELECT 1 {} 'a*';", keyword),
-                select_expr(regexp_match_expr(
-                    numeric_expr("1"),
-                    string_expr("'a*'"),
-                    keyword,
-                    false,
-                ))
-                .into(),
-            );
+    fn match_expr(expression: Expression, pattern: Expression) -> MatchExpression {
+        MatchExpression {
+            expression: Box::new(expression),
+            not: false,
+            pattern: Box::new(pattern),
         }
     }
 
     #[test]
-    fn not_regexp_match() {
-        let keywords = vec![Keyword::Glob, Keyword::Regexp, Keyword::Match];
+    fn glob_expr_test() {
+        let expected = glob_expr(numeric_expr("1"), string_expr("'a*'"));
+        run_sunny_day_test("SELECT 1 GLOB 'a*';", select_expr(expected.into()).into());
 
-        for keyword in keywords {
-            run_sunny_day_test(
-                &format!("SELECT 1 NOT {} 'a*';", keyword),
-                select_expr(regexp_match_expr(
-                    numeric_expr("1"),
-                    string_expr("'a*'"),
-                    keyword,
-                    true,
-                ))
-                .into(),
-            );
-        }
+        let mut expected = glob_expr(numeric_expr("1"), string_expr("'a*'"));
+        expected.not = true;
+        run_sunny_day_test(
+            "SELECT 1 NOT GLOB 'a*';",
+            select_expr(expected.into()).into(),
+        );
+    }
+
+    #[test]
+    fn regexp_expr_test() {
+        let expected = regexp_expr(numeric_expr("1"), string_expr("'a*'"));
+        run_sunny_day_test("SELECT 1 REGEXP 'a*';", select_expr(expected.into()).into());
+
+        let mut expected = regexp_expr(numeric_expr("1"), string_expr("'a*'"));
+        expected.not = true;
+        run_sunny_day_test(
+            "SELECT 1 NOT REGEXP 'a*';",
+            select_expr(expected.into()).into(),
+        );
+    }
+
+    #[test]
+    fn match_expr_test() {
+        let expected = match_expr(numeric_expr("1"), string_expr("'a*'"));
+        run_sunny_day_test("SELECT 1 MATCH 'a*';", select_expr(expected.into()).into());
+
+        let mut expected = match_expr(numeric_expr("1"), string_expr("'a*'"));
+        expected.not = true;
+        run_sunny_day_test(
+            "SELECT 1 NOT MATCH 'a*';",
+            select_expr(expected.into()).into(),
+        );
     }
 }

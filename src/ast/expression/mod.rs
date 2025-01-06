@@ -51,13 +51,13 @@ pub enum Expression {
     LikeExpression(LikeExpressionType),
 
     /// Glob
-    GlobExpression(Box<Expression>),
+    GlobExpression(GlobExpression),
 
     /// Regexp
-    RegexpExpression(Box<Expression>),
+    RegexpExpression(RegexpMatchingExpression),
 
     /// Match
-    MatchExpression(Box<Expression>),
+    MatchExpression(MatchExpression),
 
     /// Is
     IsExpression(AnIsExpression),
@@ -150,15 +150,6 @@ pub enum BinaryMatchingExpression {
     /// For NOT $BinaryMatchingExpression use cases
     Not(Box<BinaryMatchingExpression>),
 
-    /// Glob
-    Glob(Box<Expression>),
-
-    /// Regexp
-    Regexp(Box<Expression>),
-
-    /// Match
-    Match(Box<Expression>),
-
     /// Is
     Is(AnIsExpression),
 
@@ -188,6 +179,51 @@ pub struct LikeExpressionType {
 impl From<LikeExpressionType> for Expression {
     fn from(like_expr: LikeExpressionType) -> Self {
         Expression::LikeExpression(like_expr)
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct GlobExpression {
+    pub expression: Box<Expression>,
+
+    pub not: bool,
+
+    pub pattern: Box<Expression>,
+}
+
+impl From<GlobExpression> for Expression {
+    fn from(glob_expr: GlobExpression) -> Self {
+        Expression::GlobExpression(glob_expr)
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct RegexpMatchingExpression {
+    pub expression: Box<Expression>,
+
+    pub not: bool,
+
+    pub pattern: Box<Expression>,
+}
+
+impl From<RegexpMatchingExpression> for Expression {
+    fn from(regexp_expr: RegexpMatchingExpression) -> Self {
+        Expression::RegexpExpression(regexp_expr)
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MatchExpression {
+    pub expression: Box<Expression>,
+
+    pub not: bool,
+
+    pub pattern: Box<Expression>,
+}
+
+impl From<MatchExpression> for Expression {
+    fn from(match_expr: MatchExpression) -> Self {
+        Expression::MatchExpression(match_expr)
     }
 }
 
