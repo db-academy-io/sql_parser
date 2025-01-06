@@ -374,10 +374,9 @@ pub(crate) mod test_utils {
     }
 
     pub fn exist_expr(is_not: bool, statement: SelectStatement) -> Expression {
-        Expression::ExistsStatement(if is_not {
-            ExistsStatement::NotExists(statement)
-        } else {
-            ExistsStatement::Exists(statement)
+        Expression::ExistsStatement(ExistsStatement {
+            select_statement: statement,
+            not: is_not,
         })
     }
 

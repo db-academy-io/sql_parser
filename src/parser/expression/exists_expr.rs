@@ -20,13 +20,10 @@ impl ExistsExpressionParser for Parser<'_> {
         // Consume the enclosing right parenthesis
         self.consume_as(TokenType::RightParen)?;
 
-        let exists_statement = if is_not {
-            ExistsStatement::NotExists(select_statement)
-        } else {
-            ExistsStatement::Exists(select_statement)
-        };
-
-        Ok(Expression::ExistsStatement(exists_statement))
+        Ok(Expression::ExistsStatement(ExistsStatement {
+            select_statement,
+            not: is_not,
+        }))
     }
 }
 

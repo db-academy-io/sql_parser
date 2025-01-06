@@ -278,14 +278,12 @@ pub enum InExpressionType {
     TableFunction(Identifier, Vec<Expression>),
 }
 
-/// An exists statement type
+/// An exists statement, i.e. $expr EXISTS (select statement)
 #[derive(Debug, PartialEq, Clone)]
-pub enum ExistsStatement {
-    /// Exists
-    Exists(SelectStatement),
+pub struct ExistsStatement {
+    pub select_statement: SelectStatement,
 
-    /// Not Exists
-    NotExists(SelectStatement),
+    pub not: bool,
 }
 
 /// A case expression
