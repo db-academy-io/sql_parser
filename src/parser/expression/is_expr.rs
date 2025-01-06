@@ -1,5 +1,5 @@
 use crate::parser::errors::ParsingError;
-use crate::{AnIsExpression, BinaryMatchingExpression, Expression, Keyword, Parser};
+use crate::{AnIsExpression, Expression, Keyword, Parser};
 
 use super::ExpressionParser;
 
@@ -22,21 +22,14 @@ impl IsExpressionParser for Parser<'_> {
             self.consume_as_keyword(Keyword::From)?;
         }
 
-        let is_expression = BinaryMatchingExpression::Is(AnIsExpression {
-            expression: Box::new(self.parse_expression()?),
+        let is_expression = AnIsExpression {
+            expression: Box::new(expression),
+            not: is_not,
             distinct,
-        });
-
-        let result = if is_not {
-            BinaryMatchingExpression::Not(Box::new(is_expression))
-        } else {
-            is_expression
+            matching_expression: Box::new(self.parse_expression()?),
         };
 
-        Ok(Expression::BinaryMatchingExpression(
-            Box::new(expression),
-            result,
-        ))
+        Ok(Expression::IsExpression(is_expression))
     }
 }
 
@@ -44,36 +37,29 @@ impl IsExpressionParser for Parser<'_> {
 mod is_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
     use crate::select::test_utils::select_expr;
-    use crate::{AnIsExpression, BinaryMatchingExpression, Expression};
+    use crate::{AnIsExpression, Expression};
 
     use crate::parser::expression::test_utils::*;
 
-    fn expr_from_expr(
+    fn is_expression(
         expression: Expression,
-        is_expression: Expression,
+        matching_expression: Expression,
         distinct: bool,
         is_not: bool,
     ) -> Expression {
-        let binary_matching_expression = if is_not {
-            BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::Is(AnIsExpression {
-                expression: Box::new(is_expression),
-                distinct,
-            })))
-        } else {
-            BinaryMatchingExpression::Is(AnIsExpression {
-                expression: Box::new(is_expression),
-                distinct,
-            })
-        };
-
-        Expression::BinaryMatchingExpression(Box::new(expression), binary_matching_expression)
+        Expression::IsExpression(AnIsExpression {
+            expression: Box::new(expression),
+            distinct,
+            not: is_not,
+            matching_expression: Box::new(matching_expression),
+        })
     }
 
     #[test]
     fn is_expr_test() {
         run_sunny_day_test(
             "SELECT 1 IS 1;",
-            select_expr(expr_from_expr(
+            select_expr(is_expression(
                 numeric_expr("1"),
                 numeric_expr("1"),
                 false,
@@ -87,7 +73,7 @@ mod is_expression_tests {
     fn is_not_expr_test() {
         run_sunny_day_test(
             "SELECT 1 IS NOT 1;",
-            select_expr(expr_from_expr(
+            select_expr(is_expression(
                 numeric_expr("1"),
                 numeric_expr("1"),
                 false,
@@ -101,7 +87,7 @@ mod is_expression_tests {
     fn is_distinct_expr_test() {
         run_sunny_day_test(
             "SELECT 1 IS DISTINCT FROM 1;",
-            select_expr(expr_from_expr(
+            select_expr(is_expression(
                 numeric_expr("1"),
                 numeric_expr("1"),
                 true,

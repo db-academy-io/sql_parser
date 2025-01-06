@@ -150,9 +150,6 @@ pub enum BinaryMatchingExpression {
     /// For NOT $BinaryMatchingExpression use cases
     Not(Box<BinaryMatchingExpression>),
 
-    /// Is
-    Is(AnIsExpression),
-
     /// In
     In(InExpression),
 
@@ -232,8 +229,15 @@ impl From<MatchExpression> for Expression {
 pub struct AnIsExpression {
     /// The expression
     pub expression: Box<Expression>,
+
+    /// Whether the expression is not
+    pub not: bool,
+
     /// Whether the expression is distinct
     pub distinct: bool,
+
+    /// The matching expression
+    pub matching_expression: Box<Expression>,
 }
 
 /// A between expression
