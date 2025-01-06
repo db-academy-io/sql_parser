@@ -191,16 +191,6 @@ impl From<LikeExpressionType> for Expression {
     }
 }
 
-/// An escape expression
-#[derive(Debug, PartialEq, Clone)]
-pub struct EscapeExpression {
-    /// The expression
-    pub expression: Box<Expression>,
-
-    /// The escape expression
-    pub escape_expression: Option<Box<Expression>>,
-}
-
 /// An IS expression
 #[derive(Debug, PartialEq, Clone)]
 pub struct AnIsExpression {
