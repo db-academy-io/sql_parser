@@ -1,7 +1,5 @@
 use crate::parser::errors::ParsingError;
-use crate::{
-    BinaryMatchingExpression, EscapeExpression, Expression, Keyword, LikeExpressionType, Parser,
-};
+use crate::{Expression, Keyword, LikeExpressionType, Parser};
 
 use super::ExpressionParser;
 
@@ -28,30 +26,14 @@ impl LikeExpressionParser for Parser<'_> {
             escape_expression = Some(Box::new(self.parse_expression()?));
         }
 
-        let matching_expression: BinaryMatchingExpression = {
-            match escape_expression {
-                Some(escape_expression) => BinaryMatchingExpression::Like(
-                    LikeExpressionType::EscapeExpression(EscapeExpression {
-                        expression: Box::new(pattern),
-                        escape_expression: Some(escape_expression),
-                    }),
-                ),
-                None => BinaryMatchingExpression::Like(LikeExpressionType::Expression(Box::new(
-                    pattern,
-                ))),
-            }
+        let like_expression = LikeExpressionType {
+            expression: Box::new(expression),
+            not: is_not,
+            like_expression: Box::new(pattern),
+            escape_expression,
         };
 
-        let matching_expression = if is_not {
-            BinaryMatchingExpression::Not(Box::new(matching_expression))
-        } else {
-            matching_expression
-        };
-
-        Ok(Expression::BinaryMatchingExpression(
-            Box::new(expression),
-            matching_expression,
-        ))
+        Ok(Expression::LikeExpression(like_expression))
     }
 }
 
@@ -59,65 +41,41 @@ impl LikeExpressionParser for Parser<'_> {
 mod like_expression_tests {
     use crate::parser::test_utils::run_sunny_day_test;
     use crate::select::test_utils::select_expr;
-    use crate::{BinaryMatchingExpression, EscapeExpression, Expression, LikeExpressionType};
+    use crate::{Expression, LikeExpressionType};
 
     use crate::parser::expression::test_utils::*;
 
-    fn like_expr(
-        expression: Expression,
-        like_expression_type: LikeExpressionType,
-        inverted: bool,
-    ) -> Expression {
-        let binary_matching_expression = if inverted {
-            BinaryMatchingExpression::Not(Box::new(BinaryMatchingExpression::Like(
-                like_expression_type,
-            )))
-        } else {
-            BinaryMatchingExpression::Like(like_expression_type)
-        };
-
-        Expression::BinaryMatchingExpression(Box::new(expression), binary_matching_expression)
+    fn like_expr(expr: Expression, like_expr: Expression) -> LikeExpressionType {
+        LikeExpressionType {
+            expression: Box::new(expr),
+            not: false,
+            like_expression: Box::new(like_expr),
+            escape_expression: None,
+        }
     }
 
     #[test]
     fn like_expr_test() {
-        run_sunny_day_test(
-            "SELECT 1 LIKE 'a%';",
-            select_expr(like_expr(
-                numeric_expr("1"),
-                LikeExpressionType::Expression(Box::new(string_expr("'a%'"))),
-                false,
-            ))
-            .into(),
-        );
+        let expr = like_expr(numeric_expr("1"), string_expr("'a%'"));
+        run_sunny_day_test("SELECT 1 LIKE 'a%';", select_expr(expr.into()).into());
     }
 
     #[test]
     fn not_like_expr() {
-        run_sunny_day_test(
-            "SELECT 1 NOT LIKE 'a%';",
-            select_expr(like_expr(
-                numeric_expr("1"),
-                LikeExpressionType::Expression(Box::new(string_expr("'a%'"))),
-                true,
-            ))
-            .into(),
-        );
+        let mut expr = like_expr(numeric_expr("1"), string_expr("'a%'"));
+        expr.not = true;
+
+        run_sunny_day_test("SELECT 1 NOT LIKE 'a%';", select_expr(expr.into()).into());
     }
 
     #[test]
     fn like_with_escape_expr_test() {
+        let mut like_expr = like_expr(numeric_expr("1"), string_expr("'a%'"));
+        like_expr.escape_expression = Some(Box::new(string_expr("'b'")));
+
         run_sunny_day_test(
             "SELECT 1 LIKE 'a%' ESCAPE 'b';",
-            select_expr(like_expr(
-                numeric_expr("1"),
-                LikeExpressionType::EscapeExpression(EscapeExpression {
-                    expression: Box::new(string_expr("'a%'")),
-                    escape_expression: Some(Box::new(string_expr("'b'"))),
-                }),
-                false,
-            ))
-            .into(),
+            select_expr(like_expr.into()).into(),
         );
     }
 }

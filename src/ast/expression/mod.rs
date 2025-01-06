@@ -150,9 +150,6 @@ pub enum BinaryMatchingExpression {
     /// For NOT $BinaryMatchingExpression use cases
     Not(Box<BinaryMatchingExpression>),
 
-    /// Like
-    Like(LikeExpressionType),
-
     /// Glob
     Glob(Box<Expression>),
 
@@ -174,12 +171,24 @@ pub enum BinaryMatchingExpression {
 
 /// A like expression type
 #[derive(Debug, PartialEq, Clone)]
-pub enum LikeExpressionType {
+pub struct LikeExpressionType {
     /// An expression
-    Expression(Box<Expression>),
+    pub expression: Box<Expression>,
 
-    /// An escape expression
-    EscapeExpression(EscapeExpression),
+    /// Whether the expression is not
+    pub not: bool,
+
+    /// The like expression
+    pub like_expression: Box<Expression>,
+
+    /// The escape expression
+    pub escape_expression: Option<Box<Expression>>,
+}
+
+impl From<LikeExpressionType> for Expression {
+    fn from(like_expr: LikeExpressionType) -> Self {
+        Expression::LikeExpression(like_expr)
+    }
 }
 
 /// An escape expression
@@ -187,6 +196,7 @@ pub enum LikeExpressionType {
 pub struct EscapeExpression {
     /// The expression
     pub expression: Box<Expression>,
+
     /// The escape expression
     pub escape_expression: Option<Box<Expression>>,
 }
