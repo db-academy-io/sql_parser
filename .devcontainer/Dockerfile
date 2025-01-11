@@ -1,1 +1,1 @@
-FROM dbacademyio/cargo-tester:latest
+FROM dbacademyio/dbcheck:latest
